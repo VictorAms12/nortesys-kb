@@ -16,11 +16,12 @@ export function formatarData(iso: string): string {
 
 export type ResumoArtigo = Pick<
   Artigo,
-  "url" | "titulo" | "resumo" | "categoria" | "nivel" | "status" | "sistema" | "tags" | "atualizadoEm" | "revisarAte" | "codigosErro"
+  "tipo" | "url" | "titulo" | "resumo" | "categoria" | "nivel" | "status" | "sistema" | "tags" | "atualizadoEm" | "revisarAte" | "codigosErro"
 >;
 
 export function resumoArtigo(artigo: Artigo): ResumoArtigo {
   return {
+    tipo: artigo.tipo,
     url: artigo.url,
     titulo: artigo.titulo,
     resumo: artigo.resumo,

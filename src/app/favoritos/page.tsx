@@ -1,0 +1,13 @@
+import Link from "next/link";
+import { exigirSessao } from "../../lib/autenticacao-servidor";
+import { artigosDoUsuario } from "../../lib/interacoes";
+import { hojeISO, resumoArtigo } from "../../lib/apresentacao";
+import { CartaoArtigo } from "../../components/cartao-artigo";
+export const dynamic="force-dynamic";
+export default async function Pagina(){
+ const u=await exigirSessao();const artigos=await artigosDoUsuario(u.id,u.papel,"favoritos");
+ return <main id="conteudo" className="conteiner py-9 sm:py-12"><nav className="trilha"><Link href="/">Início</Link><span>/</span><span>Meus favoritos</span></nav>
+ <h1 className="titulo-pagina">Meus favoritos</h1><p className="mt-3 mb-7 texto-introducao">Artigos salvos para consultas frequentes.</p>
+ {artigos.length?<div className="grid gap-4 md:grid-cols-2">{artigos.map(a=><CartaoArtigo key={a.url} artigo={resumoArtigo(a)} hoje={hojeISO()}/>)}</div>:<div className="cartao p-7">Nenhum artigo aqui ainda. <Link href="/artigos">Explorar artigos →</Link></div>}
+ </main>;
+}

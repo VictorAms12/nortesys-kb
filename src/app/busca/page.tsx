@@ -8,7 +8,7 @@ import { PainelBusca } from "../../components/painel-busca";
 
 export const metadata: Metadata = {
   title: "Buscar artigos | Nortesys KB",
-  description: "Pesquise procedimentos, sintomas e códigos de erro na base de conhecimento.",
+  description: "Pesquise soluções, tutoriais, guias, FAQ e códigos de erro na base de conhecimento.",
 };
 
 export default async function PaginaBusca() {
@@ -21,7 +21,7 @@ export default async function PaginaBusca() {
       <div className="mb-8">
         <p className="sobre-titulo">Encontre a orientação certa</p>
         <h1 className="titulo-pagina mt-2">Pesquisar na base</h1>
-        <p className="mt-3 max-w-2xl leading-7 text-[var(--muted)]">Consulte os artigos de todas as categorias, incluindo códigos de erro, sintomas e soluções passo a passo.</p>
+        <p className="mt-3 max-w-2xl leading-7 text-[var(--muted)]">Consulte soluções de problemas, tutoriais, guias técnicos, FAQ e códigos de erro.</p>
       </div>
       <Suspense fallback={<div className="cartao p-6" role="status">Preparando pesquisa…</div>}>
         <PainelBusca documentos={documentos} />

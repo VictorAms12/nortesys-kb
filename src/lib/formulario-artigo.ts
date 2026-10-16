@@ -2,7 +2,7 @@ import matter from "gray-matter";
 import { z } from "zod";
 import { slugsCategorias } from "../../config/categorias";
 import { validarTextoArtigo } from "./artigos";
-import { SECOES_ARTIGO } from "../types/artigo";
+import { modeloConteudo, TODOS_TIPOS } from "./tipos-conteudo";
 
 export const slugValido = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const texto = (form: FormData, chave: string): string => {
@@ -12,6 +12,13 @@ const texto = (form: FormData, chave: string): string => {
 const dataHoje = () => new Date().toISOString().slice(0,10);
 const lista = (v: string): string[] => v.split(/[,\n]/).map(x => x.trim()).filter(Boolean);
 const dadosForm = z.object({
+  // Compatibilidade: formulários criados até a Fase 6 não enviam o campo `tipo`.
+  // Um campo ausente chega como string vazia pelo helper `texto`.
+  // Tipos explícitos incorretos continuam sendo rejeitados pelo enum.
+  tipo: z.preprocess(
+    valor => valor === "" || valor === undefined ? "solucao" : valor,
+    z.enum(TODOS_TIPOS),
+  ),
   slug: z.string().min(3).max(100).regex(slugValido),
   titulo: z.string().min(5).max(180),
   resumo: z.string().min(10).max(160),
@@ -23,20 +30,20 @@ const dadosForm = z.object({
   tags: z.string().max(500),
   codigosErro: z.string().max(500),
   fonteOficial: z.string().max(1500),
-  conteudo: z.string().min(70).max(60000),
+  conteudo: z.string().min(15).max(60000),
 });
-export const MODELO_CORPO = SECOES_ARTIGO.map(t => `## ${t}\n\nPreencha esta seção com orientações revisadas pela equipe.`).join("\n\n");
+export const MODELO_CORPO = modeloConteudo("solucao");
 
 export function criarTextoDoFormulario(form: FormData, nomeAutor: string, dataCriacao?: string): {
   categoria: string; slug: string; titulo: string; status: "rascunho"|"revisado"|"obsoleto"; conteudo: string;
 } {
   const bruto = Object.fromEntries([
-    "slug", "titulo", "resumo", "categoria", "sistema", "nivel", "status", "revisarAte", "tags", "codigosErro", "fonteOficial", "conteudo",
+    "tipo", "slug", "titulo", "resumo", "categoria", "sistema", "nivel", "status", "revisarAte", "tags", "codigosErro", "fonteOficial", "conteudo",
   ].map(chave => [chave, texto(form,chave)]));
   const validado = dadosForm.parse(bruto);
   const hoje = dataHoje();
   const frontmatter = {
-    titulo: validado.titulo, resumo: validado.resumo, categoria: validado.categoria,
+    tipo: validado.tipo, titulo: validado.titulo, resumo: validado.resumo, categoria: validado.categoria,
     sistema: validado.sistema, tags: lista(validado.tags), codigosErro: lista(validado.codigosErro),
     nivel: validado.nivel, autor: nomeAutor, criadoEm: dataCriacao ?? hoje,
     atualizadoEm: hoje, ...(validado.revisarAte ? { revisarAte: validado.revisarAte } : {}),

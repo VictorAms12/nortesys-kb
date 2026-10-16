@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { slugsCategorias } from "../../config/categorias";
+import { TODOS_TIPOS } from "./tipos-conteudo";
 
 /**
  * Alguns leitores de YAML convertem datas sem aspas em Date do JavaScript.
@@ -19,6 +20,7 @@ const listaTextos = z.array(textoObrigatorio);
 
 export const artigoFrontmatterSchema = z
   .object({
+    tipo: z.enum(TODOS_TIPOS).default("solucao"),
     titulo: textoObrigatorio,
     resumo: textoObrigatorio.max(160, "deve ter no máximo 160 caracteres"),
     categoria: z.enum(slugsCategorias, {

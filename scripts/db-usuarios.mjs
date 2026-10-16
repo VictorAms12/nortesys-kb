@@ -21,7 +21,7 @@ function gerarHash(senha) {
 }
 async function migrar() {
   let total = 0;
-  for (const arquivo of ["db/001_auth.sql", "db/002_painel.sql"]) {
+  for (const arquivo of ["db/001_auth.sql", "db/002_painel.sql", "db/003_interacoes.sql"]) {
     const bruto = readFileSync(resolve(arquivo), "utf8");
     const semComentarios = bruto.split("\n").filter(x=>!x.trim().startsWith("--")).join("\n");
     const statements = semComentarios.split(/;\s*(?:\n|$)/).map(x=>x.trim()).filter(Boolean);

@@ -21,7 +21,7 @@ export async function POST(req:NextRequest) {
   const conta=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
   if (!conta || !["administrador","editor"].includes(conta.papel)) return new NextResponse("Acesso negado",{status:403});
   const tamanho=Number(req.headers.get("content-length")??0);
-  if (!req.headers.get("content-type")?.includes("application/x-www-form-urlencoded") || tamanho>100000) return new NextResponse("Formulário inválido",{status:400});
+  if (!req.headers.get("content-type")?.includes("application/x-www-form-urlencoded") || tamanho>300000) return new NextResponse("Formulário inválido",{status:400});
   let id:string|undefined;
   try {
     const form=await req.formData();

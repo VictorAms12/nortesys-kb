@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
 
-export type NomeIcone = "inicio"|"busca"|"livro"|"categorias"|"painel"|"usuarios"|"artigos"|"auditoria"|"menu"|"fechar"|"recolher"|"expandir"|"sair"|"seta"|"escudo"|"ajustes"|"relogio"|"arquivo";
+export type NomeIcone = "inicio"|"busca"|"livro"|"categorias"|"painel"|"usuarios"|"artigos"|"auditoria"|"menu"|"fechar"|"recolher"|"expandir"|"sair"|"seta"|"escudo"|"ajustes"|"relogio"|"arquivo"|"favoritos"|"recentes";
 
 const caminhos: Record<NomeIcone, ReactNode> = {
   inicio: <><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></>,
@@ -20,6 +20,8 @@ const caminhos: Record<NomeIcone, ReactNode> = {
   escudo: <><path d="M12 2 4 5v6c0 5 3.4 8.2 8 11 4.6-2.8 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></>,
   ajustes: <><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2"/></>,
   relogio: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></>,
+  favoritos: <><path d="m12 3 2.8 5.7 6.3.9-4.55 4.45 1.08 6.27L12 17.35l-5.63 2.97 1.08-6.27L2.9 9.6l6.3-.9z"/></>,
+  recentes: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></>,
   arquivo: <><path d="M6 2h9l4 4v16H6zM15 2v5h4M9 12h7M9 16h5"/></>,
 };
 export function IconeInterface({nome,...props}:{nome:NomeIcone}&SVGProps<SVGSVGElement>) {

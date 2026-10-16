@@ -2,6 +2,8 @@ import Link from "next/link";
 import matter from "gray-matter";
 import { categorias } from "../../config/categorias";
 import { MODELO_CORPO } from "../lib/formulario-artigo";
+import { EditorMarkdown } from "./editor-markdown";
+import { tipoConteudoValido } from "../lib/tipos-conteudo";
 import type { RegistroArtigo } from "../lib/artigos-banco";
 
 const campo="block w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[var(--text)]";
@@ -29,10 +31,9 @@ export function FormularioArtigo({registro}:{registro?:RegistroArtigo}) {
         <label className="grid gap-1 text-sm font-semibold">Códigos de erro<input className={campo} name="codigosErro" maxLength={500} defaultValue={juntar(front.codigosErro)}/></label>
         <label className="grid gap-1 text-sm font-semibold sm:col-span-2">Fontes oficiais (URLs separadas por vírgula)<textarea className={campo} name="fonteOficial" rows={2} defaultValue={juntar(front.fonteOficial)}/></label>
       </div>
-      <div className="border-t border-[var(--border)] pt-5"><p className="sobre-titulo">Conteúdo e validação</p><h3 className="mt-2 text-lg font-bold">Orientações passo a passo</h3></div><label className="grid gap-1 text-sm font-semibold">Conteúdo em Markdown — sete seções obrigatórias
-        <textarea className={`${campo} font-mono text-xs leading-6`} name="conteudo" rows={25} minLength={70} maxLength={60000} defaultValue={markdown} required/>
-      </label>
-      <p className="text-xs leading-6 text-[var(--muted)]">Utilize exatamente os títulos já presentes no modelo. Não inclua dados reais de clientes, senhas, tokens ou documentos fiscais. Depois de publicar, confira o artigo.</p>
+      <div className="border-t border-[var(--border)] pt-5"><p className="sobre-titulo">Conteúdo e validação</p><h3 className="mt-2 text-lg font-bold">Editor avançado</h3></div>
+      <EditorMarkdown conteudoInicial={markdown} tipoInicial={tipoConteudoValido(front.tipo)?front.tipo:"solucao"} chave={registro?`${registro.id}-v${registro.versao}`:"novo"} editando={Boolean(registro)}/>
+      <p className="text-xs leading-6 text-[var(--muted)]">Respeite os títulos do modelo selecionado. Não inclua dados reais de clientes, senhas, tokens ou documentos fiscais. Depois de publicar, confira o artigo.</p>
       <div className="flex flex-wrap gap-3"><button className="botao-primario" type="submit">{registro?"Salvar nova versão":"Criar artigo"}</button><Link className="botao-secundario" href="/admin/artigos">Cancelar</Link></div>
     </form>
   );
