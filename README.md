@@ -1,31 +1,28 @@
-# Nortesys KB — Fase 6
+# Nortesys KB — Fase 7A
 
-Base de conhecimento interna com Next.js 16, artigos Markdown e PostgreSQL (Neon), busca Fuse.js, login por usuário e painel administrativo.
+Base de conhecimento interna feita com Next.js 16, PostgreSQL (Neon), artigos Markdown e no banco, login individual e painel administrativo. A Fase 7A aplica sidebar unificada e redesign moderno, preservando **as cores atuais** e a lógica existente.
 
-## Instalação (Windows/PowerShell)
+## Instalação — Git Bash / Windows
 
-Na pasta do projeto, preserve o `.env.local` contendo a `DATABASE_URL` já cadastrada na Fase 5.5. Em seguida:
-
-```powershell
-npm.cmd install
-npm.cmd run db:migrar
-npm.cmd run db:verificar
-npm.cmd run testar:fase6
-npm.cmd run verificar:fase6
-npm.cmd run dev
+```bash
+npm install
+npm run testar:fase7a
+npm run verificar:fase7a
+npm run dev
 ```
 
-Entre em `http://localhost:3000/entrar` com uma conta **administrador** e acesse `http://localhost:3000/admin`. O comando `db:migrar` aplica as migrações antigas e a nova `db/002_painel.sql` sem apagar usuários existentes.
+Mantenha seu `.env.local` com `DATABASE_URL` e demais configurações necessárias. Ele **não deve** ser commitado no GitHub. A Fase 7A não altera o esquema do Neon, então não requer migração adicional.
 
-## Funcionalidades
+Entre em `http://localhost:3000/entrar` e utilize o sistema. A sidebar aparece após o login, com itens conforme o perfil: leitor, editor ou administrador.
 
-- **Administrador:** usuários, permissões, ativação/desativação, redefinição de credenciais, auditoria, artigos e histórico.
-- **Editor:** gestão de artigos, rascunhos, publicação, arquivamento e histórico.
-- **Leitor:** consulta e busca de procedimentos publicados.
-- Artigos antigos de `content/` seguem sendo lidos do Git; os criados via painel ficam no PostgreSQL.
+## Principais novidades
 
-## Informações importantes
+- Sidebar recolhível com grupos Conhecimento e Administração, versão mobile e estado persistido no navegador.
+- Cabeçalho compacto com busca Ctrl/Cmd+K, alternância de tema e logout.
+- Novas páginas gerais em `/artigos` e `/categorias`.
+- Página inicial com indicadores extraídos dos artigos acessíveis e dashboard administrativo com contagens reais do Neon.
+- Refinamento visual de busca, leitura de artigos, formulários, listas de artigos e auditoria.
 
-Não existe cadastro público. Não inclua segredos, dados reais de clientes ou documentos confidenciais em artigos de teste. Use repositório privado e banco Preview isolado para a primeira implantação Vercel.
+Veja [docs/FASE-7A.md](docs/FASE-7A.md) e [docs/CHECKLIST-FASE-7A.md](docs/CHECKLIST-FASE-7A.md) para detalhes e homologação.
 
-Confira [docs/FASE-6.md](docs/FASE-6.md) para o guia completo e [docs/CHECKLIST-FASE-6.md](docs/CHECKLIST-FASE-6.md) para homologação.
+**Deploy:** publique primeiro em uma branch `fase-7a-redesign` e confira o Preview da Vercel antes do merge na `main`. Não inclua credenciais ou dados reais de clientes em conteúdos de teste.

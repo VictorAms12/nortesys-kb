@@ -55,7 +55,7 @@ export default async function PaginaArtigo({ params }: Props) {
         </div>
       }
       <AcoesArtigo passos={passos} />
-      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_250px]">
         <div className="min-w-0">
           {artigo.secoes.map((secao, indice) => (
             <section className="secao-artigo scroll-mt-28" id={`secao-${indice + 1}`} key={secao.titulo} aria-labelledby={`titulo-secao-${indice+1}`}>
@@ -71,7 +71,7 @@ export default async function PaginaArtigo({ params }: Props) {
             <ul className="list-inside list-disc space-y-2 break-all text-sm">{artigo.fonteOficial?.map((url)=><li key={url}><a href={url} target="_blank" rel="noopener noreferrer">{url}</a></li>)}</ul>
           </section>}
         </div>
-        <aside className="sumario-lateral no-print lg:sticky lg:top-24" aria-label="Sumário do artigo">
+        <aside className="sumario-lateral no-print xl:sticky xl:top-24" aria-label="Sumário do artigo">
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-[var(--muted)]">Neste artigo</h2>
           <nav><ol className="space-y-1">{artigo.secoes.map((s, i)=><li key={s.titulo}>
             <a className="link-sumario" href={`#secao-${i+1}`}><span className="mr-2 text-[var(--muted)]">{i+1}.</span>{s.titulo}</a>

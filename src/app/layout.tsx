@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { Cabecalho } from "../components/cabecalho";
+import { EstruturaAplicacao } from "../components/estrutura-aplicacao";
 import { NOME_COOKIE, obterSessao } from "../lib/sessao";
 import "./globals.css";
 export const dynamic = "force-dynamic";
@@ -16,9 +16,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
         <a href="#conteudo" className="pular-conteudo">Pular para o conteúdo</a>
-        {usuario ? <Cabecalho nome={usuario.nome} papel={usuario.papel} /> : null}
-        {children}
-        {usuario ? <footer className="rodape-site no-print"><div className="conteiner py-6 text-sm leading-6 text-[var(--muted)]">Nortesys · Base de Conhecimento · Fase 6 · Acesso restrito.</div></footer> : null}
+        {usuario ? <EstruturaAplicacao nome={usuario.nome} papel={usuario.papel}>{children}</EstruturaAplicacao> : children}
       </body>
     </html>
   );

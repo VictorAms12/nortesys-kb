@@ -9,7 +9,7 @@ export default async function Usuarios({searchParams}:Props) {
   const contas=await listarContas();const {aviso}=await searchParams;
   return <div className="space-y-8">
     <AlertaAdmin codigo={aviso}/>
-    <section className="cartao p-6"><h2 className="titulo-secao mb-3">Cadastrar colaborador</h2>
+    <section className="cartao p-6 sm:p-7"><p className="sobre-titulo">Gerenciamento de contas</p><h2 className="titulo-secao mb-2">Cadastrar colaborador</h2><p className="mb-5 text-sm text-[var(--muted)]">Crie um acesso individual e atribua o perfil apropriado.</p>
       <form method="post" action="/api/admin/usuarios" className="grid gap-3 sm:grid-cols-2">
         <input type="hidden" name="acao" value="criar"/>
         <label className="grid gap-1 text-sm">Usuário<input className={campo} name="usuario" pattern="[a-z][a-z0-9._-]{2,39}" required placeholder="joao.silva"/></label>
@@ -20,7 +20,7 @@ export default async function Usuarios({searchParams}:Props) {
         <button className="botao-primario w-fit" type="submit">Criar usuário</button>
       </form>
     </section>
-    <section><h2 className="titulo-secao mb-4">Contas cadastradas</h2><div className="grid gap-4">
+    <section><div className="cabecalho-secao mb-4"><div><p className="sobre-titulo">Equipe com acesso</p><h2 className="titulo-secao">Contas cadastradas</h2></div><span className="etiqueta">{contas.length} usuário(s)</span></div><div className="grid gap-4">
       {contas.map(c=><article key={c.id} className="cartao p-5">
         <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-lg font-bold">{c.nome} <span className="text-sm font-normal text-[var(--muted)]">@{c.usuario}</span></h3><span className="etiqueta">{c.ativo?"Ativo":"Inativo"} · {c.papel}</span></div>
         <form action="/api/admin/usuarios" method="post" className="mt-4 grid gap-3 sm:grid-cols-3">
