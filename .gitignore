@@ -1,0 +1,22 @@
+# Dependências instaladas pelo npm
+/node_modules
+
+# Arquivos de compilação do Next.js
+/.next/
+/out/
+/build/
+
+# Credenciais locais: nunca enviar ao GitHub
+.env*
+!.env.example
+
+# Relatórios e arquivos temporários
+*.log
+*.tsbuildinfo
+
+# Ferramentas de desenvolvimento
+.idea/
+.vscode/
+.vercel/
+.DS_Store
+Thumbs.db
