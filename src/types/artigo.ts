@@ -22,7 +22,7 @@ export type SecaoArtigo = {
   conteudo: string;
 };
 
-/** Artigo completo, lido do disco; nada é salvo em banco de dados. */
+/** Artigo normalizado, vindo de Markdown versionado ou do PostgreSQL. */
 export type Artigo = FrontmatterArtigo & {
   slug: string;
   caminho: string;

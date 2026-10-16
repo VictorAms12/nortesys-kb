@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { exigirSessao } from "../../lib/autenticacao-servidor";
-import { carregarArtigos } from "../../lib/artigos";
+import { carregarTodosArtigos } from "../../lib/artigos-banco";
 import { criarIndiceBusca } from "../../lib/indice-busca";
 import { PainelBusca } from "../../components/painel-busca";
 
@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default async function PaginaBusca() {
-  await exigirSessao();
-  // Índice é preparado a partir dos artigos versionados, na geração da página.
-  const documentos = criarIndiceBusca(carregarArtigos());
+  const sessao = await exigirSessao();
+  // Inclui arquivos Markdown e os artigos persistidos no Neon.
+  const documentos = criarIndiceBusca(await carregarTodosArtigos(sessao.papel));
   return (
     <main id="conteudo" className="conteiner py-9 sm:py-12">
       <nav aria-label="Caminho de navegação" className="trilha"><Link href="/">Início</Link><span aria-hidden="true">/</span><span>Busca</span></nav>

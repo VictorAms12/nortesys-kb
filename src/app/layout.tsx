@@ -16,9 +16,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
         <a href="#conteudo" className="pular-conteudo">Pular para o conteúdo</a>
-        {usuario ? <Cabecalho nome={usuario.nome} /> : null}
+        {usuario ? <Cabecalho nome={usuario.nome} papel={usuario.papel} /> : null}
         {children}
-        {usuario ? <footer className="rodape-site no-print"><div className="conteiner py-6 text-sm leading-6 text-[var(--muted)]">Nortesys · Base de Conhecimento · Fase 5.5 · Acesso restrito.</div></footer> : null}
+        {usuario ? <footer className="rodape-site no-print"><div className="conteiner py-6 text-sm leading-6 text-[var(--muted)]">Nortesys · Base de Conhecimento · Fase 6 · Acesso restrito.</div></footer> : null}
       </body>
     </html>
   );

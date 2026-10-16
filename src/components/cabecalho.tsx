@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AlternarTema } from "./alternar-tema";
 import { AtalhoBusca } from "./atalho-busca";
 
-export function Cabecalho({ nome }: { nome: string }) {
+export function Cabecalho({ nome, papel }: { nome: string; papel: "administrador" | "editor" | "leitor" }) {
   return (
     <header className="cabecalho-site no-print">
       <div className="conteiner flex flex-wrap items-center justify-between gap-3 py-3">
@@ -17,6 +17,7 @@ export function Cabecalho({ nome }: { nome: string }) {
         <nav aria-label="Navegação principal" className="flex items-center gap-2">
           <Link className="botao-secundario" href="/">Início</Link>
           <Link className="botao-secundario" href="/busca">Busca</Link>
+          {papel!=="leitor" && <Link className="botao-secundario" href="/admin">Painel</Link>}
           <Link className="botao-secundario" href="/#categorias">Categorias</Link>
           <span className="hidden max-w-40 truncate text-sm text-[var(--muted)] lg:inline" title={nome}>{nome}</span>
           <AlternarTema />

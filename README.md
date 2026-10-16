@@ -1,43 +1,31 @@
-# Nortesys KB — Fase 5.5
+# Nortesys KB — Fase 6
 
-Base de conhecimento interna Next.js 16 com busca Fuse.js, artigos em Markdown, autenticação individual em PostgreSQL e papéis (`administrador`, `editor`, `leitor`).
+Base de conhecimento interna com Next.js 16, artigos Markdown e PostgreSQL (Neon), busca Fuse.js, login por usuário e painel administrativo.
 
-## Configuração rápida (Windows / PowerShell)
+## Instalação (Windows/PowerShell)
 
-1. Extraia o projeto na pasta de trabalho. Instale Node.js compatível com `package.json`.
-2. Configure a connection string fornecida pelo Neon no `.env.local`:
+Na pasta do projeto, preserve o `.env.local` contendo a `DATABASE_URL` já cadastrada na Fase 5.5. Em seguida:
 
 ```powershell
-Copy-Item .env.example .env.local
 npm.cmd install
 npm.cmd run db:migrar
 npm.cmd run db:verificar
-npm.cmd run usuario:adicionar -- admin "Administrador Nortesys" administrador
-npm.cmd run verificar:fase55
+npm.cmd run testar:fase6
+npm.cmd run verificar:fase6
 npm.cmd run dev
 ```
 
-3. Acesse `http://localhost:3000/entrar` com o usuário e a senha gerados no terminal. Não compartilhe o arquivo `.env.local` nem senhas.
+Entre em `http://localhost:3000/entrar` com uma conta **administrador** e acesse `http://localhost:3000/admin`. O comando `db:migrar` aplica as migrações antigas e a nova `db/002_painel.sql` sem apagar usuários existentes.
 
-## Migração de contas
+## Funcionalidades
 
-Se já usou `KB_USERS` na Fase 5, mantenha essa variável temporariamente na `.env.local` e execute `npm.cmd run usuario:migrar` **após** a criação das tabelas. Contas importadas ficam como `leitor` e mantêm a senha anterior. Veja as instruções completas em [docs/FASE-5.5-POSTGRESQL.md](docs/FASE-5.5-POSTGRESQL.md).
+- **Administrador:** usuários, permissões, ativação/desativação, redefinição de credenciais, auditoria, artigos e histórico.
+- **Editor:** gestão de artigos, rascunhos, publicação, arquivamento e histórico.
+- **Leitor:** consulta e busca de procedimentos publicados.
+- Artigos antigos de `content/` seguem sendo lidos do Git; os criados via painel ficam no PostgreSQL.
 
-## Comandos importantes
+## Informações importantes
 
-- `npm run db:migrar` — cria as tabelas de autenticação.
-- `npm run db:verificar` — confere acesso ao banco e total de contas.
-- `npm run usuario:adicionar -- nome "Nome Completo" leitor` — cria conta.
-- `npm run usuario:listar` — relaciona usuários e papéis.
-- `npm run usuario:senha -- nome` — redefine senha e revoga sessões.
-- `npm run usuario:papel -- nome editor` — altera papel.
-- `npm run usuario:desativar -- nome` — suspende conta.
-- `npm run usuario:ativar -- nome` — reativa conta.
-- `npm run usuario:migrar` — importa credenciais antigas da variável `KB_USERS`.
-- `npm run verificar:fase55` — valida estrutura, scanner, testes locais, lint e build.
+Não existe cadastro público. Não inclua segredos, dados reais de clientes ou documentos confidenciais em artigos de teste. Use repositório privado e banco Preview isolado para a primeira implantação Vercel.
 
-## Segurança
-
-Sessões revogáveis armazenadas apenas como hash SHA-256 no banco; cookies HttpOnly, SameSite Strict e Secure em produção; cinco tentativas de login por usuário em 15 minutos registradas no PostgreSQL. Complementar com WAF e políticas corporativas antes de uso com dados reais. A conexão ao banco é usada apenas no servidor.
-
-Artigos permanecem em `content/` e continuarão sendo editados por arquivos Markdown até a Fase 6. Ainda não há painel administrativo. Faça sempre backup do banco e trabalhe com Preview protegido na Vercel antes do lançamento.
+Confira [docs/FASE-6.md](docs/FASE-6.md) para o guia completo e [docs/CHECKLIST-FASE-6.md](docs/CHECKLIST-FASE-6.md) para homologação.

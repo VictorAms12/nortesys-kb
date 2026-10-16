@@ -6,23 +6,23 @@ import { encontrarCategoria } from "../../../../../config/categorias";
 import { AcoesArtigo } from "../../../../components/acoes-artigo";
 import { ConteudoMarkdown } from "../../../../components/conteudo-markdown";
 import { EtiquetaStatus } from "../../../../components/etiqueta-status";
-import { carregarArtigos } from "../../../../lib/artigos";
+import { carregarTodosArtigos } from "../../../../lib/artigos-banco";
 import { artigoPrecisaRevisao, formatarData, hojeISO } from "../../../../lib/apresentacao";
 import { extrairPassos } from "../../../../lib/markdown";
 
 type Props = { params: Promise<{ categoria: string; slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  await exigirSessao();
+  const sessao = await exigirSessao();
   const { categoria, slug } = await params;
-  const artigo = carregarArtigos().find((a) => a.categoria === categoria && a.slug === slug);
+  const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === categoria && a.slug === slug);
   return { title: artigo ? `${artigo.titulo} | Nortesys KB` : "Artigo não encontrado", description: artigo?.resumo };
 }
 
 export default async function PaginaArtigo({ params }: Props) {
-  await exigirSessao();
+  const sessao = await exigirSessao();
   const { categoria: slugCategoria, slug } = await params;
-  const artigo = carregarArtigos().find((a) => a.categoria === slugCategoria && a.slug === slug);
+  const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === slugCategoria && a.slug === slug);
   if (!artigo) notFound();
   const categoria = encontrarCategoria(artigo.categoria);
   const revisaoVencida = artigoPrecisaRevisao(artigo, hojeISO());

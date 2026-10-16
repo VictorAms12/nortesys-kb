@@ -1,13 +1,14 @@
 import type { CSSProperties } from "react";
 import { exigirSessao } from "../lib/autenticacao-servidor";
 import Link from "next/link";
-import { carregarArtigos, contarPorCategoria } from "../lib/artigos";
+import { contarPorCategoria } from "../lib/artigos";
+import { carregarTodosArtigos } from "../lib/artigos-banco";
 import { artigoPrecisaRevisao, hojeISO, resumoArtigo } from "../lib/apresentacao";
 import { CartaoArtigo } from "../components/cartao-artigo";
 
 export default async function Home() {
-  await exigirSessao();
-  const artigos = carregarArtigos();
+  const sessao = await exigirSessao();
+  const artigos = await carregarTodosArtigos(sessao.papel);
   const categorias = contarPorCategoria(artigos);
   const hoje = hojeISO();
   const revisao = artigos.filter((a) => artigoPrecisaRevisao(a, hoje) || a.status === "obsoleto");

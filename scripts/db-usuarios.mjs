@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Administração por CLI local: NUNCA adicione endpoints públicos de criação de conta. */
 import { neon } from "@neondatabase/serverless";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { randomBytes, scryptSync } from "node:crypto";
 import { resolve } from "node:path";
 
@@ -20,15 +20,21 @@ function gerarHash(senha) {
   return {salt,hash};
 }
 async function migrar() {
-  const bruto = readFileSync(resolve("db/001_auth.sql"), "utf8");
-  const semComentarios = bruto.split("\n").filter(x => !x.trim().startsWith("--")).join("\n");
-  const statements = semComentarios.split(/;\s*(?:\n|$)/).map(x=>x.trim()).filter(Boolean);
-  for (const statement of statements) await q(statement);
-  console.log(`Migração aplicada: ${statements.length} instruções DDL. Pode executar novamente sem apagar dados.`);
+  let total = 0;
+  for (const arquivo of ["db/001_auth.sql", "db/002_painel.sql"]) {
+    const bruto = readFileSync(resolve(arquivo), "utf8");
+    const semComentarios = bruto.split("\n").filter(x=>!x.trim().startsWith("--")).join("\n");
+    const statements = semComentarios.split(/;\s*(?:\n|$)/).map(x=>x.trim()).filter(Boolean);
+    for (const statement of statements) await q(statement);
+    total += statements.length;
+    console.log(`Aplicado: ${arquivo} (${statements.length} instruções).`);
+  }
+  console.log(`Migração idempotente concluída: ${total} instruções. Registros anteriores preservados.`);
 }
 async function verificar() {
   const linhas = await q("SELECT count(*)::int AS total FROM kb_usuarios");
-  console.log(`PostgreSQL disponível. Usuários cadastrados: ${linhas[0].total}.`);
+  const artigos=await q("SELECT COUNT(*)::int AS total FROM kb_artigos");
+  console.log(`PostgreSQL disponível. Usuários: ${linhas[0].total}. Artigos no banco: ${artigos[0].total}.`);
 }
 async function guardarPeloMenosUmAdmin(usuario, tipo) {
   const r = await q(`SELECT papel, ativo FROM kb_usuarios WHERE usuario = $1`, [usuario]);
