@@ -14,7 +14,7 @@ export function FormularioArtigo({registro}:{registro?:RegistroArtigo}) {
   const markdown=parsed?.content.trim()||MODELO_CORPO;
   return (
     <form action="/api/admin/artigos" method="post" className="cartao grid gap-4 p-5 sm:p-7">
-      <input type="hidden" name="acao" value={registro?"salvar":"criar"}/>
+      <div className="border-b border-[var(--border)] pb-4"><p className="sobre-titulo">Editor técnico</p><h3 className="mt-2 text-lg font-bold">Informações do procedimento</h3><p className="mt-2 text-sm text-[var(--muted)]">Organize o artigo para facilitar a consulta pela equipe.</p></div><input type="hidden" name="acao" value={registro?"salvar":"criar"}/>
       {registro && <><input type="hidden" name="id" value={registro.id}/><input type="hidden" name="versao" value={registro.versao}/></>}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold sm:col-span-2">Título<input className={campo} name="titulo" minLength={5} maxLength={180} defaultValue={texto(front,"titulo")} required/></label>
@@ -29,7 +29,7 @@ export function FormularioArtigo({registro}:{registro?:RegistroArtigo}) {
         <label className="grid gap-1 text-sm font-semibold">Códigos de erro<input className={campo} name="codigosErro" maxLength={500} defaultValue={juntar(front.codigosErro)}/></label>
         <label className="grid gap-1 text-sm font-semibold sm:col-span-2">Fontes oficiais (URLs separadas por vírgula)<textarea className={campo} name="fonteOficial" rows={2} defaultValue={juntar(front.fonteOficial)}/></label>
       </div>
-      <label className="grid gap-1 text-sm font-semibold">Conteúdo em Markdown — sete seções obrigatórias
+      <div className="border-t border-[var(--border)] pt-5"><p className="sobre-titulo">Conteúdo e validação</p><h3 className="mt-2 text-lg font-bold">Orientações passo a passo</h3></div><label className="grid gap-1 text-sm font-semibold">Conteúdo em Markdown — sete seções obrigatórias
         <textarea className={`${campo} font-mono text-xs leading-6`} name="conteudo" rows={25} minLength={70} maxLength={60000} defaultValue={markdown} required/>
       </label>
       <p className="text-xs leading-6 text-[var(--muted)]">Utilize exatamente os títulos já presentes no modelo. Não inclua dados reais de clientes, senhas, tokens ou documentos fiscais. Depois de publicar, confira o artigo.</p>
