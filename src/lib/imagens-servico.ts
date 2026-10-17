@@ -67,6 +67,7 @@ async function formularioLimitado(req: NextRequest): Promise<FormData> {
 export function criarRotasImagens(dep: DependenciasImagens) {
   return {
     async enviar(req: NextRequest): Promise<Response> {
+      let etapaInicial: EtapaImagem = "sessao";
       try {
         if (!verificarOrigemPost(req.headers).valida) return erro("Origem inválida.", 403);
         const conta = await dep.sessao(req);
@@ -74,7 +75,9 @@ export function criarRotasImagens(dep: DependenciasImagens) {
         if (conta.papel !== "editor" && conta.papel !== "administrador") return erro("Somente editores e administradores podem enviar imagens.", 403);
         if (!req.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data;")) return erro("Envie uma imagem pelo formulário.", 415);
         // Reserva atômica no banco: compartilhada entre instâncias da Vercel e inclui tentativas inválidas.
+        etapaInicial = "banco_cota";
         if (!await dep.reservarCota(conta.id)) return erro("Limite de 20 envios por hora atingido. Tente mais tarde.", 429, { "Retry-After": "3600" });
+        etapaInicial = "validar_imagem";
         const form = await formularioLimitado(req);
         const arquivo = form.get("imagem");
         if (!(arquivo instanceof File) || form.getAll("imagem").length !== 1) return erro("Selecione uma única imagem.", 400);
@@ -84,6 +87,7 @@ export function criarRotasImagens(dep: DependenciasImagens) {
         const id = randomUUID();
         const caminho = `kb-imagens/${id}.${validada.extensao}`;
         // Registra o caminho antes do PUT: mesmo um processo interrompido deixa rastro para reconciliação.
+        etapaInicial = "banco_inserir";
         await dep.inserir({ id, caminho, mime: validada.mime, tamanho: validada.bytes.length,
           usuario: conta.id, alt, largura: validada.largura, altura: validada.altura });
         let etapa: EtapaImagem = "blob_gravar";
@@ -107,7 +111,9 @@ export function criarRotasImagens(dep: DependenciasImagens) {
         return Response.json({ id, url: `/api/imagens/${id}`, alt }, { status: 201, headers: cabecalhosPrivados });
       } catch (falha) {
         if (falha instanceof ErroImagem) return erro(falha.message, falha.status);
-        return erro("Upload indisponível. Confira a configuração e a migração de imagens.", 503);
+        const diagnostico = diagnosticoImagem(falha, etapaInicial);
+        dep.diagnosticar?.(diagnostico);
+        return erro(`Upload indisponível. Código: ${diagnostico.codigo}.`, 503);
       }
     },
     async ler(req: NextRequest, id: string): Promise<Response> {

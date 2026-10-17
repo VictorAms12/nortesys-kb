@@ -1,10 +1,20 @@
 import { BlobAccessError, BlobClientTokenExpiredError, BlobStoreNotFoundError } from "@vercel/blob";
 
-export type EtapaImagem = "blob_gravar" | "banco_confirmar" | "blob_compensar" | "banco_compensar";
+export type EtapaImagem = "sessao" | "banco_cota" | "validar_imagem" | "banco_inserir" | "blob_gravar" | "banco_confirmar" | "blob_compensar" | "banco_compensar";
 export type DiagnosticoImagem = { etapa: EtapaImagem; codigo: string };
 
 /** Classifica internamente o erro; nunca retorna mensagem, URL, token ou stack do SDK. */
 export function diagnosticoImagem(falha: unknown, etapa: EtapaImagem): DiagnosticoImagem {
+  if (["sessao", "banco_cota", "banco_inserir"].includes(etapa)) {
+    const sqlstate = falha && typeof falha === "object" && "code" in falha ? falha.code : undefined;
+    const mensagem = falha instanceof Error ? falha.message : "";
+    const codigo = sqlstate === "42P01" || sqlstate === "42703" || sqlstate === "42883"
+      ? "IMAGEM_BANCO_MIGRACAO_INCOMPATIVEL"
+      : /DATABASE_URL.*configurada/i.test(mensagem) ? "IMAGEM_BANCO_CONFIGURACAO_AUSENTE"
+      : "IMAGEM_BANCO_INDISPONIVEL";
+    return { etapa, codigo };
+  }
+  if (etapa === "validar_imagem") return { etapa, codigo: "IMAGEM_PROCESSAMENTO_FALHOU" };
   if (etapa === "banco_confirmar" || etapa === "banco_compensar") return { etapa, codigo: "IMAGEM_BANCO_CONFIRMACAO" };
   const mensagem = falha instanceof Error ? falha.message : "";
   let codigo = "BLOB_FALHA_NAO_IDENTIFICADA";

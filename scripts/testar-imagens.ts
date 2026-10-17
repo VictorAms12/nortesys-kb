@@ -101,6 +101,23 @@ test("Fase 7C.1: PostgreSQL em memória e Blob simulado; nenhuma conexão extern
     return retorno;
   }
   let primeira: Awaited<ReturnType<typeof upload>>;
+  await t.test("falhas antes do Blob identificam etapa e migração sem expor o erro", async () => {
+    for (const etapa of ["banco_cota", "banco_inserir"] as const) {
+      const diagnosticos: unknown[] = [];
+      const falhar = async () => { throw Object.assign(new Error("SEGREDO-DO-BANCO"), { code: "42P01" }); };
+      const resposta = await criarRotasImagens({ ...dep,
+        reservarCota: etapa === "banco_cota" ? falhar : async () => true,
+        inserir: etapa === "banco_inserir" ? falhar : dep.inserir,
+        gravar: async () => { assert.fail("Não deve acessar o Blob após falha no banco"); },
+        diagnosticar: dado => diagnosticos.push(dado),
+      }).enviar(requisicao());
+      assert.equal(resposta.status, 503);
+      const corpo = await resposta.text();
+      assert.match(corpo, /IMAGEM_BANCO_MIGRACAO_INCOMPATIVEL/);
+      assert.doesNotMatch(corpo, /SEGREDO-DO-BANCO/);
+      assert.deepEqual(diagnosticos, [{ etapa, codigo: "IMAGEM_BANCO_MIGRACAO_INCOMPATIVEL" }]);
+    }
+  });
   await t.test("editor e administrador enviam; metadados e objeto persistem entre requisições", async () => {
     primeira = await upload();
     const registro = await repo.obter(primeira.id);
