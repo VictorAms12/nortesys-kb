@@ -11,6 +11,7 @@
     "validar:artigos": "tsx scripts/validar-artigos.ts",
     "testar:validacao": "tsx scripts/testar-validacao.ts",
     "testar:busca": "tsx scripts/testar-busca.ts",
+    "testar:imagens": "tsx --test scripts/testar-imagens.ts",
     "verificar": "node scripts/verificar-dados-sensiveis.mjs",
     "testar:seguranca": "tsx scripts/testar-seguranca.ts",
     "verificar:fase5": "npm run verificar:fase55",
@@ -40,19 +41,22 @@
     "node": ">=20.9.0"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
+    "@vercel/blob": "^2.8.2",
+    "fuse.js": "^7.4.0",
+    "gray-matter": "^4.0.3",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "gray-matter": "^4.0.3",
-    "fuse.js": "^7.4.0",
-    "remark": "^15.0.1",
-    "zod": "^4.1.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
+    "remark": "^15.0.1",
     "remark-directive": "^3.0.1",
-    "@neondatabase/serverless": "^1.2.0"
+    "remark-gfm": "^4.0.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.1.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
@@ -60,7 +64,7 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.9.0",
-    "tsx": "^4.20.0"
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
   }
 }

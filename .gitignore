@@ -20,3 +20,9 @@
 .vercel/
 .DS_Store
 Thumbs.db
+
+# Capturas de teste do editor: nunca publicar acidentalmente
+/public/imagens/uploads-locais/
+
+.vercel
+.env*

@@ -79,6 +79,7 @@ export async function POST(req:NextRequest) {
     }
     return voltar(req,"salvo",id);
   } catch(error) {
+    if (error && typeof error==="object" && "constraint" in error && error.constraint==="kb_imagens_referencia") return voltar(req,"imagens",id);
     if (error && typeof error==="object" && "code" in error && error.code==="23505") return voltar(req,"duplicado",id);
     if (error instanceof z.ZodError || error instanceof Error && error.name==="ErroConteudo") return voltar(req,"validacao",id);
     console.error("Falha administrativa de artigo",error instanceof Error?error.name:"erro");

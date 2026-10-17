@@ -1,4 +1,5 @@
 const avisos:Record<string,string>={
+  imagens:"Há uma imagem indisponível ou vinculada a outro artigo/usuário. Remova a referência e envie a imagem novamente neste artigo.",
   salvo:"Alterações gravadas com sucesso.",criado:"Conta criada. Entregue a credencial inicial ao colega por canal privado.",
   arquivado:"Artigo arquivado e removido das listagens.",credencial_redefinida:"Credencial redefinida. Sessões antigas foram revogadas.",
   duplicado:"Identificador já existe.",conflito:"Outra edição ocorreu antes da sua. Reabra o artigo e revise.",
