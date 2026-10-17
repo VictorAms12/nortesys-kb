@@ -22,7 +22,7 @@ export async function POST(req:NextRequest) {
     if (acao==="criar") {
       const nome=nomeValido.parse(valor("nome"));const papel=valor("papel");
       if (!entradaContaValida(usuario,nome,papel)) return voltar(req,"dados");
-      const {salt,hash}=await gerarCredencialHash(valor("credencial"));
+      const {salt,hash}=await gerarCredencialHash(typeof f.get("credencial")==="string" ? String(f.get("credencial")) : "");
       const inserido=await consultar<{id:string}>(`INSERT INTO kb_usuarios(usuario,nome,papel,senha_salt,senha_hash)
         VALUES ($1,$2,$3,$4,$5) RETURNING id`,[usuario,nome,papel,salt,hash]);
       await registrarEvento(conta.id,"usuario_criado",inserido[0].id);
@@ -31,7 +31,7 @@ export async function POST(req:NextRequest) {
     if (!UUID.test(id)) return voltar(req,"dados");
     if (id===conta.id && (acao==="desativar" || acao==="editar")) return voltar(req,"proprio");
     if (acao==="senha") {
-      const {salt,hash}=await gerarCredencialHash(valor("credencial"));
+      const {salt,hash}=await gerarCredencialHash(typeof f.get("credencial")==="string" ? String(f.get("credencial")) : "");
       const alterados=await consultar<{id:string}>(`UPDATE kb_usuarios SET senha_salt=$2, senha_hash=$3,
         versao_sessao=versao_sessao+1, atualizado_em=NOW() WHERE id=$1 RETURNING id`,[id,salt,hash]);
       if (!alterados.length) return voltar(req,"dados");

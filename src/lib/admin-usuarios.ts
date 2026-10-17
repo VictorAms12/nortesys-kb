@@ -13,7 +13,7 @@ export async function registrarEvento(ator:string, evento:string, alvo:string): 
   await consultar(`INSERT INTO kb_auditoria(usuario_id,evento,alvo) VALUES ($1,$2,$3)`,[ator,evento,alvo]);
 }
 export async function gerarCredencialHash(credencial:string): Promise<{salt:string;hash:string}> {
-  if (credencial.length<12 || credencial.length>256) throw Error("credencial_invalida");
+  if (typeof credencial!=="string" || credencial.length===0 || credencial.trim().length===0 || credencial.length>256) throw Error("credencial_invalida");
   const sal = randomBytes(16);
   return {salt:sal.toString("hex"),hash:(await derivarHashSenha(credencial,sal)).toString("hex")};
 }

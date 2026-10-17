@@ -32,7 +32,7 @@ export async function encontrarUsuario(usuario: unknown): Promise<Usuario | null
 
 /** Hash scrypt individual, com execução assíncrona para não bloquear o servidor. */
 export async function conferirCredenciais(usuario: unknown, credencial: unknown): Promise<Usuario | null> {
-  if (typeof credencial !== "string" || credencial.length < 12 || credencial.length > 1024) return null;
+  if (typeof credencial !== "string" || credencial.length === 0 || credencial.length > 1024) return null;
   const conta = await encontrarUsuario(usuario);
   const salt = conta && /^[0-9a-f]{32}$/.test(conta.senha_salt) ? Buffer.from(conta.senha_salt, "hex") : SALT_FICTICIO;
   const esperado = conta && /^[0-9a-f]{128}$/.test(conta.senha_hash) ? Buffer.from(conta.senha_hash, "hex") : HASH_FICTICIO;
