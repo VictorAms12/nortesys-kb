@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { criarTextoDoFormulario, MODELO_CORPO, slugValido } from "../src/lib/formulario-artigo";
 import { validarTextoArtigo } from "../src/lib/artigos";
+import { modeloConteudo } from "../src/lib/tipos-conteudo";
 
 function exemplo():FormData {
   const form=new FormData();
@@ -22,8 +23,19 @@ function executar() {
   assert.equal(artigo.secoes.length,7);
   assert.equal(artigo.tags.length,2);
   assert.equal(artigo.codigosErro?.[0],"TESTE-001");
+  // O formulário legado (Fase 6) não envia `tipo` e deve continuar válido.
+  assert.equal(artigo.tipo,"solucao");
+  // Novos tipos, introduzidos na Fase 7B, continuam sendo aceitos.
+  formulario.set("tipo","tutorial");
+  formulario.set("conteudo",modeloConteudo("tutorial"));
+  const tutorial=criarTextoDoFormulario(formulario,"Colaborador de Teste");
+  assert.equal(validarTextoArtigo("content/erp/procedimento-demonstrativo.md",tutorial.conteudo).tipo,"tutorial");
+  // Um tipo fornecido, mas inexistente, deve ser rejeitado.
+  formulario.set("tipo","tipo-invalido");
+  assert.throws(()=>criarTextoDoFormulario(formulario,"Colaborador"));
+  formulario.set("tipo","solucao");
   formulario.set("conteudo","Texto sem estrutura obrigatória");
   assert.throws(()=>criarTextoDoFormulario(formulario,"Colaborador"));
-  console.log("Fase 6: formulários, roles, slug e sete seções validados.");
+  console.log("Fase 6/7B: compatibilidade de formulários, tipos, slug e seções validada.");
 }
 executar();

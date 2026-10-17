@@ -26,3 +26,8 @@ Entre em `http://localhost:3000/entrar` e utilize o sistema. A sidebar aparece a
 Veja [docs/FASE-7A.md](docs/FASE-7A.md) e [docs/CHECKLIST-FASE-7A.md](docs/CHECKLIST-FASE-7A.md) para detalhes e homologação.
 
 **Deploy:** publique primeiro em uma branch `fase-7a-redesign` e confira o Preview da Vercel antes do merge na `main`. Não inclua credenciais ou dados reais de clientes em conteúdos de teste.
+
+
+## Fase 7B
+
+Recursos da Fase 7B: editor Markdown com prévia e tipos de conteúdo, favoritos, recentes, filtros e auditoria. Veja [docs/FASE-7B.md](docs/FASE-7B.md) e [checklist](docs/CHECKLIST-FASE-7B.md). Migração necessária: `npm run db:migrar` (aplica `003_interacoes.sql`).

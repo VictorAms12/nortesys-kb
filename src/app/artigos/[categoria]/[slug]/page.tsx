@@ -9,6 +9,9 @@ import { EtiquetaStatus } from "../../../../components/etiqueta-status";
 import { carregarTodosArtigos } from "../../../../lib/artigos-banco";
 import { artigoPrecisaRevisao, formatarData, hojeISO } from "../../../../lib/apresentacao";
 import { extrairPassos } from "../../../../lib/markdown";
+import { TIPOS_CONTEUDO } from "../../../../lib/tipos-conteudo";
+import { favoritoAtivo } from "../../../../lib/interacoes";
+import { InteracoesArtigo } from "../../../../components/interacoes-artigo";
 
 type Props = { params: Promise<{ categoria: string; slug: string }> };
 
@@ -25,8 +28,9 @@ export default async function PaginaArtigo({ params }: Props) {
   const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === slugCategoria && a.slug === slug);
   if (!artigo) notFound();
   const categoria = encontrarCategoria(artigo.categoria);
+  const favorito = await favoritoAtivo(sessao.id,artigo.url);
   const revisaoVencida = artigoPrecisaRevisao(artigo, hojeISO());
-  const passos = extrairPassos(artigo.secoes[3].conteudo);
+  const passos = artigo.tipo === "solucao" ? extrairPassos(artigo.secoes[3]?.conteudo ?? "") : artigo.tipo === "tutorial" ? extrairPassos(artigo.secoes[2]?.conteudo ?? "") : "";
   return (
     <main id="conteudo" className="conteiner py-8 sm:py-11">
       <nav aria-label="Caminho de navegação" className="trilha no-print">
@@ -37,7 +41,7 @@ export default async function PaginaArtigo({ params }: Props) {
       <div className="mb-8 max-w-4xl">
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="etiqueta">{categoria?.icone} {categoria?.nome}</span>
-          <span className="etiqueta">{artigo.nivel}</span><EtiquetaStatus status={artigo.status} />
+          <span className="etiqueta">{artigo.nivel}</span><span className="etiqueta">{TIPOS_CONTEUDO[artigo.tipo].nome}</span><EtiquetaStatus status={artigo.status} />
         </div>
         <h1 className="titulo-pagina max-w-4xl">{artigo.titulo}</h1>
         <p className="mt-3 max-w-3xl text-lg leading-8 text-[var(--muted)]">{artigo.resumo}</p>
@@ -54,6 +58,7 @@ export default async function PaginaArtigo({ params }: Props) {
           <p className="mt-1">{artigo.status === "obsoleto" ? "Este procedimento não deve ser aplicado sem validação técnica." : revisaoVencida ? `Revisão prevista até ${formatarData(artigo.revisarAte!)}. Confirme as orientações com a equipe responsável e a fonte oficial vigente.` : "Este artigo ainda não foi revisado pela equipe. Confirme o procedimento antes de aplicá-lo."}</p>
         </div>
       }
+      <div className="mb-4"><InteracoesArtigo url={artigo.url} favoritoInicial={favorito}/></div>
       <AcoesArtigo passos={passos} />
       <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_250px]">
         <div className="min-w-0">

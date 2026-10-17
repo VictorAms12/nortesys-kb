@@ -1,6 +1,7 @@
 import { exigirPapel } from "../../../lib/autenticacao-servidor";
 import { listarContas } from "../../../lib/admin-usuarios";
 import { AlertaAdmin } from "../../../components/alerta-admin";
+import { BotaoConfirmar } from "../../../components/botao-confirmar";
 export const dynamic="force-dynamic";
 const campo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm";
 type Props={searchParams:Promise<{aviso?:string}>};
@@ -32,9 +33,9 @@ export default async function Usuarios({searchParams}:Props) {
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <form action="/api/admin/usuarios" method="post" className="flex flex-wrap items-end gap-2"><input type="hidden" name="acao" value="senha"/><input type="hidden" name="id" value={c.id}/>
             <label className="grid gap-1 text-sm">Nova credencial<input className={campo} name="credencial" type="password" minLength={12} maxLength={256} autoComplete="new-password" required/></label>
-            <button className="botao-secundario" type="submit">Redefinir</button>
+            <BotaoConfirmar mensagem="Redefinir a credencial desta conta? Isso encerrará as sessões existentes." rotulo="Redefinir"/>
           </form>
-          {c.id!==sessao.id && <form action="/api/admin/usuarios" method="post"><input type="hidden" name="id" value={c.id}/><input type="hidden" name="nome" value={c.nome}/><input type="hidden" name="acao" value={c.ativo?"desativar":"ativar"}/><button className="botao-secundario" type="submit">{c.ativo?"Desativar":"Ativar"}</button></form>}
+          {c.id!==sessao.id && <form action="/api/admin/usuarios" method="post"><input type="hidden" name="id" value={c.id}/><input type="hidden" name="nome" value={c.nome}/><input type="hidden" name="acao" value={c.ativo?"desativar":"ativar"}/><BotaoConfirmar mensagem={c.ativo?"Desativar esta conta? O acesso será encerrado.":"Reativar o acesso desta conta?"} rotulo={c.ativo?"Desativar":"Ativar"}/></form>}
         </div>
       </article>)}
     </div></section>

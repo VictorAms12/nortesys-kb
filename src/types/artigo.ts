@@ -1,21 +1,13 @@
 import type { z } from "zod";
 import type { artigoFrontmatterSchema } from "../lib/schema-artigo";
+import { TIPOS_CONTEUDO } from "../lib/tipos-conteudo";
 
 /** Frontmatter após a validação feita pelo Zod. */
 export type FrontmatterArtigo = z.infer<typeof artigoFrontmatterSchema>;
 
 /** Títulos oficiais e a ordem obrigatória no corpo de cada artigo. */
-export const SECOES_ARTIGO = [
-  "Problema",
-  "Sintomas e mensagem exata",
-  "Causa provável",
-  "Solução passo a passo",
-  "Como confirmar que resolveu",
-  "Se não resolver: quando e para quem escalar",
-  "Artigos relacionados",
-] as const;
-
-export type NomeSecao = (typeof SECOES_ARTIGO)[number];
+export const SECOES_ARTIGO = TIPOS_CONTEUDO.solucao.secoes;
+export type NomeSecao = string;
 
 export type SecaoArtigo = {
   titulo: NomeSecao;

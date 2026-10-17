@@ -16,6 +16,8 @@ const gerais:Destino[] = [
   {href:"/busca", texto:"Pesquisar", icone:"busca"},
   {href:"/artigos", texto:"Artigos", icone:"livro"},
   {href:"/categorias", texto:"Categorias", icone:"categorias"},
+  {href:"/favoritos", texto:"Favoritos", icone:"favoritos"},
+  {href:"/recentes", texto:"Recentes", icone:"recentes"},
 ];
 const admin:Destino[] = [
   {href:"/admin",texto:"Visão geral",icone:"painel"},

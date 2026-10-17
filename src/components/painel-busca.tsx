@@ -8,6 +8,7 @@ import { criarBuscador, executarBusca, MINIMO_CARACTERES_BUSCA, trechoEncontrado
 import { formatarData } from "../lib/apresentacao";
 import type { DocumentoBusca } from "../lib/indice-busca";
 import { EtiquetaStatus } from "./etiqueta-status";
+import { TIPOS_CONTEUDO, TODOS_TIPOS } from "../lib/tipos-conteudo";
 
 function Destaque({ texto, consulta }: { texto: string; consulta: string }) {
   // Divide o texto em segmentos React: nunca usa dangerouslySetInnerHTML.
@@ -33,17 +34,21 @@ export function PainelBusca({ documentos }: Props) {
   const [sistema, setSistema] = useState("");
   const [nivel, setNivel] = useState("");
   const [status, setStatus] = useState("");
+  const [tipo, setTipo] = useState("");
+  const [ordenacao, setOrdenacao] = useState("relevancia");
 
   const fuse = useMemo(() => criarBuscador(documentos), [documentos]);
+  const sugestoes = useMemo(() => [...new Set(documentos.flatMap(doc=>[doc.titulo,...(doc.codigosErro??[])]))].slice(0,100), [documentos]);
   const sistemas = useMemo(() => [...new Set(documentos.map((doc) => doc.sistema))].sort((a, b) => a.localeCompare(b, "pt-BR")), [documentos]);
   const resultadoBusca = useMemo(() => executarBusca(fuse, consulta), [fuse, consulta]);
   const resultados = resultadoBusca.filter(({ artigo }) =>
     (!categoria || artigo.categoria === categoria) &&
     (!sistema || artigo.sistema === sistema) &&
     (!nivel || artigo.nivel === nivel) &&
-    (!status || artigo.status === status),
-  );
-  const filtrosAtivos = Boolean(categoria || sistema || nivel || status);
+    (!status || artigo.status === status) &&
+    (!tipo || artigo.tipo === tipo),
+  ).sort((a,b)=> ordenacao==="recentes" ? b.artigo.atualizadoEm.localeCompare(a.artigo.atualizadoEm) : ordenacao==="az" ? a.artigo.titulo.localeCompare(b.artigo.titulo,"pt-BR") : 0);
+  const filtrosAtivos = Boolean(categoria || sistema || nivel || status || tipo);
   const temTermo = consulta.trim().length >= MINIMO_CARACTERES_BUSCA;
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
@@ -53,7 +58,7 @@ export function PainelBusca({ documentos }: Props) {
   }
 
   function limparFiltros() {
-    setCategoria(""); setSistema(""); setNivel(""); setStatus("");
+    setCategoria(""); setSistema(""); setNivel(""); setStatus(""); setTipo(""); setOrdenacao("relevancia");
   }
 
   return (
@@ -61,14 +66,15 @@ export function PainelBusca({ documentos }: Props) {
       <form role="search" onSubmit={enviar} className="cartao p-5 sm:p-6">
         <label className="campo-filtro" htmlFor="campo-consulta"><span>O que você precisa resolver?</span>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <input id="campo-consulta" type="search" className="campo-pesquisa flex-1" value={consulta} onChange={(evento) => alterarConsulta(evento.target.value)} placeholder="Ex.: CLI-DUP-001, cliente duplicado, rejeição..." maxLength={120} autoComplete="off" />
+            <input id="campo-consulta" list="sugestoes-conhecimento" type="search" className="campo-pesquisa flex-1" value={consulta} onChange={(evento) => alterarConsulta(evento.target.value)} placeholder="Ex.: CLI-DUP-001, cliente duplicado, rejeição..." maxLength={120} autoComplete="off" />
             <button className="botao-primario px-5" type="submit">Pesquisar</button>
           </div>
         </label>
+        <datalist id="sugestoes-conhecimento">{sugestoes.map(t=><option key={t} value={t}/>)}</datalist>
         <p className="mt-3 text-xs text-[var(--muted)]">Resultados instantâneos enquanto digita. Pressione Enter para criar um link compartilhável da consulta.</p>
       </form>
 
-      <section aria-label="Filtros da pesquisa" className="mt-5 cartao grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Filtros da pesquisa" className="mt-5 cartao grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
         <label className="campo-filtro">Categoria
           <select value={categoria} onChange={(e) => setCategoria(e.target.value)}><option value="">Todas as categorias</option>{categorias.map((item) => <option value={item.slug} key={item.slug}>{item.nome}</option>)}</select>
         </label>
@@ -81,6 +87,12 @@ export function PainelBusca({ documentos }: Props) {
         <label className="campo-filtro">Status
           <select value={status} onChange={(e) => setStatus(e.target.value)}><option value="">Todos os status</option>{["rascunho", "revisado", "obsoleto"].map((item) => <option value={item} key={item}>{item}</option>)}</select>
         </label>
+        <label className="campo-filtro">Tipo de conteúdo
+          <select value={tipo} onChange={e=>setTipo(e.target.value)}><option value="">Todos os tipos</option>{TODOS_TIPOS.map(t=><option value={t} key={t}>{TIPOS_CONTEUDO[t].nome}</option>)}</select>
+        </label>
+        <label className="campo-filtro">Ordenação
+          <select value={ordenacao} onChange={e=>setOrdenacao(e.target.value)}><option value="relevancia">Mais relevantes</option><option value="recentes">Atualizados recentemente</option><option value="az">Título A–Z</option></select>
+        </label>
       </section>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
@@ -91,7 +103,7 @@ export function PainelBusca({ documentos }: Props) {
       {!temTermo ? (
         <div className="cartao mt-4 p-8 text-center">
           <h2 className="text-xl font-bold">Comece digitando um termo</h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">Use pelo menos dois caracteres. Você pode buscar pelo título, erro, sintoma, tag ou texto do procedimento.</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">Use pelo menos dois caracteres. Busque por título, código, tutorial, guia, FAQ, tag ou texto do artigo.</p>
           <p className="mt-4 text-sm text-[var(--muted)]">Exemplos:</p>
           <div className="mt-2 flex flex-wrap justify-center gap-2">{["CLI-DUP-001", "cliente", "duplicidade"].map((termo) => <button className="botao-secundario" key={termo} type="button" onClick={() => alterarConsulta(termo)}>{termo}</button>)}</div>
         </div>
@@ -107,7 +119,7 @@ export function PainelBusca({ documentos }: Props) {
             <article className="cartao p-5 sm:p-6" key={artigo.url}>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="etiqueta">{artigo.nomeCategoria}</span>
-                <span className="etiqueta">{artigo.nivel}</span>
+                <span className="etiqueta">{artigo.nivel}</span><span className="etiqueta">{TIPOS_CONTEUDO[artigo.tipo].nome}</span>
                 <EtiquetaStatus status={artigo.status} />
               </div>
               <h2 className="mt-3 text-lg font-bold sm:text-xl"><Link className="link-cartao" href={artigo.url}><Destaque texto={artigo.titulo} consulta={consulta} /></Link></h2>

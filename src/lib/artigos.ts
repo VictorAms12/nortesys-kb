@@ -3,8 +3,9 @@ import { basename, join, relative, resolve } from "node:path";
 import matter from "gray-matter";
 import { remark } from "remark";
 import { categorias } from "../../config/categorias";
-import { SECOES_ARTIGO, type Artigo, type SecaoArtigo } from "../types/artigo";
+import { type Artigo, type SecaoArtigo } from "../types/artigo";
 import { artigoFrontmatterSchema } from "./schema-artigo";
+import { TIPOS_CONTEUDO, type TipoConteudo } from "./tipos-conteudo";
 
 const PASTA_CONTEUDO = resolve(process.cwd(), "content");
 const PADRAO_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -40,7 +41,8 @@ function normalizarTitulo(texto: string) {
     .trim();
 }
 
-function validarSecoes(markdown: string, caminho: string): SecaoArtigo[] {
+function validarSecoes(markdown: string, caminho: string, tipo: TipoConteudo): SecaoArtigo[] {
+  const secoesEsperadas: readonly string[] = TIPOS_CONTEUDO[tipo].secoes;
   // remark distingue títulos verdadeiros de texto em blocos de código.
   const arvore = remark().parse(markdown);
   const titulos = arvore.children.filter(
@@ -48,15 +50,15 @@ function validarSecoes(markdown: string, caminho: string): SecaoArtigo[] {
   );
   const problemas: string[] = [];
 
-  if (titulos.length !== SECOES_ARTIGO.length) {
+  if (titulos.length !== secoesEsperadas.length) {
     problemas.push(
-      `corpo: esperadas ${SECOES_ARTIGO.length} seções '##', encontradas ${titulos.length}`,
+      `corpo: esperadas ${secoesEsperadas.length} seções '##', encontradas ${titulos.length}`,
     );
   }
 
-  for (let indice = 0; indice < SECOES_ARTIGO.length; indice++) {
+  for (let indice = 0; indice < secoesEsperadas.length; indice++) {
     const tituloEncontrado = titulos[indice];
-    const esperado = SECOES_ARTIGO[indice];
+    const esperado = secoesEsperadas[indice];
 
     if (!tituloEncontrado) {
       problemas.push(`corpo.seção ${indice + 1}: falta '## ${esperado}'`);
@@ -92,8 +94,8 @@ function validarSecoes(markdown: string, caminho: string): SecaoArtigo[] {
       problemas.push(`corpo.seção ${indice + 1}: não pode estar vazia`);
     }
     // Só criamos a seção estruturada quando temos o título correspondente.
-    if (indice < SECOES_ARTIGO.length) {
-      secoes.push({ titulo: SECOES_ARTIGO[indice], conteudo });
+    if (indice < secoesEsperadas.length) {
+      secoes.push({ titulo: secoesEsperadas[indice], conteudo });
     }
   }
 
@@ -146,7 +148,7 @@ export function validarTextoArtigo(caminho: string, texto: string): Artigo {
   }
   if (problemas.length > 0) throw new ErroConteudo(caminho, problemas);
 
-  const secoes = validarSecoes(corpo, caminho);
+  const secoes = validarSecoes(corpo, caminho, parseado.data.tipo);
   return {
     ...parseado.data,
     slug,
