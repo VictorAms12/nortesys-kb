@@ -6,12 +6,15 @@ for (const chave of Object.keys(ambiente)) {
 }
 const tarefas = [
   ["scripts/verificar-estrutura.mjs"],
+  ["scripts/verificar-documentacao.mjs"],
   ["scripts/verificar-dados-sensiveis.mjs"],
-  ...["validar-artigos", "testar-validacao", "testar-busca", "testar-seguranca", "testar-usuarios", "testar-fase6",
-    "testar-upload-imagens-local", "testar-hidratacao-imagens"].map(nome => ["node_modules/tsx/dist/cli.mjs", `scripts/${nome}.ts`]),
-  ...["testar-banco", "testar-fase7a", "testar-fase7b", "testar-login-unificado", "testar-login-visual"].map(nome => [`scripts/${nome}.mjs`]),
-  ["node_modules/tsx/dist/cli.mjs", "--test", "scripts/testar-imagens.ts", "scripts/testar-revisao.ts"],
+  ["node_modules/tsx/dist/cli.mjs", "scripts/validar-artigos.ts"],
+  ...["testar-validacao", "testar-busca", "testar-seguranca", "testar-usuarios", "testar-fase6",
+    "testar-hidratacao-imagens"].map(nome => ["node_modules/tsx/dist/cli.mjs", `tests/${nome}.ts`]),
+  ...["testar-banco", "testar-fase7a", "testar-fase7b", "testar-login-unificado", "testar-login-visual"].map(nome => [`tests/${nome}.mjs`]),
+  ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-imagens.ts", "tests/testar-revisao.ts"],
   ["node_modules/eslint/bin/eslint.js", "."],
+  ["node_modules/next/dist/bin/next", "typegen"],
   ["node_modules/typescript/bin/tsc", "--noEmit", "--incremental", "false"],
 ];
 for (const args of tarefas) {

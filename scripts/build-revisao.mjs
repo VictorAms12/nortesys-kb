@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 const raiz = process.cwd();
 const destino = resolve(raiz, "build", `revisao-${Date.now()}`);
 mkdirSync(destino, { recursive: true });
-for (const nome of ["src", "config", "content", "db", "scripts", "public",
+for (const nome of ["src", "config", "content", "db", "scripts", "tests", "public",
   "package.json", "package-lock.json", "next.config.ts", "tsconfig.json",
   "postcss.config.mjs", "eslint.config.mjs", ".gitignore", ".env.example"]) {
   cpSync(join(raiz, nome), join(destino, nome), {

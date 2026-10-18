@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 
 const ANALISAVEIS = new Set([".md", ".mdx", ".txt", ".csv", ".sql", ".xml", ".yaml", ".yml", ".json", ".html", ".svg", ".ts", ".tsx", ".js", ".mjs", ".css", ".env"]);
-const IGNORADOS = new Set([".git", ".next", "node_modules", ".vercel", "out", "build", "coverage", ".idea", ".vscode"]);
+const IGNORADOS = new Set([".git", ".next", "node_modules", ".vercel", ".local", "out", "build", "coverage", ".idea", ".vscode"]);
 const ARQUIVOS_IGNORADOS = new Set(["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "dados-sensiveis.mjs"]);
 
 function ipPublico(ip) {

@@ -9,11 +9,13 @@ const obrigatorios = [
   "src/app/entrar/page.tsx", "src/app/robots.ts",
   "src/app/api/autenticacao/entrar/route.ts", "src/app/api/autenticacao/sair/route.ts",
   "src/lib/sessao.ts", "src/lib/usuarios.ts", "src/lib/autenticacao-servidor.ts",
-  "scripts/db-usuarios.mjs", "scripts/testar-usuarios.ts", "scripts/testar-banco.mjs", "db/001_auth.sql", "db/002_painel.sql", "src/lib/banco.ts",
+  "scripts/db-usuarios.mjs", "tests/testar-usuarios.ts", "tests/testar-banco.mjs", "db/001_auth.sql", "db/002_painel.sql", "src/lib/banco.ts",
   "src/app/admin/page.tsx", "src/app/admin/usuarios/page.tsx", "src/app/admin/artigos/page.tsx",
   "src/app/api/admin/usuarios/route.ts", "src/app/api/admin/artigos/route.ts",
   "src/components/painel-busca.tsx", "src/components/estrutura-aplicacao.tsx", "src/components/icone-interface.tsx", "src/lib/indice-busca.ts", "src/lib/busca.ts",
-  "scripts/verificar-dados-sensiveis.mjs", "scripts/testar-seguranca.ts", "scripts/testar-fase7a.mjs", "docs/FASE-7A.md", "docs/CHECKLIST-FASE-7A.md",
+  "scripts/verificar-dados-sensiveis.mjs", "tests/testar-seguranca.ts", "tests/testar-fase7a.mjs",
+  "docs/README.md", "docs/arquitetura.md", "docs/guias/configuracao.md", "docs/guias/deploy.md",
+  "db/003_interacoes.sql", "db/004_imagens.sql", "tests/testar-imagens.ts", "tests/testar-revisao.ts",
 ];
 let erros = 0;
 for (const caminho of obrigatorios) {
@@ -25,4 +27,4 @@ for (const pacote of ["next", "react", "react-dom", "fuse.js", "@neondatabase/se
   if (!json.dependencies?.[pacote]) { console.error(`[FALTA] dependência: ${pacote}`); erros++; }
 }
 if (erros) { console.error(`Estrutura incompleta: ${erros} problema(s).`); process.exitCode = 1; }
-else console.log("Estrutura da Fase 7A conferida. Execute lint e build para validação final.");
+else console.log("Estrutura do projeto conferida. Execute verificar:revisao e build:revisao para validação completa.");

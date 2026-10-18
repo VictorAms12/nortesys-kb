@@ -5,6 +5,8 @@
 /.next/
 /out/
 /build/
+/coverage/
+/next-env.d.ts
 
 # Credenciais locais: nunca enviar ao GitHub
 .env*
@@ -13,6 +15,9 @@
 # Relatórios e arquivos temporários
 *.log
 *.tsbuildinfo
+
+# Materiais locais do piloto, fora do código e da publicação
+/.local/
 
 # Ferramentas de desenvolvimento
 .idea/
@@ -23,6 +28,3 @@ Thumbs.db
 
 # Capturas de teste do editor: nunca publicar acidentalmente
 /public/imagens/uploads-locais/
-
-.vercel
-.env*
