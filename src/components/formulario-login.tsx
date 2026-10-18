@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconeInterface } from "./icone-interface";
 
 type Props = {
@@ -13,6 +13,11 @@ export function FormularioLogin({ pronta, retorno, credenciaisInvalidas }: Props
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  useEffect(() => {
+    const restaurar = () => setEnviando(false);
+    window.addEventListener("pageshow", restaurar);
+    return () => window.removeEventListener("pageshow", restaurar);
+  }, []);
 
   return (
     <form action="/api/autenticacao/entrar" method="post" className="login-form" onSubmit={() => setEnviando(true)}>

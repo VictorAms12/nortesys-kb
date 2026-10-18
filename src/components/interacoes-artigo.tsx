@@ -18,7 +18,7 @@ export function InteracoesArtigo({url,favoritoInicial}:{url:string;favoritoInici
     }catch{setErro("Não foi possível atualizar os favoritos.");}finally{setOcupado(false);}
   }
   return <div className="no-print flex flex-wrap items-center gap-3">
-    <button type="button" className="botao-secundario" onClick={alternar} disabled={ocupado} aria-pressed={favorito}>{favorito?"★ Remover dos favoritos":"☆ Adicionar aos favoritos"}</button>
+    <button type="button" className="botao-secundario" onClick={alternar} disabled={ocupado} aria-busy={ocupado} aria-pressed={favorito}>{ocupado && <span className="indicador-envio" aria-hidden="true"/>}{favorito?"★ Remover dos favoritos":"☆ Adicionar aos favoritos"}</button>
     {erro&&<span role="alert" className="text-sm text-[var(--warn-text)]">{erro}</span>}
   </div>;
 }

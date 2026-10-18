@@ -117,7 +117,7 @@ export function PainelBusca({ documentos }: Props) {
           {filtrosAtivos && <button className="botao-secundario mt-4" onClick={limparFiltros} type="button">Remover filtros</button>}
         </div>
       ) : (
-        <div aria-busy={atualizando}>
+        <div className="resultados-busca" aria-busy={atualizando}>
           <ResultadosBusca key={JSON.stringify([consultaResultados, categoria, sistema, nivel, status, tipo, ordenacao])} resultados={resultados} consulta={consultaResultados} />
         </div>
       )}
@@ -130,7 +130,7 @@ export function PainelBusca({ documentos }: Props) {
 const ResultadosBusca = memo(function ResultadosBusca({ resultados, consulta }: { resultados: ResultadoBusca[]; consulta: string }) {
   const [limite, setLimite] = useState(30);
   return <>
-        <div className="mt-4 grid gap-4" aria-label="Resultados da pesquisa">
+        <div className="lista-animada mt-4 grid gap-4" aria-label="Resultados da pesquisa">
           {resultados.slice(0, limite).map(({ artigo }) => (
             <article className="cartao p-5 sm:p-6" key={artigo.url}>
               <div className="flex flex-wrap items-center gap-2">

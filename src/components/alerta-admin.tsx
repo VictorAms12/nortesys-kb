@@ -11,5 +11,9 @@ const avisos:Record<string,string>={
   proprio:"Você não pode desativar nem alterar seu próprio perfil nesta tela.",
 };
 export function AlertaAdmin({codigo}:{codigo?:string}) {
-  return codigo && avisos[codigo] ? <div className="aviso-artigo mb-5" role="status">{avisos[codigo]}</div> : null;
+  const sucesso = codigo && ["salvo", "criado", "arquivado", "credencial_redefinida"].includes(codigo);
+  return codigo && avisos[codigo] ? <div className={`aviso-artigo feedback-resultado mb-5 ${sucesso ? "feedback-sucesso" : ""}`} role="status">
+    {sucesso && <span className="selo-sucesso" aria-hidden="true">✓</span>}
+    <span>{avisos[codigo]}</span>
+  </div> : null;
 }

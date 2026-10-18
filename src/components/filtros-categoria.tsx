@@ -47,7 +47,7 @@ export function FiltrosCategoria({ artigos, hoje }: Props) {
         <p className="text-sm text-[var(--muted)]" role="status" aria-live="polite">{filtrados.length} de {artigos.length} artigo(s)</p>
         {filtrosAtivos && <button className="botao-secundario" type="button" onClick={()=>{setTag("");setSistema("");setNivel("");setStatus("");setTipo("");setOrdem("recentes");}}>Limpar filtros</button>}
       </div>
-      {filtrados.length ? <div className="grid gap-4 lg:grid-cols-2">{filtrados.map(a=><CartaoArtigo key={a.url} artigo={a} hoje={hoje}/>)}</div> :
+      {filtrados.length ? <div key={JSON.stringify([tag,sistema,nivel,status,tipo,ordem])} className="lista-animada grid gap-4 lg:grid-cols-2">{filtrados.map(a=><CartaoArtigo key={a.url} artigo={a} hoje={hoje}/>)}</div> :
         <div className="cartao p-8 text-center"><p className="text-lg font-semibold">Nenhum artigo com esses filtros.</p><p className="mt-2 text-sm text-[var(--muted)]">Tente remover um filtro ou escolha outra categoria.</p></div>}
     </section>
   );

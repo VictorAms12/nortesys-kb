@@ -3,6 +3,7 @@ import matter from "gray-matter";
 import { categorias } from "../../config/categorias";
 import { MODELO_CORPO } from "../lib/formulario-artigo";
 import { EditorMarkdown } from "./editor-markdown";
+import { FormularioComFeedback } from "./formulario-com-feedback";
 import { tipoConteudoValido } from "../lib/tipos-conteudo";
 import type { RegistroArtigo } from "../lib/artigos-banco";
 
@@ -15,7 +16,7 @@ export function FormularioArtigo({registro}:{registro?:RegistroArtigo}) {
   const front=(parsed?.data??{}) as Record<string,unknown>;
   const markdown=parsed?.content.trim()||MODELO_CORPO;
   return (
-    <form action="/api/admin/artigos" method="post" className="cartao grid gap-4 p-5 sm:p-7">
+    <FormularioComFeedback action="/api/admin/artigos" method="post" mensagemEnvio={registro ? "Salvando nova versão..." : "Criando artigo..."} className="cartao grid gap-4 p-5 sm:p-7">
       <div className="border-b border-[var(--border)] pb-4"><p className="sobre-titulo">Editor técnico</p><h3 className="mt-2 text-lg font-bold">Informações do procedimento</h3><p className="mt-2 text-sm text-[var(--muted)]">Organize o artigo para facilitar a consulta pela equipe.</p></div><input type="hidden" name="acao" value={registro?"salvar":"criar"}/>
       {registro && <><input type="hidden" name="id" value={registro.id}/><input type="hidden" name="versao" value={registro.versao}/></>}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -35,6 +36,6 @@ export function FormularioArtigo({registro}:{registro?:RegistroArtigo}) {
       <EditorMarkdown conteudoInicial={markdown} tipoInicial={tipoConteudoValido(front.tipo)?front.tipo:"solucao"} chave={registro?`${registro.id}-v${registro.versao}`:"novo"} editando={Boolean(registro)}/>
       <p className="text-xs leading-6 text-[var(--muted)]">Respeite os títulos do modelo selecionado. Não inclua dados reais de clientes, senhas, tokens ou documentos fiscais. Depois de publicar, confira o artigo.</p>
       <div className="flex flex-wrap gap-3"><button className="botao-primario" type="submit">{registro?"Salvar nova versão":"Criar artigo"}</button><Link className="botao-secundario" href="/admin/artigos">Cancelar</Link></div>
-    </form>
+    </FormularioComFeedback>
   );
 }

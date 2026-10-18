@@ -47,3 +47,14 @@ Antes de integrar, validar no Preview: login com os três perfis, biblioteca sem
 Esta entrega não requer migração de banco. Produção, variáveis de ambiente e os arquivos locais pendentes anteriores não foram alterados.
 
 Para crescimento futuro: paginação administrativa no servidor e carregamento individual de artigos. A biblioteca completa ainda é carregada para a busca; não foi substituída por pesquisa remota nesta revisão.
+
+## Animações e feedback de interação
+
+- Entrada de páginas em 240 ms, incluindo navegação entre telas administrativas.
+- Entrada escalonada dos seis primeiros resultados, com atraso máximo de 100 ms; filtros mantêm o foco nos controles.
+- Respostas visuais em botões, opções de navegação, campos e cartões clicáveis.
+- Formulários de contas e artigos exibem o envio em andamento e bloqueiam submissões repetidas, mantendo campos e POST nativo. Cancelar uma confirmação ou aguardar upload não inicia o indicador.
+- Confirmação visual de sucesso somente após resposta efetiva do servidor. Login e formulários restauram o estado ao voltar pelo histórico do navegador.
+- Preferência de movimento reduzido desativa animações, transições e rolagem suave. Impressão não recebe esses efeitos.
+
+Nenhuma biblioteca de animação foi adicionada. Validar no Preview o foco, movimento reduzido, envio com Enter, criação de usuário, edição de artigo, confirmação cancelada e retorno pelo botão Voltar.
