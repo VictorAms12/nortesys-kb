@@ -32,7 +32,10 @@ export async function registrarLeitura(id:string,url:string):Promise<void>{
     ON CONFLICT (usuario_id,artigo_url) DO UPDATE SET acessado_em=NOW()`,[id,url]);
 }
 export async function artigosDoUsuario(id:string,papel:Papel,modo:"favoritos"|"recentes"):Promise<Artigo[]>{
-  const urls=modo==="favoritos"?await favoritosUsuario(id):await leiturasUsuario(id);
-  const mapa=new Map((await carregarTodosArtigos(papel)).map(a=>[a.url,a]));
+  const [urls, artigos] = await Promise.all([
+    modo === "favoritos" ? favoritosUsuario(id) : leiturasUsuario(id),
+    carregarTodosArtigos(papel),
+  ]);
+  const mapa=new Map(artigos.map(a=>[a.url,a]));
   return urls.map(url=>mapa.get(url)).filter((x):x is Artigo=>Boolean(x));
 }

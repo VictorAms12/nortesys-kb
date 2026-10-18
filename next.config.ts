@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingRoot: process.cwd(),
   // Garante que Markdown versionado acompanhe a função serverless na Vercel.
   outputFileTracingIncludes: { "/*": ["./content/**/*"] },
   // Autenticação demanda servidor Node.js; NUNCA usar output: "export".

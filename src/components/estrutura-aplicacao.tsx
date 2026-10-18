@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { AlternarTema } from "./alternar-tema";
 import { AtalhoBusca } from "./atalho-busca";
 import { IconeInterface, type NomeIcone } from "./icone-interface";
+import { lerPreferencia, salvarPreferencia } from "../lib/preferencias-navegador";
 
 type Papel = "administrador" | "editor" | "leitor";
 type Destino = {href:string; texto:string; icone:NomeIcone; prefixo?:boolean; titulo?:string};
@@ -29,7 +30,7 @@ function observar(callback:()=>void) {
   window.addEventListener("storage",callback); window.addEventListener(EVENTO,callback);
   return ()=>{window.removeEventListener("storage",callback);window.removeEventListener(EVENTO,callback);};
 }
-function leituraSidebar(){return window.localStorage.getItem(CHAVE)==="1";}
+function leituraSidebar(){return lerPreferencia(CHAVE)==="1";}
 function estadoServidor(){return false;}
 function atual(path:string, href:string){
   if(href==="/")return path==="/";
@@ -49,13 +50,36 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
   const pathname=usePathname();
   const recolhida=useSyncExternalStore(observar,leituraSidebar,estadoServidor);
   const [mobileAberta,setMobileAberta]=useState(false);
+  const menu = useRef<HTMLElement>(null);
   useEffect(()=>{
     if(!mobileAberta)return;
-    function tecla(e:KeyboardEvent){if(e.key==="Escape")setMobileAberta(false);}
+    const anterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focaveis = () => Array.from(menu.current?.querySelectorAll<HTMLElement>("a[href], button:not(:disabled)") ?? [])
+      .filter(elemento => elemento.getClientRects().length > 0);
+    focaveis()[0]?.focus();
+    function tecla(e:KeyboardEvent){
+      if(e.key==="Escape")setMobileAberta(false);
+      if(e.key === "Tab") {
+        const itens = focaveis();
+        const primeiro = itens[0], ultimo = itens.at(-1);
+        if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo?.focus(); }
+        else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro?.focus(); }
+      }
+    }
+    const desktop = window.matchMedia("(min-width: 1001px)");
+    const redimensionar = () => { if (desktop.matches) setMobileAberta(false); };
+    desktop.addEventListener("change", redimensionar);
     window.addEventListener("keydown",tecla);
-    return ()=>window.removeEventListener("keydown",tecla);
+    return ()=>{
+      window.removeEventListener("keydown",tecla);
+      desktop.removeEventListener("change", redimensionar);
+      document.body.style.overflow = overflow;
+      anterior?.focus();
+    };
   },[mobileAberta]);
-  function alternar(){window.localStorage.setItem(CHAVE,recolhida?"0":"1");window.dispatchEvent(new Event(EVENTO));}
+  function alternar(){salvarPreferencia(CHAVE,recolhida?"0":"1");window.dispatchEvent(new Event(EVENTO));}
   function linkItem(d:Destino) {
     const ativo=atual(pathname,d.href);
     return <Link key={d.href} href={d.href} title={recolhida?d.texto:undefined} aria-current={ativo?"page":undefined} onClick={()=>setMobileAberta(false)} className={`item-navegacao ${ativo?"item-navegacao-ativo":""}`}>
@@ -66,7 +90,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
   if(pathname==="/entrar")return <>{children}</>;
   return <div className="estrutura-app" data-recolhida={recolhida?"sim":"nao"} data-menu-mobile={mobileAberta?"aberto":"fechado"}>
     {mobileAberta&&<button aria-label="Fechar menu de navegação" className="fundo-menu-mobile no-print" onClick={()=>setMobileAberta(false)} type="button"/>}
-    <aside className="sidebar-app no-print" id="navegacao-lateral" aria-label="Menu lateral">
+    <aside ref={menu} className="sidebar-app no-print" id="navegacao-lateral" aria-label="Menu lateral">
       <div className="marca-sidebar">
         <Link href="/" className="simbolo-marca" onClick={()=>setMobileAberta(false)} aria-label="Ir para o início">N</Link>
         <Link href="/" className="texto-marca" onClick={()=>setMobileAberta(false)}><strong>Nortesys KB</strong><small>Base de conhecimento</small></Link>
@@ -81,7 +105,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
         <button type="button" className="botao-icone recolher-sidebar" aria-label={recolhida?"Expandir menu lateral":"Recolher menu lateral"} title={recolhida?"Expandir menu":"Recolher menu"} onClick={alternar}><IconeInterface nome={recolhida?"expandir":"recolher"}/></button>
       </div>
     </aside>
-    <div className="area-app">
+    <div className="area-app" inert={mobileAberta}>
       <header className="topbar-app no-print">
         <div className="topbar-esquerda"><button type="button" className="botao-icone abrir-menu-mobile" aria-label="Abrir menu" aria-controls="navegacao-lateral" aria-expanded={mobileAberta} onClick={()=>setMobileAberta(true)}><IconeInterface nome="menu"/></button><span className="caminho-topbar">Nortesys KB <span aria-hidden="true">/</span> <strong>{tituloPagina(pathname)}</strong></span></div>
         <div className="topbar-direita"><AtalhoBusca/><AlternarTema/><form action="/api/autenticacao/sair" method="post"><button type="submit" className="botao-icone" title="Encerrar sessão" aria-label="Sair da conta"><IconeInterface nome="sair"/></button></form></div>

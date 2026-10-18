@@ -1,12 +1,18 @@
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NOME_COOKIE, obterSessao, papelPermitido } from "./sessao";
 import type { Papel, UsuarioPublico } from "./usuarios";
 
-export async function exigirSessao(): Promise<UsuarioPublico> {
+/** Compartilhada por layout, página e metadados somente nesta requisição. */
+export const sessaoAtual = cache(async (): Promise<UsuarioPublico | null> => {
   const cookie = (await cookies()).get(NOME_COOKIE)?.value;
-  const sessao = await obterSessao(cookie);
+  return obterSessao(cookie);
+});
+
+export async function exigirSessao(): Promise<UsuarioPublico> {
+  const sessao = await sessaoAtual();
   if (!sessao) redirect("/entrar");
   return sessao;
 }

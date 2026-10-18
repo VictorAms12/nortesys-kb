@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run verificar && npm run validar:artigos && next build",
+    "build:revisao": "node scripts/build-revisao.mjs",
+    "testar:revisao": "tsx --test scripts/testar-revisao.ts",
+    "verificar:revisao": "node scripts/verificar-revisao.mjs",
     "start": "next start",
     "lint": "eslint .",
     "verificar:estrutura": "node scripts/verificar-estrutura.mjs",

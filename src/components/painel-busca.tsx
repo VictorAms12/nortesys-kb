@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { memo, useDeferredValue, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { categorias } from "../../config/categorias";
-import { criarBuscador, executarBusca, MINIMO_CARACTERES_BUSCA, trechoEncontrado } from "../lib/busca";
+import { criarBuscador, executarBusca, MINIMO_CARACTERES_BUSCA, trechoEncontrado, type ResultadoBusca } from "../lib/busca";
 import { formatarData } from "../lib/apresentacao";
 import type { DocumentoBusca } from "../lib/indice-busca";
 import { EtiquetaStatus } from "./etiqueta-status";
@@ -29,6 +29,8 @@ export function PainelBusca({ documentos }: Props) {
   const urlConsulta = (parametros.get("q") ?? "").slice(0, 120);
   const [edicao, setEdicao] = useState<{ origem: string; valor: string } | null>(null);
   const consulta = edicao?.origem === urlConsulta ? edicao.valor : urlConsulta;
+  const consultaResultados = useDeferredValue(consulta);
+  const atualizando = consulta !== consultaResultados;
   const alterarConsulta = (valor: string) => setEdicao({ origem: urlConsulta, valor });
   const [categoria, setCategoria] = useState("");
   const [sistema, setSistema] = useState("");
@@ -40,16 +42,17 @@ export function PainelBusca({ documentos }: Props) {
   const fuse = useMemo(() => criarBuscador(documentos), [documentos]);
   const sugestoes = useMemo(() => [...new Set(documentos.flatMap(doc=>[doc.titulo,...(doc.codigosErro??[])]))].slice(0,100), [documentos]);
   const sistemas = useMemo(() => [...new Set(documentos.map((doc) => doc.sistema))].sort((a, b) => a.localeCompare(b, "pt-BR")), [documentos]);
-  const resultadoBusca = useMemo(() => executarBusca(fuse, consulta), [fuse, consulta]);
-  const resultados = resultadoBusca.filter(({ artigo }) =>
+  const resultadoBusca = useMemo(() => executarBusca(fuse, consultaResultados), [fuse, consultaResultados]);
+  const resultados = useMemo(() => resultadoBusca.filter(({ artigo }) =>
     (!categoria || artigo.categoria === categoria) &&
     (!sistema || artigo.sistema === sistema) &&
     (!nivel || artigo.nivel === nivel) &&
     (!status || artigo.status === status) &&
     (!tipo || artigo.tipo === tipo),
-  ).sort((a,b)=> ordenacao==="recentes" ? b.artigo.atualizadoEm.localeCompare(a.artigo.atualizadoEm) : ordenacao==="az" ? a.artigo.titulo.localeCompare(b.artigo.titulo,"pt-BR") : 0);
+  ).sort((a,b)=> ordenacao==="recentes" ? b.artigo.atualizadoEm.localeCompare(a.artigo.atualizadoEm) : ordenacao==="az" ? a.artigo.titulo.localeCompare(b.artigo.titulo,"pt-BR") : 0),
+  [resultadoBusca, categoria, sistema, nivel, status, tipo, ordenacao]);
   const filtrosAtivos = Boolean(categoria || sistema || nivel || status || tipo);
-  const temTermo = consulta.trim().length >= MINIMO_CARACTERES_BUSCA;
+  const temTermo = consultaResultados.trim().length >= MINIMO_CARACTERES_BUSCA;
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -96,7 +99,7 @@ export function PainelBusca({ documentos }: Props) {
       </section>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[var(--muted)]" aria-live="polite" role="status">{temTermo ? `${resultados.length} resultado(s) para “${consulta.trim()}”` : `${documentos.length} artigo(s) indexado(s)`}</p>
+        <p className="text-sm text-[var(--muted)]" aria-live="polite" role="status">{atualizando ? "Atualizando resultados..." : temTermo ? `${resultados.length} resultado(s) para “${consultaResultados.trim()}”` : `${documentos.length} artigo(s) indexado(s)`}</p>
         {filtrosAtivos && <button className="botao-secundario" type="button" onClick={limparFiltros}>Limpar filtros</button>}
       </div>
 
@@ -114,8 +117,21 @@ export function PainelBusca({ documentos }: Props) {
           {filtrosAtivos && <button className="botao-secundario mt-4" onClick={limparFiltros} type="button">Remover filtros</button>}
         </div>
       ) : (
+        <div aria-busy={atualizando}>
+          <ResultadosBusca key={JSON.stringify([consultaResultados, categoria, sistema, nivel, status, tipo, ordenacao])} resultados={resultados} consulta={consultaResultados} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// Mantém a lista fora da renderização urgente do campo de texto.
+const ResultadosBusca = memo(function ResultadosBusca({ resultados, consulta }: { resultados: ResultadoBusca[]; consulta: string }) {
+  const [limite, setLimite] = useState(30);
+  return <>
         <div className="mt-4 grid gap-4" aria-label="Resultados da pesquisa">
-          {resultados.map(({ artigo }) => (
+          {resultados.slice(0, limite).map(({ artigo }) => (
             <article className="cartao p-5 sm:p-6" key={artigo.url}>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="etiqueta">{artigo.nomeCategoria}</span>
@@ -130,7 +146,6 @@ export function PainelBusca({ documentos }: Props) {
             </article>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
+        {limite < resultados.length && <button type="button" className="botao-secundario mt-5" onClick={() => setLimite(valor => valor + 30)}>Mostrar mais resultados ({resultados.length - limite})</button>}
+  </>;
+});

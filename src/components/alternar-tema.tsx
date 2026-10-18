@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { lerPreferencia, salvarPreferencia } from "../lib/preferencias-navegador";
 
 type Tema = "sistema" | "claro" | "escuro";
 const CHAVE = "nortesys-kb-tema";
 const EVENTO = "nortesys-kb-troca-tema";
 
 function temaSalvo(): Tema {
-  const salvo = window.localStorage.getItem(CHAVE);
+  const salvo = lerPreferencia(CHAVE);
   return salvo === "claro" || salvo === "escuro" ? salvo : "sistema";
 }
 function temaServidor(): Tema { return "sistema"; }
@@ -31,7 +32,7 @@ export function AlternarTema() {
 
   function mudarTema() {
     const proximo: Tema = tema === "sistema" ? "claro" : tema === "claro" ? "escuro" : "sistema";
-    window.localStorage.setItem(CHAVE, proximo);
+    salvarPreferencia(CHAVE, proximo);
     window.dispatchEvent(new Event(EVENTO));
   }
   return (

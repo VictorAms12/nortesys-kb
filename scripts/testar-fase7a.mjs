@@ -9,7 +9,7 @@ const shell=ler("src/components/estrutura-aplicacao.tsx");
 for(const item of ['href:"/"','href:"/busca"','href:"/artigos"','href:"/categorias"','href:"/admin"','href:"/admin/artigos"','href:"/admin/usuarios"','href:"/admin/auditoria"'])assert.ok(shell.includes(item),`Menu sem destino ${item}`);
 assert.ok(shell.includes('papel!=="leitor"'),"Menu administrativo visível para leitor");
 assert.ok(shell.includes('papel==="administrador"'),"Permissões administrativas não verificadas");
-assert.ok(shell.includes('window.localStorage'),"Preferência de recolhimento não persistida");
+assert.ok(shell.includes('salvarPreferencia(CHAVE'),"Preferência de recolhimento não persistida");
 assert.ok(shell.includes('e.key==="Escape"'),"Falta suporte à tecla Escape");
 assert.ok(shell.includes('aria-expanded={mobileAberta}'),"Botão mobile sem estado ARIA");
 assert.ok(shell.includes('pathname==="/entrar"'),"Login deve permanecer sem sidebar");

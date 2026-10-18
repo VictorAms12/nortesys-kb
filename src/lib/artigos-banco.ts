@@ -1,6 +1,8 @@
 import "server-only";
+import { cache } from "react";
 import { consultar } from "./banco";
-import { carregarArtigos, validarTextoArtigo } from "./artigos";
+import { carregarArtigos } from "./artigos";
+import { combinarArtigos } from "./artigos-visibilidade";
 import type { Artigo } from "../types/artigo";
 import type { Papel } from "./usuarios";
 
@@ -32,16 +34,9 @@ export async function listarVersoesArtigo(id: string): Promise<VersaoArtigo[]> {
     FROM kb_artigo_versoes v LEFT JOIN kb_usuarios u ON u.id=v.editor_id
     WHERE v.artigo_id=$1 ORDER BY v.versao DESC LIMIT 50`, [id]);
 }
-export async function carregarTodosArtigos(papel: Papel): Promise<Artigo[]> {
+// Cache por requisição: nenhuma sessão ou publicação fica retida entre acessos.
+export const carregarTodosArtigos = cache(async (papel: Papel): Promise<Artigo[]> => {
   const locais = carregarArtigos();
   const registros = await listarRegistrosArtigos();
-  const encontrados = new Map(locais.map(a => [`${a.categoria}/${a.slug}`, a]));
-  for (const registro of registros) {
-    if (registro.arquivado) continue;
-    if (registro.status === "rascunho" && papel === "leitor") continue;
-    const caminho = `content/${registro.categoria}/${registro.slug}.md`;
-    const artigo = validarTextoArtigo(caminho, registro.conteudo);
-    encontrados.set(`${artigo.categoria}/${artigo.slug}`, artigo);
-  }
-  return [...encontrados.values()].sort((a,b) => b.atualizadoEm.localeCompare(a.atualizadoEm) || a.titulo.localeCompare(b.titulo,"pt-BR"));
-}
+  return combinarArtigos(locais, registros, papel);
+});

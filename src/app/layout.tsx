@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
 import { EstruturaAplicacao } from "../components/estrutura-aplicacao";
-import { NOME_COOKIE, obterSessao } from "../lib/sessao";
+import { sessaoAtual } from "../lib/autenticacao-servidor";
 import "./globals.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 };
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const usuario = await obterSessao((await cookies()).get(NOME_COOKIE)?.value).catch(() => null);
+  const usuario = await sessaoAtual().catch(() => null);
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className="min-h-screen antialiased">
