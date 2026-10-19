@@ -4,7 +4,6 @@ import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type ConversaC
 import {registrarAuditoriaSegura} from "./auditoria-eventos";
 import {publicarChat} from "./chat-ably";
 import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA} from "./chat-sql";
-import type {ReferenciaMensagem} from "./chat-tipos";
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
 type ConversaLinha={id:string;tipo:"geral"|"privada";nome:string;nao_lidas:number;
@@ -101,7 +100,7 @@ export async function enviarMensagem(usuario:string,conversa:string,texto:string
  if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
  if(respondendoA!==null&&!idMensagemValido(respondendoA))
   throw new ErroChat(400,"Mensagem de origem inválida.");
- const limpo=texto.replace(/[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f]/g,"").trim();
+ const limpo=texto.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,"").trim();
  if(!limpo||limpo.length>2000)throw new ErroChat(400,"Mensagem deve ter de 1 a 2000 caracteres.");
  const destino=await destinatarios(usuario,conversa);
  if(!await consumirLimite(usuario))throw new ErroChat(429,"Muitas mensagens. Aguarde alguns segundos.");
