@@ -152,17 +152,17 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   }
  }
  function mudarConversa(id:string){setMensagens([]);setMais(false);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");}
- return <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-  <aside className="cartao grid content-start gap-4 p-4" aria-label="Conversas e colaboradores">
+ return <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
+  <aside className="cartao grid min-w-0 content-start gap-4 overflow-hidden p-4" aria-label="Conversas e colaboradores">
    <div><h2 className="text-lg font-bold">Conversas</h2>
     <p className="mt-1 text-xs text-[var(--muted)]">{realtime?"● Tempo real conectado":"○ Atualizações periódicas"} · {totalNaoLidas} não lida(s)</p>
    </div>
    {!estado?<p className="text-sm text-[var(--muted)]">Carregando conversas...</p>:
-   <div className="grid gap-1" role="group" aria-label="Selecionar conversa">
+   <div className="grid min-w-0 gap-1" role="group" aria-label="Selecionar conversa">
     {abertas.map(c=><button type="button" key={c.id} onClick={()=>mudarConversa(c.id)}
-      className={"flex w-full items-center justify-between gap-2 rounded-lg border p-3 text-left text-sm "+(c.id===conversa?"border-[var(--primary)]":"border-[var(--border)]")}>
-      <span className="min-w-0"><strong className="block truncate">{c.nome}</strong>
-       <span className="block truncate text-xs text-[var(--muted)]">{c.ultimaMensagem?.slice(0,65)||"Sem mensagens"}</span>
+      className={"flex min-w-0 w-full items-center justify-between gap-2 overflow-hidden rounded-lg border p-3 text-left text-sm "+(c.id===conversa?"border-[var(--primary)]":"border-[var(--border)]")}>
+      <span className="block min-w-0 flex-1 overflow-hidden"><strong className="block truncate">{c.nome}</strong>
+       <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[var(--muted)]">{c.ultimaMensagem?.slice(0,65)||"Sem mensagens"}</span>
       </span>{c.naoLidas>0&&<span className="etiqueta" aria-label={c.naoLidas+" mensagens não lidas"}>{c.naoLidas}</span>}
     </button>)}
    </div>}
@@ -176,7 +176,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     </button>)}</div>
    </div>
   </aside>
-  <section className="cartao flex min-h-[600px] min-w-0 flex-col p-4 sm:p-6" aria-label="Mensagens">
+  <section className="cartao flex min-h-[600px] min-w-0 max-w-full flex-col overflow-hidden p-4 sm:p-6" aria-label="Mensagens">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
       <div><h2 className="text-lg font-bold">{atual?.nome??"Equipe — Geral"}</h2>
        <p className="text-xs text-[var(--muted)]">{atual?.tipo==="privada"?"Conversa privada":"Canal geral da equipe"}</p>
@@ -190,15 +190,15 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     </div>
     {aviso&&<p className="mt-3 text-sm text-amber-700" role="alert">{aviso}</p>}
     {notificacao&&<button type="button" className="mt-3 rounded-lg border border-[var(--border)] p-2 text-left text-sm" onClick={()=>{setNotificacao("");void atualizarEstado();}}>{notificacao} · Ver conversas</button>}
-    <div className="min-h-0 flex-1 overflow-y-auto py-5" aria-label="Histórico de mensagens" style={{maxHeight:"55vh"}}>
+    <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-5" aria-label="Histórico de mensagens" style={{maxHeight:"55vh"}}>
      {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>void carregar(conversa,pesquisa,mensagens[0]?.id??null)}>Carregar mensagens anteriores</button>}
      {mensagens.length===0?<p className="py-10 text-center text-sm text-[var(--muted)]">{pesquisa?"Nenhuma mensagem encontrada.":"Nenhuma mensagem ainda. Envie a primeira!"}</p>:
-      <ul className="grid gap-3">{mensagens.map(m=><li key={m.id} className={"flex "+(m.autorId===usuarioId?"justify-end":"justify-start")}>
-       <article className={"max-w-[93%] rounded-xl border border-[var(--border)] p-3 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--surface)]")}>
+      <ul className="grid min-w-0 gap-3">{mensagens.map(m=><li key={m.id} className={"flex min-w-0 "+(m.autorId===usuarioId?"justify-end":"justify-start")}>
+       <article className={"min-w-0 max-w-[93%] overflow-hidden rounded-xl border border-[var(--border)] p-3 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--surface)]")}>
         <div className="mb-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
          <strong>{m.autorId===usuarioId?"Você":m.autor}</strong><time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
         </div>
-        <p className="whitespace-pre-wrap break-words text-sm leading-6"><ConteudoMensagem texto={m.texto}/></p>
+        <p className="max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]"><ConteudoMensagem texto={m.texto}/></p>
        </article>
       </li>)}</ul>}
      <div ref={final}/>
