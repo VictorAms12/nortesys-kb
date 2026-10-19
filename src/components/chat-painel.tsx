@@ -236,18 +236,19 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
           <strong className="max-w-full truncate">{m.autorId===usuarioId?"Você":m.autor}</strong>
           <time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
          </div>
-         <details className="chat-mensagem-acoes relative z-20 shrink-0">
+         <details className="chat-mensagem-acoes relative z-20 shrink-0"
+          onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))e.currentTarget.open=false;}}>
           <summary className="chat-mensagem-gatilho flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-md text-lg leading-none transition-colors hover:bg-[var(--surface)] focus-visible:bg-[var(--surface)] [&::-webkit-details-marker]:hidden"
             aria-label={"Ações da mensagem de "+m.autor} title="Ações da mensagem">
            <span aria-hidden="true">⋯</span>
           </summary>
           <div className={"absolute top-full z-30 mt-1 grid min-w-44 gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1.5 text-left text-sm text-[var(--text)] shadow-lg "+(m.autorId===usuarioId?"right-0":"left-0")}>
            {!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
-             onClick={()=>{setRespondendo(m);setPesquisa("");setBusca("");}}>Responder</button>}
+             onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");setRespondendo(m);setPesquisa("");setBusca("");}}>Responder</button>}
            <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
-             onClick={()=>void apagarMensagem(m.id,false)}>Apagar para mim</button>
+             onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");void apagarMensagem(m.id,false);}}>Apagar para mim</button>
            {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]"
-             disabled={operando!==null} onClick={()=>void apagarMensagem(m.id,true)}>Apagar para todos</button>}
+             disabled={operando!==null} onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");void apagarMensagem(m.id,true);}}>Apagar para todos</button>}
           </div>
          </details>
         </div>
