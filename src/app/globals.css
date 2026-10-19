@@ -453,3 +453,59 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
   .chat-balao:hover .chat-mensagem-gatilho,
   .chat-balao:focus-within .chat-mensagem-gatilho { opacity: 1; }
 }
+
+
+/* Chat: encaixar a interface na área disponível sob a barra superior,
+   sem rolagem da página inteira. Somente o histórico e a lista rolam. */
+.estrutura-chat .area-app { height:100dvh; min-height:0; overflow:hidden; }
+.estrutura-chat .topbar-app { flex-shrink:0; }
+.estrutura-chat .conteudo-app { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
+.estrutura-chat .rodape-app { display:none; }
+.pagina-chat { flex:1; display:flex; flex-direction:column; min-height:0; gap:.45rem; padding-block:.6rem .75rem; }
+.pagina-chat .trilha { margin:0; font-size:.75rem; line-height:1.15rem; }
+.chat-intro { display:flex; flex-wrap:wrap; align-items:baseline; gap:.35rem 1rem; flex-shrink:0; }
+.chat-intro .titulo-secao { font-size:clamp(1.1rem,1.8vw,1.4rem); }
+.chat-painel { flex:1; min-height:0; height:100%; position:relative; overflow:hidden; }
+.chat-painel .chat-lista { min-height:0; overscroll-behavior:contain; }
+.chat-painel .chat-area-mensagens { min-height:0; height:100%; }
+.chat-painel .chat-historico { min-height:0; overscroll-behavior:contain; }
+.chat-botao-contatos,.chat-fechar-lista,.chat-fundo-contatos { display:none; }
+.chat-ferramentas-mensagens .botao-secundario { white-space:nowrap; }
+@media(max-width:1023px) {
+  .chat-painel { grid-template-columns:minmax(0,1fr); }
+  .chat-painel .chat-lista {
+    display:grid; position:absolute; top:0; bottom:0; left:0;
+    z-index:31; width:min(330px,90%); transform:translateX(-105%);
+    visibility:hidden; pointer-events:none; transition:transform .18s ease,visibility .18s ease;
+    box-shadow:0 12px 32px #061a2736;
+  }
+  .chat-painel[data-contatos-abertos="sim"] .chat-lista { transform:translateX(0); visibility:visible; pointer-events:auto; }
+  .chat-painel[data-contatos-abertos="sim"] .chat-fundo-contatos {
+    display:block; position:absolute; inset:0; z-index:30; border:0;
+    background:#06142099; cursor:pointer;
+  }
+  .chat-botao-contatos,.chat-fechar-lista { display:inline-flex; }
+}
+@media(max-width:680px) {
+  .pagina-chat { padding-block:.35rem .45rem; gap:.3rem; }
+  .chat-intro .titulo-secao { font-size:1.1rem; }
+  .chat-subtitulo { display:none; }
+  .chat-cabecalho-mensagens { align-items:flex-start; }
+  .chat-cabecalho-mensagens .chat-ferramentas-mensagens { width:100%; }
+  .chat-cabecalho-mensagens .chat-ferramentas-mensagens form { flex:1; }
+  .chat-cabecalho-mensagens .chat-ferramentas-mensagens input { flex:1; min-width:0; }
+  .chat-dica-envio { display:none; }
+}
+@media(max-height:650px) {
+  .pagina-chat .trilha,.chat-subtitulo { display:none; }
+  .pagina-chat { padding-block:.3rem; }
+  .chat-compositor .chat-dica-envio { display:none; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .chat-painel .chat-lista { transition:none; }
+}
+@media print {
+  .estrutura-chat .area-app { height:auto; overflow:visible; }
+  .estrutura-chat .conteudo-app,.chat-painel { overflow:visible; }
+  .chat-painel .chat-lista { display:none; }
+}
