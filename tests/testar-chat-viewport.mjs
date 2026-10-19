@@ -7,6 +7,8 @@ test("Chat mede altura visível e mantém um escape de rolagem em janelas baixas
  assert.match(painel,/visualViewport/);
  assert.match(painel,/getBoundingClientRect\(\)\.top/);
  assert.match(painel,/Math\.max\(310,disponivel\)/);
+ assert.match(painel,/margemInferior=window\.innerWidth<=680\?20:24/);
+ assert.match(painel,/fundo-topo-margemInferior/);
  assert.match(painel,/ref=\{painelRef\}/);
  assert.match(css,/\.chat-painel\s*\{[^}]*grid-template-rows:minmax\(0,1fr\)/s);
  assert.match(css,/\.chat-painel \.chat-historico\s*\{[^}]*overflow-y:auto/s);

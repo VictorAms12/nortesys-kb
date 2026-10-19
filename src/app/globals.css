@@ -466,7 +466,7 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 .estrutura-chat .rodape-app { display:none; }
 .pagina-chat { display:block; min-height:0; max-height:none; padding-block:.45rem .55rem; }
 .chat-painel {
-  display:grid; height:calc(100dvh - 90px); min-height:310px;
+  display:grid; height:calc(100dvh - 104px); min-height:310px;
   grid-template-rows:minmax(0,1fr); position:relative; overflow:hidden;
 }
 .chat-painel .chat-lista {

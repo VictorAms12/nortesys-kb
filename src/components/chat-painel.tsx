@@ -61,7 +61,10 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     const vv=window.visualViewport;
     const fundo=vv?vv.offsetTop+vv.height:window.innerHeight;
     const topo=painel.getBoundingClientRect().top;
-    const disponivel=Math.floor(fundo-topo-10);
+    // Reserva uma margem visual consistente até a borda inferior.
+    // Mantém a área de digitação dentro do espaço calculado.
+    const margemInferior=window.innerWidth<=680?20:24;
+    const disponivel=Math.floor(fundo-topo-margemInferior);
     // Em janelas muito baixas, permitir rolagem da página em vez de esconder
     // o compositor. Em alturas normais, só o histórico recebe scroll.
     if(Number.isFinite(disponivel)&&disponivel>0)
