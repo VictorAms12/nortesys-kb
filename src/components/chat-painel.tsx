@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import Link from "next/link";
-import {CHAT_GERAL_ID,type EstadoChat,type MensagemChat,type ConversaChat,type UsuarioChat} from "../lib/chat-tipos";
+import {CHAT_GERAL_ID,type EstadoChat,type MensagemChat,type UsuarioChat} from "../lib/chat-tipos";
 type ErroResposta={erro?:string};
 const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
 async function jsonSeguro<T,>(res:Response):Promise<T>{
@@ -102,8 +102,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       if(!dados||typeof dados.conversaId!=="string")return;
       if(evento.name==="chat_mensagem"){
        if(dados.conversaId===selecionada.current)void carregar(dados.conversaId);
-       else {const titulo=autores.current.find(u=>u.id===dados.autorId)?.nome??"Nova mensagem";
-         setNotificacao("Nova mensagem em uma de suas conversas");}
+       else {setNotificacao("Nova mensagem em uma de suas conversas");}
        void atualizarEstado();
       }else if(evento.name==="chat_digitando"&&dados.autorId!==usuarioId&&dados.conversaId===selecionada.current){
        const pessoa=autores.current.find(u=>u.id===dados.autorId);

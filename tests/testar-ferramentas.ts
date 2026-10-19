@@ -5,7 +5,6 @@ import {FLUXOS_DIAGNOSTICO} from "../src/lib/diagnostico";
 import {variacoesBusca} from "../src/lib/busca";
 import {sugerirArtigosRelacionados} from "../src/lib/artigos-relacionados";
 import type {Artigo} from "../src/types/artigo";
-import {TIPOS_CONTEUDO} from "../src/lib/tipos-conteudo";
 test("7F: registro técnico preserva estrutura e campos sem inventar respostas",()=>{
   const registro=formatarRegistro({tipo:"ERP",dificuldade:"  Erro ao emitir NF-e  ",
     versao:"",atualizou:"Não",erro:"590",repasse:"Não",tarefa:"",resumo:"Foi orientado a verificar os dados",

@@ -7,7 +7,7 @@ export const ROTULOS_AUDITORIA:Record<string,string>={
  artigo_visualizado:"Consultou artigo",artigo_favoritado:"Favoritou artigo",artigo_desfavoritado:"Removeu favorito",
  usuario_criado:"Criou usuário",usuario_editar:"Editou usuário",usuario_ativar:"Ativou usuário",
  usuario_desativar:"Desativou usuário",usuario_senha_redefinida:"Redefiniu senha",
- anexo_enviado:"Enviou PDF",anexo_removido:"Removeu PDF",chat_aberto:"Abriu chat",
+ anexo_enviado:"Enviou PDF",anexo_removido:"Removeu PDF",imagem_enviada:"Enviou imagem",chat_aberto:"Abriu chat",
  chat_conversa_criada:"Iniciou conversa privada",chat_mensagem_enviada:"Enviou mensagem",
  chat_mensagem_lida:"Leu conversa",diagnostico_aberto:"Abriu diagnóstico guiado",
  registro_aberto:"Abriu gerador técnico"
