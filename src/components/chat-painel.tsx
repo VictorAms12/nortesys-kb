@@ -46,6 +46,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [contatosAbertos,setContatosAbertos]=useState(false);
  const painelRef=useRef<HTMLDivElement>(null);
  const campoMensagemRef=useRef<HTMLTextAreaElement>(null);
+ const botaoEnviarRef=useRef<HTMLButtonElement>(null);
  const historicoRef=useRef<HTMLDivElement>(null);
  const rolarAoFim=useRef(true);
  const ajusteHistorico=useRef<{altura:number;topo:number}|null>(null);
@@ -212,7 +213,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    if(document.visibilityState==="visible"){
     window.requestAnimationFrame(()=>{
      const ativo=document.activeElement;
-     if(ativo===document.body||ativo===campoMensagemRef.current||ativo?.getAttribute("type")==="submit")
+     if(ativo===document.body||ativo===campoMensagemRef.current||ativo===botaoEnviarRef.current)
       campoMensagemRef.current?.focus({preventScroll:true});
     });
    }
@@ -345,7 +346,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
        rows={2} maxLength={2000} placeholder="Digite sua mensagem... (Enter para enviar)" aria-label="Nova mensagem"
        readOnly={enviando} disabled={!estado}/>
-      <button className="botao-primario" type="submit" disabled={enviando||!texto.trim()}>Enviar</button>
+      <button ref={botaoEnviarRef} className="botao-primario" type="submit" disabled={enviando||!texto.trim()}>Enviar</button>
      </form>
      <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
     </div>
