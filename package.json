@@ -38,7 +38,8 @@
     "testar:fase7a": "node tests/testar-fase7a.mjs",
     "verificar:fase7a": "npm run verificar:estrutura && npm run verificar && npm run validar:artigos && npm run testar:validacao && npm run testar:busca && npm run testar:seguranca && npm run testar:usuarios && npm run testar:fase6 && npm run testar:fase7a && npm run testar:banco && npm run lint && npm run build",
     "testar:fase7b": "node tests/testar-fase7b.mjs",
-    "verificar:fase7b": "npm run verificar:estrutura && npm run verificar && npm run validar:artigos && npm run testar:validacao && npm run testar:busca && npm run testar:seguranca && npm run testar:usuarios && npm run testar:fase6 && npm run testar:fase7a && npm run testar:fase7b && npm run testar:banco && npm run lint && npm run build"
+    "verificar:fase7b": "npm run verificar:estrutura && npm run verificar && npm run validar:artigos && npm run testar:validacao && npm run testar:busca && npm run testar:seguranca && npm run testar:usuarios && npm run testar:fase6 && npm run testar:fase7a && npm run testar:fase7b && npm run testar:banco && npm run lint && npm run build",
+    "testar:anexos": "tsx --test tests/testar-anexos.ts"
   },
   "engines": {
     "node": ">=20.9.0"
