@@ -9,7 +9,10 @@ export function normalizarTextoImportado(texto:string):string {
 }
 /** Preserva o texto original para revisão sem inventar diagnóstico, causa ou solução. */
 export function gerarMarkdownImportado(texto:string,tipo:TipoConteudo):string {
-  const origem=normalizarTextoImportado(texto).replace(/^(\s*)#{1,6}\s+(.+)$/gm,"$1**$2**");
+  // Não permitir que títulos ou delimitadores Markdown do documento quebrem o modelo obrigatório.
+  const origem=normalizarTextoImportado(texto)
+    .replace(/^(\s*)#{1,6}\s+(.+)$/gm,"$1**$2**")
+    .replace(/^(\s*)(```|~~~)/gm,"$1[trecho de código]");
   const destino=tipo==="solucao"?"Solução passo a passo":tipo==="tutorial"?"Passo a passo":
     tipo==="guia"?"Orientações e exemplos":"Resposta";
   return TIPOS_CONTEUDO[tipo].secoes.map(secao=>{
@@ -20,5 +23,7 @@ export function gerarMarkdownImportado(texto:string,tipo:TipoConteudo):string {
   }).join("\n\n");
 }
 export function resumoImportado(texto:string):string {
-  return normalizarTextoImportado(texto).replace(/\s+/g," ").slice(0,157).trim().replace(/\s+\S*$/,"")+"…";
+  const plano=normalizarTextoImportado(texto).replace(/\s+/g," ");
+  if(plano.length<=160)return plano;
+  return plano.slice(0,157).trim().replace(/\s+\S*$/,"")+"…";
 }

@@ -35,7 +35,7 @@ export function ImportadorDocumento() {
       setGerado(corpo);
       setResumo(resumoImportado(texto));
       setTitulo(atual=>atual.trim().length>=5?atual:(nomeFonte||"Documento importado"));
-      setContador(n=>n+1);setAviso(""); 
+      setContador(Date.now());setAviso(""); 
     }catch(e){setAviso(e instanceof Error?e.message:"Documento inválido.");}
   }
   if(!gerado)return <section className="cartao grid gap-4 p-5 sm:p-7">

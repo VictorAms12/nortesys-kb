@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export function AcoesArtigo({ passos }: { passos: string }) {
   const [mensagem, setMensagem] = useState("");
@@ -13,6 +14,7 @@ export function AcoesArtigo({ passos }: { passos: string }) {
       {passos && <button type="button" className="botao-primario" onClick={()=>copiar(passos,"Passos copiados!")}>Copiar passos</button>}
       <button type="button" className="botao-secundario" onClick={()=>copiar(window.location.href,"Link copiado!")}>Copiar link</button>
       <button type="button" className="botao-secundario" onClick={()=>window.print()}>Imprimir</button>
+      <Link className="botao-secundario" href="/ferramentas/registro">Registrar atendimento</Link>
       <span className="text-xs text-[var(--muted)]" role="status" aria-live="polite">{mensagem}</span>
     </div>
   );
