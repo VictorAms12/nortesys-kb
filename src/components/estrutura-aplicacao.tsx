@@ -92,7 +92,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
     </Link>;
   }
   if(pathname==="/entrar")return <>{children}</>;
-  return <div className="estrutura-app" data-recolhida={recolhida?"sim":"nao"} data-menu-mobile={mobileAberta?"aberto":"fechado"}>
+  return <div className={`estrutura-app ${pathname==="/chat"?"estrutura-chat":""}`} data-recolhida={recolhida?"sim":"nao"} data-menu-mobile={mobileAberta?"aberto":"fechado"}>
     {mobileAberta&&<button aria-label="Fechar menu de navegação" className="fundo-menu-mobile no-print" onClick={()=>setMobileAberta(false)} type="button"/>}
     <aside ref={menu} className="sidebar-app no-print" id="navegacao-lateral" aria-label="Menu lateral">
       <div className="marca-sidebar">

@@ -43,7 +43,10 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [notificacao,setNotificacao]=useState("");
  const [digitando,setDigitando]=useState("");
  const [realtime,setRealtime]=useState(false);
- const final=useRef<HTMLDivElement>(null);
+ const [contatosAbertos,setContatosAbertos]=useState(false);
+ const historicoRef=useRef<HTMLDivElement>(null);
+ const rolarAoFim=useRef(true);
+ const ajusteHistorico=useRef<{altura:number;topo:number}|null>(null);
  const timeoutDigitando=useRef<number|null>(null);
  const atividade=useRef(0);
  const ultimaDigitacao=useRef(0);
@@ -73,7 +76,18 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  },[atualizarEstado]);
  useEffect(()=>{const t=window.setTimeout(()=>void atualizarEstado(),0);return ()=>window.clearTimeout(t);},[atualizarEstado]);
  useEffect(()=>{const t=window.setTimeout(()=>void carregar(conversa,pesquisa),0);return ()=>window.clearTimeout(t);},[conversa,pesquisa,carregar]);
- useEffect(()=>{if(!pesquisa)final.current?.scrollIntoView({behavior:"smooth",block:"nearest"});},[mensagens,pesquisa]);
+ useEffect(()=>{
+  const area=historicoRef.current;
+  if(!area||pesquisa||mensagens.length===0)return;
+  if(ajusteHistorico.current){
+   const anterior=ajusteHistorico.current;
+   area.scrollTop=anterior.topo+area.scrollHeight-anterior.altura;
+   ajusteHistorico.current=null;
+  }else if(rolarAoFim.current||area.scrollHeight-area.scrollTop-area.clientHeight<160){
+   area.scrollTop=area.scrollHeight;
+  }
+  rolarAoFim.current=false;
+ },[mensagens,pesquisa]);
  useEffect(()=>{
   const activity=()=>{atividade.current=Date.now();};
   const visivel=()=>{
@@ -134,7 +148,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   try{
    const resposta=await enviar("privada",{alvo});
    const id=String(resposta.id);
-   await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setNotificacao("");setAviso("");
+   rolarAoFim.current=true;await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setContatosAbertos(false);setNotificacao("");setAviso("");
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir a conversa.");}
  }
  async function enviarTexto(e:FormEvent){
@@ -183,12 +197,13 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível limpar a conversa.");}
   finally{setLimpando(false);}
  }
- function mudarConversa(id:string){setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");}
- return <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
-  <aside className="cartao grid min-w-0 content-start gap-4 overflow-hidden p-4" aria-label="Conversas e colaboradores">
-   <div><h2 className="text-lg font-bold">Conversas</h2>
+ function mudarConversa(id:string){rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
+ return <div className="chat-painel grid min-w-0 gap-3 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)]" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
+  {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
+  <aside className="chat-lista cartao grid min-w-0 content-start gap-4 overflow-y-auto overflow-x-hidden p-3 sm:p-4" aria-label="Conversas e colaboradores">
+   <div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><h2 className="text-base font-bold">Conversas</h2>
     <p className="mt-1 text-xs text-[var(--muted)]">{realtime?"● Tempo real conectado":"○ Atualizações periódicas"} · {totalNaoLidas} não lida(s)</p>
-   </div>
+   </div><button type="button" className="chat-fechar-lista botao-secundario" onClick={()=>setContatosAbertos(false)} aria-label="Fechar conversas">Fechar</button></div>
    {!estado?<p className="text-sm text-[var(--muted)]">Carregando conversas...</p>:
    <div className="grid min-w-0 gap-1" role="group" aria-label="Selecionar conversa">
     {abertas.map(c=><button type="button" key={c.id} onClick={()=>mudarConversa(c.id)}
@@ -208,13 +223,15 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     </button>)}</div>
    </div>
   </aside>
-  <section className="cartao flex min-h-[600px] min-w-0 max-w-full flex-col overflow-hidden p-4 sm:p-6" aria-label="Mensagens">
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
-      <div><h2 className="text-lg font-bold">{atual?.nome??"Equipe — Geral"}</h2>
-       <p className="text-xs text-[var(--muted)]">{atual?.tipo==="privada"?"Conversa privada":"Canal geral da equipe"}</p>
+  <section className="chat-area-mensagens cartao flex min-h-0 min-w-0 max-w-full flex-col overflow-hidden p-3 sm:p-4" aria-label="Mensagens">
+    <div className="chat-cabecalho-mensagens flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+      <div className="flex min-w-0 items-center gap-2">
+       <button type="button" className="chat-botao-contatos botao-secundario" onClick={()=>setContatosAbertos(true)} aria-label="Abrir conversas" aria-expanded={contatosAbertos}>Conversas{totalNaoLidas>0?` (${totalNaoLidas})`:""}</button>
+       <div className="min-w-0"><h2 className="truncate text-base font-bold">{atual?.nome??"Equipe — Geral"}</h2>
+        <p className="text-xs text-[var(--muted)]">{atual?.tipo==="privada"?"Conversa privada":"Canal geral da equipe"}</p></div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-      <form className="flex flex-wrap items-center gap-2" onSubmit={e=>{e.preventDefault();setMensagens([]);setMais(false);setPesquisa(busca.trim().slice(0,100));}}>
+      <div className="chat-ferramentas-mensagens flex min-w-0 flex-wrap items-center gap-2">
+      <form className="flex min-w-0 flex-wrap items-center gap-2" onSubmit={e=>{e.preventDefault();setMensagens([]);setMais(false);setPesquisa(busca.trim().slice(0,100));}}>
        <input className={estiloCampo+" max-w-[170px]"} type="search" value={busca} onChange={e=>setBusca(e.target.value)}
         placeholder="Buscar mensagens" aria-label="Pesquisar mensagens" maxLength={100}/>
        <button className="botao-secundario" type="submit">Buscar</button>
@@ -226,8 +243,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     </div>
     {aviso&&<p className="mt-3 text-sm text-amber-700" role="alert">{aviso}</p>}
     {notificacao&&<button type="button" className="mt-3 rounded-lg border border-[var(--border)] p-2 text-left text-sm" onClick={()=>{setNotificacao("");void atualizarEstado();}}>{notificacao} · Ver conversas</button>}
-    <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-5" aria-label="Histórico de mensagens" style={{maxHeight:"55vh"}}>
-     {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>void carregar(conversa,pesquisa,mensagens[0]?.id??null)}>Carregar mensagens anteriores</button>}
+    <div ref={historicoRef} className="chat-historico min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3" aria-label="Histórico de mensagens">
+     {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>{const area=historicoRef.current;if(area)ajusteHistorico.current={altura:area.scrollHeight,topo:area.scrollTop};void carregar(conversa,pesquisa,mensagens[0]?.id??null);}}>Carregar mensagens anteriores</button>}
      {mensagens.length===0?<p className="py-10 text-center text-sm text-[var(--muted)]">{pesquisa?"Nenhuma mensagem encontrada.":"Nenhuma mensagem ainda. Envie a primeira!"}</p>:
       <ul className="grid min-w-0 gap-3">{mensagens.map(m=><li key={m.id} className={"flex min-w-0 "+(m.autorId===usuarioId?"justify-end":"justify-start")}>
        <article className={"chat-balao group relative min-w-0 max-w-[93%] rounded-2xl px-3 py-2.5 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--background)]")}>
@@ -261,9 +278,9 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
         </p>
        </article>
       </li>)}</ul>}
-     <div ref={final}/>
+     <div aria-hidden="true"/>
     </div>
-    <div className="border-t border-[var(--border)] pt-3">
+    <div className="chat-compositor shrink-0 border-t border-[var(--border)] pt-2">
      {respondendo&&<div className="mb-3 flex min-w-0 items-center justify-between gap-2 rounded-lg border-l-4 border-[var(--primary)] bg-[var(--surface-alt)] p-3">
        <div className="min-w-0"><strong className="block text-xs">Respondendo a {respondendo.autorId===usuarioId?"você":respondendo.autor}</strong>
          <p className="line-clamp-2 break-words text-xs [overflow-wrap:anywhere]">{respondendo.texto}</p>
@@ -272,13 +289,13 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
      </div>}
      <p className="mb-2 min-h-4 text-xs text-[var(--muted)]" aria-live="polite">{digitando}</p>
      <form onSubmit={e=>void enviarTexto(e)} className="flex items-end gap-2">
-      <textarea className={estiloCampo+" min-h-12 flex-1 resize-y"} value={texto} onChange={e=>escrever(e.target.value)}
+      <textarea className={estiloCampo+" min-h-12 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto"} value={texto} onChange={e=>escrever(e.target.value)}
        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
        rows={2} maxLength={2000} placeholder="Digite sua mensagem... (Enter para enviar)" aria-label="Nova mensagem"
        disabled={enviando||!estado}/>
       <button className="botao-primario" type="submit" disabled={enviando||!texto.trim()}>Enviar</button>
      </form>
-     <p className="mt-2 text-xs text-[var(--muted)]">Shift+Enter pula linha. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
+     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
     </div>
   </section>
  </div>;
