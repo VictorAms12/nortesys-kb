@@ -5,7 +5,7 @@ import {useEffect,useRef,useState} from "react";
 export function IndicadorChat(){
  const pathname=usePathname();
  const [naoLidas,setNaoLidas]=useState(0);
- const ultimoMovimento=useRef(Date.now());
+ const ultimoMovimento=useRef(0);
  useEffect(()=>{
   let vivo=true;
   async function atualizar(){
@@ -24,7 +24,7 @@ export function IndicadorChat(){
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({acao:"presenca",ativo:Date.now()-ultimoMovimento.current<5*60*1000})}).catch(()=>{});
   };
-  void atualizar();ping();
+  marcar();void atualizar();ping();
   const t=window.setInterval(()=>{void atualizar();ping();},45000);
   for(const evt of ["pointerdown","keydown","mousemove","touchstart"])window.addEventListener(evt,marcar,{passive:true});
   window.addEventListener("focus",atualizar);

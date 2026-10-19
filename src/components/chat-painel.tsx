@@ -42,7 +42,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [realtime,setRealtime]=useState(false);
  const final=useRef<HTMLDivElement>(null);
  const timeoutDigitando=useRef<number|null>(null);
- const atividade=useRef(Date.now());
+ const atividade=useRef(0);
  const ultimaDigitacao=useRef(0);
  const selecionada=useRef(conversa);
  const autores=useRef<UsuarioChat[]>([]);
@@ -68,8 +68,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    if(!q&&antes===null&&!document.hidden)void enviar("lido",{conversa:id}).then(()=>atualizarEstado()).catch(()=>{});
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir as mensagens.");}
  },[atualizarEstado]);
- useEffect(()=>{void atualizarEstado();},[atualizarEstado]);
- useEffect(()=>{setMensagens([]);setMais(false);void carregar(conversa,pesquisa);},[conversa,pesquisa,carregar]);
+ useEffect(()=>{const t=window.setTimeout(()=>void atualizarEstado(),0);return ()=>window.clearTimeout(t);},[atualizarEstado]);
+ useEffect(()=>{const t=window.setTimeout(()=>void carregar(conversa,pesquisa),0);return ()=>window.clearTimeout(t);},[conversa,pesquisa,carregar]);
  useEffect(()=>{if(!pesquisa)final.current?.scrollIntoView({behavior:"smooth",block:"nearest"});},[mensagens,pesquisa]);
  useEffect(()=>{
   const activity=()=>{atividade.current=Date.now();};
@@ -79,7 +79,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   for(const nome of ["pointerdown","keydown","mousemove","touchstart"])window.addEventListener(nome,activity,{passive:true});
   document.addEventListener("visibilitychange",visivel);
   const batida=()=>{if(!document.hidden)void enviar("presenca",{ativo:Date.now()-atividade.current<300000}).catch(()=>{});};
-  batida();const t=window.setInterval(batida,45000);
+  activity();batida();const t=window.setInterval(batida,45000);
   return ()=>{window.clearInterval(t);document.removeEventListener("visibilitychange",visivel);
    for(const nome of ["pointerdown","keydown","mousemove","touchstart"])window.removeEventListener(nome,activity);};
  },[atualizarEstado]);
@@ -131,7 +131,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   try{
    const resposta=await enviar("privada",{alvo});
    const id=String(resposta.id);
-   await atualizarEstado();setPesquisa("");setBusca("");setConversa(id);setNotificacao("");setAviso("");
+   await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setConversa(id);setNotificacao("");setAviso("");
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir a conversa.");}
  }
  async function enviarTexto(e:FormEvent){
@@ -151,7 +151,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    ultimaDigitacao.current=Date.now();void enviar("digitando",{conversa}).catch(()=>{});
   }
  }
- function mudarConversa(id:string){setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");}
+ function mudarConversa(id:string){setMensagens([]);setMais(false);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");}
  return <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
   <aside className="cartao grid content-start gap-4 p-4" aria-label="Conversas e colaboradores">
    <div><h2 className="text-lg font-bold">Conversas</h2>
@@ -181,11 +181,11 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       <div><h2 className="text-lg font-bold">{atual?.nome??"Equipe — Geral"}</h2>
        <p className="text-xs text-[var(--muted)]">{atual?.tipo==="privada"?"Conversa privada":"Canal geral da equipe"}</p>
       </div>
-      <form className="flex flex-wrap items-center gap-2" onSubmit={e=>{e.preventDefault();setPesquisa(busca.trim().slice(0,100));}}>
+      <form className="flex flex-wrap items-center gap-2" onSubmit={e=>{e.preventDefault();setMensagens([]);setMais(false);setPesquisa(busca.trim().slice(0,100));}}>
        <input className={estiloCampo+" max-w-[170px]"} type="search" value={busca} onChange={e=>setBusca(e.target.value)}
         placeholder="Buscar mensagens" aria-label="Pesquisar mensagens" maxLength={100}/>
        <button className="botao-secundario" type="submit">Buscar</button>
-       {pesquisa&&<button className="botao-secundario" type="button" onClick={()=>{setBusca("");setPesquisa("");}}>Limpar</button>}
+       {pesquisa&&<button className="botao-secundario" type="button" onClick={()=>{setBusca("");setMensagens([]);setMais(false);setPesquisa("");}}>Limpar</button>}
       </form>
     </div>
     {aviso&&<p className="mt-3 text-sm text-amber-700" role="alert">{aviso}</p>}

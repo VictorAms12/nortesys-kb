@@ -15,7 +15,7 @@ export function DiagnosticoGuiado({documentos}:{documentos:DocumentoBusca[]}) {
   const etapa=fluxo?.etapas[etapaId];
   const buscador=useMemo(()=>criarBuscador(documentos),[documentos]);
   const consulta=etapa?.solicitarCodigo ? codigo.trim() : etapa?.pesquisa ?? "";
-  const indicados=useMemo(()=>consulta.length>=2?executarBusca(buscador,consulta).slice(0,4):[],[buscador,consulta]);
+  const indicados=consulta.length>=2?executarBusca(buscador,consulta).slice(0,4):[];
   function selecionar(id:string) {const escolhido=encontrarFluxo(id);setFluxoId(id);setEtapaId(escolhido?.inicio??"");setHistorico([]);setCodigo("");}
   function avancar(id:string) {setHistorico(atuais=>[...atuais,etapaId]);setEtapaId(id);setCodigo("");}
   function voltar() {const anterior=historico.at(-1);if(!anterior){selecionar("");return;}setEtapaId(anterior);setHistorico(atuais=>atuais.slice(0,-1));setCodigo("");}
