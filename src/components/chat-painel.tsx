@@ -41,7 +41,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [digitando,setDigitando]=useState("");
  const [realtime,setRealtime]=useState(false);
  const final=useRef<HTMLDivElement>(null);
- const ultimoEvento=useRef(0);
+ const timeoutDigitando=useRef<number|null>(null);
  const atividade=useRef(Date.now());
  const ultimaDigitacao=useRef(0);
  const selecionada=useRef(conversa);
@@ -65,7 +65,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    const lista=data.mensagens;
    setMensagens(atual=>antes===null?lista:[...lista,...atual.filter(m=>!lista.some(a=>a.id===m.id))]);
    setMais(lista.length===60);
-   if(!q&&antes===null)void enviar("lido",{conversa:id}).then(()=>atualizarEstado()).catch(()=>{});
+   if(!q&&antes===null&&!document.hidden)void enviar("lido",{conversa:id}).then(()=>atualizarEstado()).catch(()=>{});
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir as mensagens.");}
  },[atualizarEstado]);
  useEffect(()=>{void atualizarEstado();},[atualizarEstado]);
@@ -107,7 +107,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       }else if(evento.name==="chat_digitando"&&dados.autorId!==usuarioId&&dados.conversaId===selecionada.current){
        const pessoa=autores.current.find(u=>u.id===dados.autorId);
        setDigitando((pessoa?.nome??"Alguém")+" está digitando...");
-       ultimoEvento.current=Date.now();
+       if(timeoutDigitando.current!==null)window.clearTimeout(timeoutDigitando.current);
+       timeoutDigitando.current=window.setTimeout(()=>setDigitando(""),5000);
       }
      }catch{/* Eventos malformados são ignorados. */}
     };
@@ -115,11 +116,11 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   };
   void conectar();
   const renew=window.setInterval(()=>{if(!encerrado)void conectar();},20*60*1000);
-  return ()=>{encerrado=true;window.clearInterval(renew);stream?.close();};
+  return ()=>{encerrado=true;window.clearInterval(renew);stream?.close();
+    if(timeoutDigitando.current!==null)window.clearTimeout(timeoutDigitando.current);};
  },[atualizarEstado,carregar,usuarioId]);
  useEffect(()=>{
-  const t=window.setInterval(()=>{void atualizarEstado();if(!document.hidden)void carregar(selecionada.current,pesquisa);
-   if(Date.now()-ultimoEvento.current>5000)setDigitando("");},20000);
+  const t=window.setInterval(()=>{void atualizarEstado();if(!document.hidden)void carregar(selecionada.current,pesquisa);},20000);
   return ()=>window.clearInterval(t);
  },[atualizarEstado,carregar,pesquisa]);
  const abertas=estado?.conversas??[];
