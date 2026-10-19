@@ -4,6 +4,7 @@ import { verificarOrigemPost } from "../../../../lib/origem";
 import { chaveTentativas, registrarTentativa, limparTentativas } from "../../../../lib/limite-login";
 import { autenticacaoConfigurada, criarTokenSessao, destinoSeguro, NOME_COOKIE, opcoesCookie } from "../../../../lib/sessao";
 import { conferirCredenciais } from "../../../../lib/usuarios";
+import { registrarAuditoriaSegura } from "../../../../lib/auditoria-eventos";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,12 +33,13 @@ export async function POST(req: NextRequest) {
   try {
     if (!(await registrarTentativa(chave))) return voltar(req, "bloqueado");
     const conta = await conferirCredenciais(usuario, senha);
-    if (!conta) return voltar(req, "credenciais");
+    if (!conta) {await registrarAuditoriaSegura(null,"login_falha","credenciais_invalidas",{limitarMinutos:1});return voltar(req,"credenciais");}
     const token = await criarTokenSessao(conta);
     await limparTentativas(chave);
     const destino = destinoSeguro(formulario.get("retorno"));
     const resposta = NextResponse.redirect(new URL(destino, req.url), { status: 303 });
     resposta.cookies.set(NOME_COOKIE, token, opcoesCookie());
+    await registrarAuditoriaSegura(conta.id,"login_sucesso","sessao");
     resposta.headers.set("Cache-Control", "no-store");
     return resposta;
   } catch (erro) {
