@@ -15,6 +15,7 @@ Copie [`.env.example`](../../.env.example) para `.env.local`. No PowerShell, pod
 | `DATABASE_URL` | Conexão PostgreSQL do Neon com `sslmode=require`; necessária para autenticação e persistência |
 | `BLOB_STORE_ID` | Identifica o store no fluxo OIDC da integração Vercel Blob |
 | `BLOB_READ_WRITE_TOKEN` | Alternativa de autenticação para integrações Blob que utilizem token estático |
+| `ABLY_API_KEY` | Chave privada do Ably para notificação em tempo real no chat; opcional para carregamento somente por consultas ao Neon |
 
 O SDK resolve a autenticação do Blob. Para OIDC no desenvolvimento, utilize o fluxo de credenciais de desenvolvimento da integração Vercel; apenas informar o ID do store não fornece uma identidade. Não copie tokens de sessão do navegador para o projeto. Nenhuma dessas variáveis deve usar o prefixo `NEXT_PUBLIC_`.
 
@@ -96,3 +97,7 @@ node tests/testar-build-revisao.mjs build/revisao-IDENTIFICADOR
 Use o diretório indicado pelo build. O snapshot não copia arquivos `.env` nem uploads locais e remove as variáveis de serviços do processo filho. Os testes de imagens usam PostgreSQL em memória e armazenamento simulado. Nenhuma migração é executada no Neon por esses comandos.
 
 A checagem de tipos regenera `next-env.d.ts` e os tipos de rotas com `next typegen`. Essa etapa lê a configuração local do Next, mas não executa consultas no banco. Se remover ou renomear rotas e houver erros em `.next/dev/types`, encerre o servidor de desenvolvimento e regenere o cache do Next antes de repetir a checagem.
+
+## Chat (Fases 7G.1 e 7G.2)
+
+Em banco de Preview, execute `db/006_chat.sql` inteiro no SQL Editor após 001 e 002, incluindo transação. Configure `ABLY_API_KEY` restrita a `kb-chat:*` com publish e subscribe. As mensagens ficam no Neon; o Ably é usado para eventos sem texto privado. Confira [a checklist do chat](../historico/FASE-7G-CHAT-AUDITORIA.md).
