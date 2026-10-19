@@ -82,9 +82,9 @@ test("7G.3: ações preservam privacidade por participante e mantêm integridade
  assert.equal(limpar.rows.length,1);
  assert.equal((await listar(b)).length,0);
  assert.equal((await listar(a)).length,2);
- const previewsB=await db.query<Linha>(SQL_CONVERSAS,[b]);
+ const previewsB=await db.query<{id:string;ultima_mensagem:string|null}>(SQL_CONVERSAS,[b]);
  assert.equal(previewsB.rows.find(m=>m.id===dm)?.ultima_mensagem,null,"Limpar remove prévia apenas para a conta");
- const previewsA=await db.query<Linha>(SQL_CONVERSAS,[a]);
+ const previewsA=await db.query<{id:string;ultima_mensagem:string|null}>(SQL_CONVERSAS,[a]);
  assert.ok(previewsA.rows.find(m=>m.id===dm)?.ultima_mensagem,"Outros mantêm sua prévia");
  const depois=await escrever(a,"Nova mensagem depois de limpar");
  assert.equal((await listar(b)).length,1);
