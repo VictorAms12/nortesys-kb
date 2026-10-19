@@ -66,7 +66,7 @@ export async function abrirConversaPrivada(usuario:string,alvo:string):Promise<s
    "SELECT 'privada',$3,$1 FROM pessoa ON CONFLICT(chave) DO UPDATE SET chave=EXCLUDED.chave RETURNING id), "+
    "partes AS (INSERT INTO kb_chat_participantes(conversa_id,usuario_id) "+
    "SELECT nova.id,ids.id FROM nova CROSS JOIN (SELECT $1::uuid AS id UNION SELECT $2::uuid AS id) ids "+
-   "ON CONFLICT DO NOTHING RETURNING conversa_id) SELECT id FROM nova",[usuario,alvo,chave]);
+   "WHERE true ON CONFLICT DO NOTHING RETURNING conversa_id) SELECT id FROM nova",[usuario,alvo,chave]);
  if(!rows.length)throw new ErroChat(404,"Colaborador não encontrado.");
  await registrarAuditoriaSegura(usuario,"chat_conversa_criada",rows[0].id,{limitarMinutos:15});
  return rows[0].id;
