@@ -455,39 +455,35 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 }
 
 
-/* Chat: usa o espaço disponível da janela sem altura intrínseca nas linhas
-   do grid. O histórico e os contatos rolam, nunca o compositor. */
-.estrutura-chat { height:100dvh; min-height:0; overflow:hidden; }
-.estrutura-chat .area-app { height:100%; min-height:0; overflow:hidden; }
+/* Correção chat: altura definida em pixels pelo ChatPainel a partir do limite
+   VISÍVEL do navegador. Nunca esconder o final de uma página inteira. */
+.estrutura-chat { height:auto; min-height:100dvh; overflow:visible; }
+.estrutura-chat .area-app { height:auto; min-height:100dvh; overflow:visible; }
 .estrutura-chat .topbar-app { flex:0 0 auto; }
 .estrutura-chat .conteudo-app {
-  display:flex; flex:1 1 0%; min-height:0; flex-direction:column; overflow:hidden;
+  display:block; flex:1 0 auto; min-height:0; overflow:visible;
 }
 .estrutura-chat .rodape-app { display:none; }
-.pagina-chat {
-  display:flex; flex:1 1 0%; flex-direction:column;
-  min-height:0; max-height:100%; padding-block:.45rem .55rem;
-}
+.pagina-chat { display:block; min-height:0; max-height:none; padding-block:.45rem .55rem; }
 .chat-painel {
-  display:grid; flex:1 1 0%; height:auto; min-height:0;
-  grid-template-rows:minmax(0,1fr);
-  position:relative; overflow:hidden;
+  display:grid; height:calc(100dvh - 90px); min-height:310px;
+  grid-template-rows:minmax(0,1fr); position:relative; overflow:hidden;
 }
 .chat-painel .chat-lista {
   min-height:0; max-height:100%; overflow-y:auto; overflow-x:hidden;
   overscroll-behavior:contain;
 }
 .chat-painel .chat-area-mensagens {
-  display:flex; flex-direction:column;
-  height:auto; min-height:0; max-height:100%; overflow:hidden;
+  display:flex; flex-direction:column; height:100%; min-height:0;
+  max-height:100%; overflow:hidden;
 }
 .chat-painel .chat-cabecalho-mensagens { flex:0 0 auto; }
 .chat-painel .chat-historico {
-  flex:1 1 0%; min-height:0;
-  overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+  flex:1 1 0%; min-height:0; overflow-x:hidden; overflow-y:auto;
+  overscroll-behavior:contain; scrollbar-width:thin;
 }
 .chat-painel .chat-compositor {
-  flex:0 0 auto; background:var(--surface);
+  flex:0 0 auto; position:relative; z-index:1; background:var(--surface);
 }
 .chat-botao-contatos,.chat-fechar-lista,.chat-fundo-contatos { display:none; }
 .chat-ferramentas-mensagens .botao-secundario { white-space:nowrap; }
@@ -524,8 +520,8 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
   .chat-painel .chat-lista { transition:none; }
 }
 @media print {
-  .estrutura-chat { height:auto; overflow:visible; }
-  .estrutura-chat .area-app { height:auto; overflow:visible; }
+  .estrutura-chat,.estrutura-chat .area-app { height:auto; min-height:0; overflow:visible; }
   .estrutura-chat .conteudo-app,.chat-painel { overflow:visible; }
+  .chat-painel { height:auto !important; min-height:0; display:block; }
   .chat-painel .chat-lista { display:none; }
 }

@@ -44,9 +44,46 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [digitando,setDigitando]=useState("");
  const [realtime,setRealtime]=useState(false);
  const [contatosAbertos,setContatosAbertos]=useState(false);
+ const painelRef=useRef<HTMLDivElement>(null);
  const historicoRef=useRef<HTMLDivElement>(null);
  const rolarAoFim=useRef(true);
  const ajusteHistorico=useRef<{altura:number;topo:number}|null>(null);
+ // Tamanho explícito calculado pela posição REAL do chat na janela, incluindo
+ // as barras variáveis do navegador, zoom e cabeçalhos que quebram linha.
+ // Não depende da altura intrínseca das mensagens nem de flex:1 em ancestrais.
+ useEffect(()=>{
+  const painel=painelRef.current;
+  if(!painel)return;
+  let quadro=0;
+  const ajustar=()=>{
+   window.cancelAnimationFrame(quadro);
+   quadro=window.requestAnimationFrame(()=>{
+    const vv=window.visualViewport;
+    const fundo=vv?vv.offsetTop+vv.height:window.innerHeight;
+    const topo=painel.getBoundingClientRect().top;
+    const disponivel=Math.floor(fundo-topo-10);
+    // Em janelas muito baixas, permitir rolagem da página em vez de esconder
+    // o compositor. Em alturas normais, só o histórico recebe scroll.
+    if(Number.isFinite(disponivel)&&disponivel>0)
+      painel.style.height=`${Math.max(310,disponivel)}px`;
+   });
+  };
+  ajustar();
+  const observador=new ResizeObserver(ajustar);
+  const barra=document.querySelector(".topbar-app");
+  if(barra)observador.observe(barra);
+  window.addEventListener("resize",ajustar);
+  window.visualViewport?.addEventListener("resize",ajustar);
+  window.visualViewport?.addEventListener("scroll",ajustar);
+  return ()=>{
+   observador.disconnect();
+   window.cancelAnimationFrame(quadro);
+   window.removeEventListener("resize",ajustar);
+   window.visualViewport?.removeEventListener("resize",ajustar);
+   window.visualViewport?.removeEventListener("scroll",ajustar);
+  };
+ },[]);
+
  const timeoutDigitando=useRef<number|null>(null);
  const atividade=useRef(0);
  const ultimaDigitacao=useRef(0);
@@ -198,7 +235,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   finally{setLimpando(false);}
  }
  function mudarConversa(id:string){rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
- return <div className="chat-painel grid min-w-0 gap-3 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)]" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
+ return <div ref={painelRef} className="chat-painel grid min-w-0 gap-3 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)]" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
   {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
   <aside className="chat-lista cartao grid min-w-0 content-start gap-4 overflow-y-auto overflow-x-hidden p-3 sm:p-4" aria-label="Conversas e colaboradores">
    <div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><h2 className="text-base font-bold">Conversas</h2>
