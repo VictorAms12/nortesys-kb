@@ -12,6 +12,8 @@ import { extrairPassos } from "../../../../lib/markdown";
 import { TIPOS_CONTEUDO } from "../../../../lib/tipos-conteudo";
 import { favoritoAtivo } from "../../../../lib/interacoes";
 import { InteracoesArtigo } from "../../../../components/interacoes-artigo";
+import { listarAnexosPorChave } from "../../../../lib/anexos";
+import { sugerirArtigosRelacionados } from "../../../../lib/artigos-relacionados";
 
 type Props = { params: Promise<{ categoria: string; slug: string }> };
 
@@ -28,7 +30,8 @@ export default async function PaginaArtigo({ params }: Props) {
   const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === slugCategoria && a.slug === slug);
   if (!artigo) notFound();
   const categoria = encontrarCategoria(artigo.categoria);
-  const favorito = await favoritoAtivo(sessao.id,artigo.url);
+  const relacionados = sugerirArtigosRelacionados(artigo, await carregarTodosArtigos(sessao.papel));
+  const [favorito, anexos] = await Promise.all([favoritoAtivo(sessao.id,artigo.url), listarAnexosPorChave(artigo.categoria,artigo.slug)]);
   const revisaoVencida = artigoPrecisaRevisao(artigo, hojeISO());
   const passos = artigo.tipo === "solucao" ? extrairPassos(artigo.secoes[3]?.conteudo ?? "") : artigo.tipo === "tutorial" ? extrairPassos(artigo.secoes[2]?.conteudo ?? "") : "";
   return (
@@ -71,6 +74,25 @@ export default async function PaginaArtigo({ params }: Props) {
               <ConteudoMarkdown markdown={secao.conteudo} />
             </section>
           ))}
+          {anexos.length>0 && <section className="mt-8 rounded-xl border border-[var(--border)] p-5" aria-labelledby="titulo-documentos">
+            <h2 id="titulo-documentos" className="mb-3 text-lg font-bold">Documentos anexos</h2>
+            <ul className="grid gap-2">{anexos.map(a=><li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] p-3">
+              <div className="min-w-0"><p className="break-all text-sm font-semibold">{a.nome}</p>
+                <p className="text-xs text-[var(--muted)]">PDF · {(a.tamanho/1024/1024).toFixed(2)} MB</p></div>
+              <div className="flex flex-wrap gap-2">
+                <a href={`/api/anexos/${a.id}?visualizar=1`} target="_blank" rel="noopener noreferrer" className="botao-secundario shrink-0" aria-label={`Visualizar ${a.nome} em nova aba`}>Visualizar</a>
+                <a href={`/api/anexos/${a.id}`} className="botao-secundario shrink-0">Baixar PDF</a>
+              </div>
+            </li>)}</ul>
+          </section>}
+          {relacionados.length>0 && <section className="mt-8 rounded-xl border border-[var(--border)] p-5" aria-labelledby="relacionados">
+            <h2 id="relacionados" className="mb-3 text-lg font-bold">Você também pode consultar</h2>
+            <ul className="grid gap-2">{relacionados.map(outro=><li key={outro.url}>
+              <Link className="block rounded-lg border border-[var(--border)] p-3 hover:border-[var(--primary)]" href={outro.url}>
+                <strong>{outro.titulo}</strong><span className="mt-1 block text-sm text-[var(--muted)]">{outro.resumo}</span>
+              </Link>
+            </li>)}</ul>
+          </section>}
           {Boolean(artigo.fonteOficial?.length) && <section className="mt-8 rounded-xl border border-[var(--border)] p-5">
             <h2 className="mb-2 text-lg font-bold">Fontes oficiais para conferência</h2>
             <ul className="list-inside list-disc space-y-2 break-all text-sm">{artigo.fonteOficial?.map((url)=><li key={url}><a href={url} target="_blank" rel="noopener noreferrer">{url}</a></li>)}</ul>

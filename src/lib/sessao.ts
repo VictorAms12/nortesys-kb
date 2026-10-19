@@ -41,7 +41,7 @@ export function papelPermitido(papel: Papel, permitidos: readonly Papel[]): bool
 export function destinoSeguro(entrada: unknown): string {
   if (typeof entrada !== "string" || entrada.length > 400 || entrada.includes("\\") || /[\r\n]/.test(entrada)) return "/";
   if (entrada === "/") return "/";
-  if (!/^\/(busca|categorias|artigos|admin|favoritos|recentes)(?:\/|\?|$)/.test(entrada) || entrada.startsWith("//")) return "/";
+  if (!/^\/(busca|categorias|artigos|admin|favoritos|recentes|diagnostico|ferramentas|chat)(?:\/|\?|$)/.test(entrada) || entrada.startsWith("//")) return "/";
   try {
     const url = new URL(entrada, "http://localhost");
     if (url.origin !== "http://localhost" || url.pathname.includes("//")) return "/";

@@ -12,7 +12,7 @@ const tarefas = [
   ...["testar-validacao", "testar-busca", "testar-seguranca", "testar-usuarios", "testar-fase6",
     "testar-hidratacao-imagens"].map(nome => ["node_modules/tsx/dist/cli.mjs", `tests/${nome}.ts`]),
   ...["testar-banco", "testar-fase7a", "testar-fase7b", "testar-login-unificado", "testar-login-visual"].map(nome => [`tests/${nome}.mjs`]),
-  ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-imagens.ts", "tests/testar-revisao.ts"],
+  ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-imagens.ts", "tests/testar-revisao.ts", "tests/testar-anexos.ts", "tests/testar-ferramentas.ts", "tests/testar-chat.ts"],
   ["node_modules/eslint/bin/eslint.js", "."],
   ["node_modules/next/dist/bin/next", "typegen"],
   ["node_modules/typescript/bin/tsc", "--noEmit", "--incremental", "false"],

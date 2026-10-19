@@ -11,7 +11,7 @@ function csp(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
-    `connect-src 'self'${desenvolvimento ? " ws: wss:" : ""}`,
+    `connect-src 'self' https://main.realtime.ably.net${desenvolvimento ? " ws: wss:" : ""}`,
     "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
   ].join("; ");
 }

@@ -17,10 +17,13 @@
 ## O que a base oferece
 
 - **Biblioteca técnica:** soluções, tutoriais, guias e perguntas frequentes, com categorias, tags e filtros.
-- **Busca:** pesquisa textual com Fuse.js, filtros combinados e exibição progressiva dos resultados.
+- **Busca:** pesquisa textual com Fuse.js, equivalências terminológicas, filtros combinados e exibição progressiva dos resultados; permite explorar artigos só pelos filtros.
+- **Diagnóstico guiado:** perguntas de triagem para NF-e/NFC-e, impressão, acesso e instalação, com pesquisa em artigos disponíveis e sugestões de conteúdos relacionados.
 - **Edição no navegador:** Markdown com prévia, modelos de conteúdo, rascunhos, revisão, arquivamento e histórico de versões.
 - **Imagens privadas:** envio de PNG, JPEG e WebP, validação do arquivo e leitura autenticada conforme o acesso ao artigo.
+- **Anexos PDF privados:** documentos de até 3 MB vinculados a artigos, com download autenticado. Exige migração 005 aplicada no banco escolhido.
 - **Área pessoal:** favoritos e artigos acessados recentemente.
+- **Registro técnico:** gerador local de registros de atendimento padronizados, com botão para copiar, sem persistir dados de clientes.
 - **Administração:** contas individuais, perfis de acesso e consulta de ações administrativas.
 - **Interface adaptável:** temas claro/escuro, navegação móvel, atalhos de busca e transições que respeitam a preferência por movimento reduzido.
 
@@ -127,3 +130,9 @@ Leia também:
 - [Relatório de revisão, desempenho e animações](docs/relatorios/revisao-polimento-performance.md)
 
 Credenciais, capturas de clientes e dados pessoais não devem entrar no repositório. O scanner do projeto ajuda a encontrar padrões suspeitos; a revisão do material continua necessária.
+
+## Comunicação interna (Fases 7G.1 / 7G.2)
+
+O chat geral e as conversas privadas utilizam Neon para histórico/autorização, enquanto o Ably oferece notificação instantânea. A conexão SSE recebe tokens com acesso limitado ao canal geral e ao canal pessoal do usuário; envio e escrita no banco ocorrem apenas via APIs autenticadas do site. A presença online/ausente/offline é aproximada por atividade recente, sem controle invasivo.
+
+**Antes de validar:** aplicar `db/006_chat.sql` no banco de Preview e configurar `ABLY_API_KEY` no ambiente Preview. Não incluir essa chave em `NEXT_PUBLIC_`. Para testar use duas contas em navegadores diferentes e valide que não é possível ler uma conversa de terceiros. Não publicar em Production sem a migração correspondente.

@@ -20,6 +20,9 @@ Antes de publicar funcionalidades que dependem do banco, aplique as migrações 
 
 - Migrações 001–003: CLI `db:migrar` ou aplicação manual revisada.
 - Migração 004: aplicação manual do arquivo inteiro, incluindo a transação.
+- Migração 005: anexos PDF privados (Neon), aplicação manual antes da fase 7C.2.
+- Migração 006: chat e presença, aplicação manual antes da fase 7G (Preview e depois Production).
+- Chat: configurar `ABLY_API_KEY` por ambiente; não expor a chave ao navegador.
 - O build não aplica SQL e não cria contas.
 
 O build normal é `npm run build`. A revisão local usa `npm run verificar:revisao` e `npm run build:revisao`, sem as credenciais reais. Não envie `.env.local`, `.vercel/`, `.local/`, `node_modules/` ou snapshots de `build/` ao Git.

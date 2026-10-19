@@ -10,6 +10,9 @@ try {
   assert.equal(opcoesCookie().httpOnly, true);
   assert.equal(destinoSeguro("//externo/"), "/");
   assert.equal(destinoSeguro("/busca?q=erro"), "/busca?q=erro");
+  assert.equal(destinoSeguro("/diagnostico"), "/diagnostico");
+  assert.equal(destinoSeguro("/ferramentas/registro"), "/ferramentas/registro");
+  assert.equal(destinoSeguro("/admin/importar"), "/admin/importar");
   const local = new Headers({ host: "localhost:3000", origin: "http://localhost:3000", "sec-fetch-site": "same-origin" });
   assert.equal(origemPostValida(local), true);
   assert.equal(origemPostValida(new Headers({ host: "localhost:3000", origin: "null" })), false);

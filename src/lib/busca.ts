@@ -24,6 +24,19 @@ export function criarBuscador(documentos: DocumentoBusca[]): Fuse<DocumentoBusca
 }
 
 export type ResultadoBusca = { artigo: DocumentoBusca; pontuacao: number };
+/** Equivalências restritas, sem adivinhar regras fiscais ou substituir o termo original. */
+const ALIASES_BUSCA = [
+  ["nf-e", "nfe", "nota fiscal eletrônica"],
+  ["nfc-e", "nfce", "nota fiscal consumidor"],
+  ["impressão", "impressora", "imprime", "fila impressão"],
+  ["login", "entrar sistema", "acesso sistema"],
+  ["ibs cbs", "ibscbs", "reforma tributária"],
+] as const;
+export function variacoesBusca(termo:string):string[] {
+  const chave=normalizar(termo).replace(/\s+/g," ");
+  const grupo=ALIASES_BUSCA.find(op=>op.some(v=>normalizar(v)===chave));
+  return grupo?grupo.filter(v=>normalizar(v)!==chave):[];
+}
 
 function normalizar(termo: string): string {
   return termo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
@@ -35,16 +48,23 @@ export function executarBusca(buscador: Fuse<DocumentoBusca>, consulta: string):
   if (termo.length < MINIMO_CARACTERES_BUSCA) return [];
 
   const termoNormalizado = normalizar(termo);
-  const resultados = buscador.search(termo).map((resultado) => {
-    const artigo = resultado.item;
-    const codigosErro = artigo.codigosErro ?? [];
-    const codigoExato = codigosErro.some((codigo) => normalizar(codigo) === termoNormalizado);
-    const codigoContem = codigosErro.some((codigo) => normalizar(codigo).includes(termoNormalizado));
-    const tituloContem = normalizar(artigo.titulo).includes(termoNormalizado);
-    const prioridade = codigoExato ? -3 : codigoContem ? -2 : tituloContem ? -1 : 0;
-    return { artigo, pontuacao: resultado.score ?? 1, prioridade };
-  });
-
+  const combinados = new Map<string, {artigo: DocumentoBusca; pontuacao:number; prioridade:number}>();
+  const consultas=[termo,...variacoesBusca(termo)];
+  for (const [indice,consulta] of consultas.entries()) {
+    for(const resultado of buscador.search(consulta)) {
+      const artigo=resultado.item;
+      const codigosErro=artigo.codigosErro??[];
+      const codigoExato=indice===0&&codigosErro.some(c=>normalizar(c)===termoNormalizado);
+      const codigoContem=indice===0&&codigosErro.some(c=>normalizar(c).includes(termoNormalizado));
+      const tituloContem=indice===0&&normalizar(artigo.titulo).includes(termoNormalizado);
+      const prioridade=indice>0?2:codigoExato?-3:codigoContem?-2:tituloContem?-1:0;
+      const novo={artigo,pontuacao:(resultado.score??1)+(indice>0?0.2:0),prioridade};
+      const anterior=combinados.get(artigo.url);
+      if(!anterior||novo.prioridade<anterior.prioridade||
+        (novo.prioridade===anterior.prioridade&&novo.pontuacao<anterior.pontuacao))combinados.set(artigo.url,novo);
+    }
+  }
+  const resultados=[...combinados.values()];
   resultados.sort((a, b) =>
     a.prioridade - b.prioridade || a.pontuacao - b.pontuacao || a.artigo.titulo.localeCompare(b.artigo.titulo, "pt-BR"),
   );
