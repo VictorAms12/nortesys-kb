@@ -20,6 +20,7 @@
 - **Busca:** pesquisa textual com Fuse.js, filtros combinados e exibição progressiva dos resultados.
 - **Edição no navegador:** Markdown com prévia, modelos de conteúdo, rascunhos, revisão, arquivamento e histórico de versões.
 - **Imagens privadas:** envio de PNG, JPEG e WebP, validação do arquivo e leitura autenticada conforme o acesso ao artigo.
+- **Anexos PDF privados:** documentos de até 3 MB vinculados a artigos, com download autenticado. Exige migração 005 aplicada no banco escolhido.
 - **Área pessoal:** favoritos e artigos acessados recentemente.
 - **Administração:** contas individuais, perfis de acesso e consulta de ações administrativas.
 - **Interface adaptável:** temas claro/escuro, navegação móvel, atalhos de busca e transições que respeitam a preferência por movimento reduzido.
