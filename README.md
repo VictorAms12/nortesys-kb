@@ -23,6 +23,8 @@
 - **Imagens privadas:** envio de PNG, JPEG e WebP, validação do arquivo e leitura autenticada conforme o acesso ao artigo.
 - **Anexos PDF privados:** documentos de até 3 MB vinculados a artigos, com download autenticado. Exige migração 005 aplicada no banco escolhido.
 - **Área pessoal:** favoritos e artigos acessados recentemente.
+- **Registro técnico:** gerador local de registros de atendimento padronizados, com botão para copiar, sem persistir dados de clientes.
+- **Importação assistida:** TXT/Markdown ou texto copiado de PDF é convertido em rascunho estruturado para revisão, sem extração automática de PDF nem publicação automática.
 - **Administração:** contas individuais, perfis de acesso e consulta de ações administrativas.
 - **Interface adaptável:** temas claro/escuro, navegação móvel, atalhos de busca e transições que respeitam a preferência por movimento reduzido.
 
