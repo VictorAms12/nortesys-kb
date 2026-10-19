@@ -12,14 +12,14 @@ const campo="block w-full rounded-lg border border-[var(--border)] bg-[var(--sur
 function texto(data: Record<string, unknown>, chave:string):string {return String(data[chave]??"");}
 function dataISO(data:unknown):string {return data instanceof Date ? data.toISOString().slice(0,10) : typeof data === "string" ? data : "";}
 function juntar(data:unknown):string {return Array.isArray(data)?data.join(", "):"";}
-export function FormularioArtigo({registro,modelo}:{registro?:RegistroArtigo;modelo?:RegistroArtigo}) {
+export function FormularioArtigo({registro,modelo,restaurarVersao}:{registro?:RegistroArtigo;modelo?:RegistroArtigo;restaurarVersao?:number}) {
   const origem = registro ?? modelo;
   const parsed=origem?matter(origem.conteudo):null;
   const front=(parsed?.data??{}) as Record<string,unknown>;
   // Imagens privadas não podem ser vinculadas a um artigo diferente; não as duplicar.
   const markdownOriginal=parsed?.content.trim()||MODELO_CORPO;
   const markdown=!registro && modelo
-    ? markdownOriginal.replace(/!\[[^\]]*\]\(\/api\/imagens\/[0-9a-f-]{36}(?:\s+"[^"]*")?\)/gi, "[Imagem do artigo original não duplicada]")
+    ? markdownOriginal.replace(/\/api\/imagens\/[0-9a-f-]{36}/gi, "imagem-privada-nao-duplicada")
     : markdownOriginal;
   const tituloInicial=registro ? texto(front,"titulo") : modelo ? ("Cópia de " + texto(front,"titulo")).slice(0,180) : "";
   return (
@@ -39,7 +39,7 @@ export function FormularioArtigo({registro,modelo}:{registro?:RegistroArtigo;mod
         <label className="grid gap-1 text-sm font-semibold sm:col-span-2">Fontes oficiais (URLs separadas por vírgula)<textarea className={campo} name="fonteOficial" rows={2} defaultValue={juntar(front.fonteOficial)}/></label>
       </div>
       <div className="border-t border-[var(--border)] pt-5"><p className="sobre-titulo">Conteúdo e validação</p><h3 className="mt-2 text-lg font-bold">Editor avançado</h3></div>
-      <EditorMarkdown conteudoInicial={markdown} tipoInicial={tipoConteudoValido(front.tipo)?front.tipo:"solucao"} chave={registro?`${registro.id}-v${registro.versao}`:modelo?`copia-${modelo.id}`:"novo"} editando={Boolean(registro)}/>
+      <EditorMarkdown conteudoInicial={markdown} tipoInicial={tipoConteudoValido(front.tipo)?front.tipo:"solucao"} chave={registro?`${registro.id}-v${registro.versao}${restaurarVersao?`-recuperar-${restaurarVersao}`:""}`:modelo?`copia-${modelo.id}`:"novo"} editando={Boolean(registro)}/>
       <p className="text-xs leading-6 text-[var(--muted)]">Respeite os títulos do modelo selecionado. Não inclua dados reais de clientes, senhas, tokens ou documentos fiscais. Depois de publicar, confira o artigo.</p>
       <div className="flex flex-wrap gap-3"><button className="botao-primario" type="submit">{registro?"Salvar nova versão":"Criar artigo"}</button><Link className="botao-secundario" href="/admin/artigos">Cancelar</Link></div>
     </FormularioComFeedback>

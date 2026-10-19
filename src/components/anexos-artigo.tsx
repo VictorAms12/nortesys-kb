@@ -5,6 +5,16 @@ import type { AnexoArtigo } from "../lib/anexos-tipos";
 export function AnexosArtigo({artigoId,iniciais}:{artigoId:string;iniciais:AnexoArtigo[]}) {
   const [anexos,setAnexos]=useState(iniciais);const [enviando,setEnviando]=useState(false);
   const [aviso,setAviso]=useState("");
+  async function remover(id:string,nome:string) {
+    if(!window.confirm(`Remover o documento “${nome}” deste artigo? Esta ação não apaga o histórico.`))return;
+    setAviso("Removendo anexo...");
+    try {
+      const resposta=await fetch(`/api/admin/anexos/${id}`,{method:"DELETE",credentials:"same-origin",cache:"no-store"});
+      const dados:{erro?:string}=await resposta.json();
+      if(!resposta.ok)throw new Error(dados.erro||"Não foi possível remover.");
+      setAnexos(lista=>lista.filter(a=>a.id!==id));setAviso("Anexo removido da visualização do artigo.");
+    }catch(e){setAviso(e instanceof Error?e.message:"Falha ao remover.");}
+  }
   async function enviar(evento:ChangeEvent<HTMLInputElement>) {
     const arquivo=evento.currentTarget.files?.[0];evento.currentTarget.value="";if(!arquivo)return;
     if(arquivo.size===0||arquivo.size>3*1024*1024||!arquivo.name.toLowerCase().endsWith(".pdf")) {
@@ -31,7 +41,10 @@ export function AnexosArtigo({artigoId,iniciais}:{artigoId:string;iniciais:Anexo
       <ul className="grid gap-2">{anexos.map(a=><li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] p-3">
         <div className="min-w-0"><span className="break-all text-sm font-semibold">{a.nome}</span>
           <span className="ml-2 text-xs text-[var(--muted)]">{(a.tamanho/1024/1024).toFixed(2)} MB</span></div>
-        <a className="botao-secundario" href={`/api/anexos/${a.id}`}>Baixar PDF</a>
+        <div className="flex flex-wrap gap-2">
+          <a className="botao-secundario" href={`/api/anexos/${a.id}`}>Baixar PDF</a>
+          <button className="botao-secundario" type="button" disabled={enviando} onClick={()=>void remover(a.id,a.nome)}>Remover</button>
+        </div>
       </li>)}</ul>}
   </section>;
 }

@@ -158,7 +158,7 @@ export async function baixarAnexo(req:NextRequest,id:string):Promise<Response> {
       await objeto.stream.cancel();return erro("Anexo indisponível.",503);
     }
     // Sempre forçar download: não executar conteúdo ativo de PDF na origem do KB.
-    const nomeCodificado=encodeURIComponent(x.nome).replace(/['()]/g,escape);
+    const nomeCodificado=encodeURIComponent(x.nome);
     return new Response(objeto.stream,{headers:{...cabecalhos,
       "Content-Type":"application/pdf","Content-Length":String(x.tamanho),
       "Content-Disposition":`attachment; filename="documento.pdf"; filename*=UTF-8''${nomeCodificado}`,
@@ -166,5 +166,27 @@ export async function baixarAnexo(req:NextRequest,id:string):Promise<Response> {
   } catch(falha) {
     console.error("[anexos] Falha no download",falha instanceof Error?falha.name:"desconhecida");
     return erro("Anexo indisponível.",503);
+  }
+}
+
+/** Exclusão lógica: mantém objeto e metadados para auditoria e reconciliação. */
+export async function removerAnexo(req:NextRequest,id:string):Promise<Response> {
+  if(!verificarOrigemPost(req.headers).valida)return erro("Origem inválida.",403);
+  try {
+    const usuario=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
+    if(!usuario)return erro("Autenticação necessária.",401);
+    if(usuario.papel==="leitor")return erro("Acesso restrito a editores.",403);
+    if(!UUID.test(id))return erro("Anexo não encontrado.",404);
+    const alterados=await consultar<{id:string}>(`UPDATE kb_anexos x SET estado='removido'
+      WHERE x.id=$1 AND x.estado='pronta' AND EXISTS (
+        SELECT 1 FROM kb_artigos a WHERE a.id=x.artigo_id AND NOT a.arquivado
+      ) RETURNING x.id`,[id]);
+    if(!alterados.length)return erro("Anexo não encontrado.",404);
+    try {await registrarEvento(usuario.id,"anexo_removido",id);}
+    catch {console.error("[anexos] Falha ao auditar remoção");}
+    return Response.json({ok:true},{headers:cabecalhos});
+  } catch(falha) {
+    console.error("[anexos] Erro ao remover",falha instanceof Error?falha.name:"desconhecida");
+    return erro("Não foi possível remover o anexo.",503);
   }
 }

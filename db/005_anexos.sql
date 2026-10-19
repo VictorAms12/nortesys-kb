@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS kb_anexos (
   nome VARCHAR(160) NOT NULL CHECK (char_length(nome) BETWEEN 5 AND 160),
   mime VARCHAR(32) NOT NULL DEFAULT 'application/pdf' CHECK (mime = 'application/pdf'),
   tamanho INTEGER NOT NULL CHECK (tamanho BETWEEN 1 AND 3145728),
-  estado VARCHAR(20) NOT NULL DEFAULT 'pendente' CHECK (estado IN ('pendente', 'pronta', 'falhou', 'limpeza_pendente')),
+  estado VARCHAR(20) NOT NULL DEFAULT 'pendente' CHECK (estado IN ('pendente', 'pronta', 'falhou', 'limpeza_pendente', 'removido')),
   enviado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (blob_caminho = 'kb-anexos/' || id::text || '.pdf')
 );

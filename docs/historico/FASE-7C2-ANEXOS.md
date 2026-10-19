@@ -13,7 +13,7 @@ Esta entrega adiciona documentos PDF a artigos existentes. Os arquivos são guar
 
 - Upload somente de PDFs com até 3 MiB. Upload direto de PDFs maiores precisa de arquitetura separada e revisão das garantias de privacidade; a Vercel limita a carga HTTP de funções.
 - Download forçado, sem visualização inline nem parsing ou indexação do conteúdo do PDF. Nome do arquivo não é executado nem refletido em headers sem codificação.
-- Não há exclusão automática, pois documentos vinculados podem fazer parte do histórico. Estado de upload com falha fica no banco para reconciliação.
+- Remoção no editor é lógica (oculta o anexo e bloqueia download, sem destruir os bytes); exclusão física automática não foi implementada para preservar rastreabilidade. Upload com falha fica no banco para reconciliação.
 - Anexos são vinculados à identidade UUID do artigo, mesmo após edição de categoria/slug; duplicações não copiam anexos.
 
 ## Verificação SQL no banco de testes
