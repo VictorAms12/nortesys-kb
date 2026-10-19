@@ -71,7 +71,7 @@ test("7G.3: ações preservam privacidade por participante e mantêm integridade
   [primeira.id]);
  assert.equal(atual.rows[0].texto,"[Mensagem apagada]");
  assert.ok(atual.rows[0].apagada_para_todos_em);
- assert.equal((await listar(a))[0].apagada_para_todos,true);
+ assert.equal((await listar(a)).find(m=>Number(m.id)===Number(primeira.id))?.apagada_para_todos,true);
  const naoPodeRepetir=await db.query(SQL_APAGAR_PARA_TODOS,[a,primeira.id,dm]);
  assert.equal(naoPodeRepetir.rows.length,0);
  const citarApagada=await db.query(SQL_INSERIR_MENSAGEM,[dm,a,"Não pode citar apagada",primeira.id]);
@@ -83,9 +83,9 @@ test("7G.3: ações preservam privacidade por participante e mantêm integridade
  assert.equal((await listar(b)).length,0);
  assert.equal((await listar(a)).length,2);
  const previewsB=await db.query<Linha>(SQL_CONVERSAS,[b]);
- assert.equal(previewsB.rows[0].ultima_mensagem,null,"Limpar remove prévia apenas para a conta");
+ assert.equal(previewsB.rows.find(m=>m.id===dm)?.ultima_mensagem,null,"Limpar remove prévia apenas para a conta");
  const previewsA=await db.query<Linha>(SQL_CONVERSAS,[a]);
- assert.ok(previewsA.rows[0].ultima_mensagem,"Outros mantêm sua prévia");
+ assert.ok(previewsA.rows.find(m=>m.id===dm)?.ultima_mensagem,"Outros mantêm sua prévia");
  const depois=await escrever(a,"Nova mensagem depois de limpar");
  assert.equal((await listar(b)).length,1);
  assert.equal((await listar(b))[0].texto,depois.texto);
