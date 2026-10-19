@@ -296,7 +296,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     </div>
     {aviso&&<p className="mt-3 text-sm text-amber-700" role="alert">{aviso}</p>}
     {notificacao&&<button type="button" className="mt-3 rounded-lg border border-[var(--border)] p-2 text-left text-sm" onClick={()=>{setNotificacao("");void atualizarEstado();}}>{notificacao} · Ver conversas</button>}
-    <div ref={historicoRef} className="chat-historico min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3" aria-label="Histórico de mensagens">
+    <div ref={historicoRef} className="chat-historico min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3 pl-2 pr-4 sm:pl-3 sm:pr-5" aria-label="Histórico de mensagens">
      {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>{const area=historicoRef.current;if(area)ajusteHistorico.current={altura:area.scrollHeight,topo:area.scrollTop};void carregar(conversa,pesquisa,mensagens[0]?.id??null);}}>Carregar mensagens anteriores</button>}
      {mensagens.length===0?<p className="py-10 text-center text-sm text-[var(--muted)]">{pesquisa?"Nenhuma mensagem encontrada.":"Nenhuma mensagem ainda. Envie a primeira!"}</p>:
       <ul className="grid min-w-0 gap-3">{mensagens.map(m=><li key={m.id} className={"flex min-w-0 "+(m.autorId===usuarioId?"justify-end":"justify-start")}>
