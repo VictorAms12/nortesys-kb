@@ -26,3 +26,8 @@ test("Enviar mensagem mantém o campo pronto para continuar digitando",()=>{
  assert.match(painel,/campoMensagemRef\.current\?\.focus\(\{preventScroll:true\}\)/);
  assert.match(painel,/ref=\{botaoEnviarRef\}/);
 });
+
+test("Balões mantêm espaçamento em relação à barra de rolagem",()=>{
+ assert.match(painel,/chat-historico[^\"]*pl-2 pr-4 sm:pl-3 sm:pr-5/);
+ assert.match(painel,/justify-end/);
+});
