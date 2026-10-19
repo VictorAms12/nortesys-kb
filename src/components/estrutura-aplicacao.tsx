@@ -16,6 +16,7 @@ const gerais:Destino[] = [
   {href:"/", texto:"Início", icone:"inicio"},
   {href:"/busca", texto:"Pesquisar", icone:"busca"},
   {href:"/diagnostico", texto:"Diagnóstico", icone:"ajustes"},
+  {href:"/chat", texto:"Chat da equipe", icone:"usuarios"},
   {href:"/artigos", texto:"Artigos", icone:"livro"},
   {href:"/categorias", texto:"Categorias", icone:"categorias"},
   {href:"/favoritos", texto:"Favoritos", icone:"favoritos"},

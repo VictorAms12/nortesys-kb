@@ -130,3 +130,9 @@ Leia também:
 - [Relatório de revisão, desempenho e animações](docs/relatorios/revisao-polimento-performance.md)
 
 Credenciais, capturas de clientes e dados pessoais não devem entrar no repositório. O scanner do projeto ajuda a encontrar padrões suspeitos; a revisão do material continua necessária.
+
+## Comunicação interna (Fases 7G.1 / 7G.2)
+
+O chat geral e as conversas privadas utilizam Neon para histórico/autorização, enquanto o Ably oferece notificação instantânea. A conexão SSE recebe tokens com acesso limitado ao canal geral e ao canal pessoal do usuário; envio e escrita no banco ocorrem apenas via APIs autenticadas do site. A presença online/ausente/offline é aproximada por atividade recente, sem controle invasivo.
+
+**Antes de validar:** aplicar `db/006_chat.sql` no banco de Preview e configurar `ABLY_API_KEY` no ambiente Preview. Não incluir essa chave em `NEXT_PUBLIC_`. Para testar use duas contas em navegadores diferentes e valide que não é possível ler uma conversa de terceiros. Não publicar em Production sem a migração correspondente.
