@@ -6,8 +6,9 @@ const pagina=readFileSync("src/app/chat/page.tsx","utf8");
 const painel=readFileSync("src/components/chat-painel.tsx","utf8");
 test("Chat usa grid de linha contraída e compositor fora da rolagem",()=>{
  assert.match(css,/\.chat-painel\s*\{[^}]*grid-template-rows:minmax\(0,1fr\)/s);
- assert.match(css,/\.chat-painel\s*\{[^}]*height:auto/s);
- assert.match(css,/\.chat-painel \.chat-area-mensagens\s*\{[^}]*height:auto/s);
+ assert.match(css,/\.chat-painel\s*\{[^}]*height:calc\(100dvh - 90px\)/s);
+ assert.match(painel,/painel\.style\.height/);
+ assert.match(css,/\.chat-painel \.chat-area-mensagens\s*\{[^}]*height:100%/s);
  assert.match(css,/\.chat-painel \.chat-historico\s*\{[^}]*overflow-y:auto/s);
  assert.match(css,/\.chat-painel \.chat-compositor\s*\{[^}]*flex:0 0 auto/s);
  assert.doesNotMatch(css,/\.chat-painel[^\n]*height:100%/);
