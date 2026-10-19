@@ -441,3 +441,15 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
   .entrada-pagina { transform: none; opacity: 1; }
   .feedback-formulario { display: none; }
 }
+
+
+/* Chat: ações apenas com o ícone ⋯, sem ocupar uma linha em cada mensagem.
+   Em dispositivos touch o acionador permanece visível; em desktops aparece
+   ao apontar, focar com teclado ou abrir o menu. */
+.chat-mensagem-gatilho { color: var(--muted); opacity: .72; }
+.chat-mensagem-acoes[open] > .chat-mensagem-gatilho { opacity: 1; background: var(--surface); }
+@media (hover: hover) and (pointer: fine) {
+  .chat-mensagem-acoes:not([open]) > .chat-mensagem-gatilho { opacity: 0; }
+  .chat-balao:hover .chat-mensagem-gatilho,
+  .chat-balao:focus-within .chat-mensagem-gatilho { opacity: 1; }
+}

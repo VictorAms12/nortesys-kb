@@ -230,9 +230,26 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
      {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>void carregar(conversa,pesquisa,mensagens[0]?.id??null)}>Carregar mensagens anteriores</button>}
      {mensagens.length===0?<p className="py-10 text-center text-sm text-[var(--muted)]">{pesquisa?"Nenhuma mensagem encontrada.":"Nenhuma mensagem ainda. Envie a primeira!"}</p>:
       <ul className="grid min-w-0 gap-3">{mensagens.map(m=><li key={m.id} className={"flex min-w-0 "+(m.autorId===usuarioId?"justify-end":"justify-start")}>
-       <article className={"min-w-0 max-w-[93%] overflow-hidden rounded-xl border border-[var(--border)] p-3 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--surface)]")}>
-        <div className="mb-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
-         <strong>{m.autorId===usuarioId?"Você":m.autor}</strong><time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
+       <article className={"chat-balao group relative min-w-0 max-w-[93%] rounded-2xl px-3 py-2.5 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--background)]")}>
+        <div className="mb-1 flex min-w-0 items-start justify-between gap-2 text-xs text-[var(--muted)]">
+         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pt-1">
+          <strong className="max-w-full truncate">{m.autorId===usuarioId?"Você":m.autor}</strong>
+          <time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
+         </div>
+         <details className="chat-mensagem-acoes relative z-20 shrink-0">
+          <summary className="chat-mensagem-gatilho flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-md text-lg leading-none transition-colors hover:bg-[var(--surface)] focus-visible:bg-[var(--surface)] [&::-webkit-details-marker]:hidden"
+            aria-label={"Ações da mensagem de "+m.autor} title="Ações da mensagem">
+           <span aria-hidden="true">⋯</span>
+          </summary>
+          <div className={"absolute top-full z-30 mt-1 grid min-w-44 gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1.5 text-left text-sm text-[var(--text)] shadow-lg "+(m.autorId===usuarioId?"right-0":"left-0")}>
+           {!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
+             onClick={()=>{setRespondendo(m);setPesquisa("");setBusca("");}}>Responder</button>}
+           <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
+             onClick={()=>void apagarMensagem(m.id,false)}>Apagar para mim</button>
+           {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]"
+             disabled={operando!==null} onClick={()=>void apagarMensagem(m.id,true)}>Apagar para todos</button>}
+          </div>
+         </details>
         </div>
         {m.respostaA&&<blockquote className="mb-2 min-w-0 max-w-full border-l-2 border-[var(--primary)] bg-[var(--surface)] p-2 text-xs">
           <strong className="block text-[var(--muted)]">{m.respostaA.autor??"Mensagem anterior"}</strong>
@@ -241,18 +258,6 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
         <p className={"max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere] "+(m.apagadaParaTodos?"italic text-[var(--muted)]":"")}>
           {m.apagadaParaTodos?"Mensagem apagada":<ConteudoMensagem texto={m.texto}/>}
         </p>
-        <details className="mt-2 text-xs text-[var(--muted)]">
-         <summary className="w-fit cursor-pointer rounded px-1 py-1 hover:bg-[var(--background)]"
-           aria-label={"Opções da mensagem de "+m.autor}>⋯ Opções</summary>
-         <div className="mt-2 flex flex-wrap gap-2">
-          {!m.apagadaParaTodos&&<button type="button" className="botao-secundario" disabled={operando!==null}
-            onClick={()=>{setRespondendo(m);setPesquisa("");setBusca("");}}>Responder</button>}
-          <button type="button" className="botao-secundario" disabled={operando!==null}
-            onClick={()=>void apagarMensagem(m.id,false)}>Apagar para mim</button>
-          {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="botao-secundario"
-            disabled={operando!==null} onClick={()=>void apagarMensagem(m.id,true)}>Apagar para todos</button>}
-         </div>
-        </details>
        </article>
       </li>)}</ul>}
      <div ref={final}/>
