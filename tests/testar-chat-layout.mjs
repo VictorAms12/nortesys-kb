@@ -18,3 +18,11 @@ test("Chat usa grid de linha contraída e compositor fora da rolagem",()=>{
  assert.match(pagina,/pagina-chat conteiner/);
  assert.doesNotMatch(pagina,/chat-intro|<nav/);
 });
+
+test("Enviar mensagem mantém o campo pronto para continuar digitando",()=>{
+ assert.match(painel,/ref=\{campoMensagemRef\}/);
+ assert.match(painel,/readOnly=\{enviando\} disabled=\{!estado\}/);
+ assert.doesNotMatch(painel,/disabled=\{enviando\|\|!estado\}/);
+ assert.match(painel,/campoMensagemRef\.current\?\.focus\(\{preventScroll:true\}\)/);
+ assert.match(painel,/ref=\{botaoEnviarRef\}/);
+});
