@@ -43,16 +43,19 @@ export function PainelBusca({ documentos }: Props) {
   const sugestoes = useMemo(() => [...new Set(documentos.flatMap(doc=>[doc.titulo,...(doc.codigosErro??[])]))].slice(0,100), [documentos]);
   const sistemas = useMemo(() => [...new Set(documentos.map((doc) => doc.sistema))].sort((a, b) => a.localeCompare(b, "pt-BR")), [documentos]);
   const resultadoBusca = useMemo(() => executarBusca(fuse, consultaResultados), [fuse, consultaResultados]);
-  const resultados = useMemo(() => resultadoBusca.filter(({ artigo }) =>
-    (!categoria || artigo.categoria === categoria) &&
-    (!sistema || artigo.sistema === sistema) &&
-    (!nivel || artigo.nivel === nivel) &&
-    (!status || artigo.status === status) &&
-    (!tipo || artigo.tipo === tipo),
-  ).sort((a,b)=> ordenacao==="recentes" ? b.artigo.atualizadoEm.localeCompare(a.artigo.atualizadoEm) : ordenacao==="az" ? a.artigo.titulo.localeCompare(b.artigo.titulo,"pt-BR") : 0),
-  [resultadoBusca, categoria, sistema, nivel, status, tipo, ordenacao]);
+  const resultados = useMemo(() => {
+    const semTermo=consultaResultados.trim().length<MINIMO_CARACTERES_BUSCA;
+    const base=semTermo?documentos.map(artigo=>({artigo,pontuacao:1})):resultadoBusca;
+    return base.filter(({artigo})=>
+      (!categoria||artigo.categoria===categoria)&&(!sistema||artigo.sistema===sistema)&&
+      (!nivel||artigo.nivel===nivel)&&(!status||artigo.status===status)&&(!tipo||artigo.tipo===tipo)
+    ).sort((a,b)=>ordenacao==="recentes"||semTermo&&ordenacao==="relevancia"
+      ?b.artigo.atualizadoEm.localeCompare(a.artigo.atualizadoEm)
+      :ordenacao==="az"?a.artigo.titulo.localeCompare(b.artigo.titulo,"pt-BR"):0);
+  },[resultadoBusca,documentos,consultaResultados,categoria,sistema,nivel,status,tipo,ordenacao]);
   const filtrosAtivos = Boolean(categoria || sistema || nivel || status || tipo);
   const temTermo = consultaResultados.trim().length >= MINIMO_CARACTERES_BUSCA;
+  const explorarSemTermo = !temTermo && filtrosAtivos;
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -99,11 +102,11 @@ export function PainelBusca({ documentos }: Props) {
       </section>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-[var(--muted)]" aria-live="polite" role="status">{atualizando ? "Atualizando resultados..." : temTermo ? `${resultados.length} resultado(s) para “${consultaResultados.trim()}”` : `${documentos.length} artigo(s) indexado(s)`}</p>
+        <p className="text-sm text-[var(--muted)]" aria-live="polite" role="status">{atualizando ? "Atualizando resultados..." : temTermo ? `${resultados.length} resultado(s) para “${consultaResultados.trim()}”` : explorarSemTermo ? `${resultados.length} artigo(s) com os filtros selecionados` : `${documentos.length} artigo(s) indexado(s)`}</p>
         {filtrosAtivos && <button className="botao-secundario" type="button" onClick={limparFiltros}>Limpar filtros</button>}
       </div>
 
-      {!temTermo ? (
+      {!temTermo && !explorarSemTermo ? (
         <div className="cartao mt-4 p-8 text-center">
           <h2 className="text-xl font-bold">Comece digitando um termo</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">Use pelo menos dois caracteres. Busque por título, código, tutorial, guia, FAQ, tag ou texto do artigo.</p>

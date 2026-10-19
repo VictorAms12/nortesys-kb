@@ -17,7 +17,8 @@
 ## O que a base oferece
 
 - **Biblioteca técnica:** soluções, tutoriais, guias e perguntas frequentes, com categorias, tags e filtros.
-- **Busca:** pesquisa textual com Fuse.js, filtros combinados e exibição progressiva dos resultados.
+- **Busca:** pesquisa textual com Fuse.js, equivalências terminológicas, filtros combinados e exibição progressiva dos resultados; permite explorar artigos só pelos filtros.
+- **Diagnóstico guiado:** perguntas de triagem para NF-e/NFC-e, impressão, acesso e instalação, com pesquisa em artigos disponíveis e sugestões de conteúdos relacionados.
 - **Edição no navegador:** Markdown com prévia, modelos de conteúdo, rascunhos, revisão, arquivamento e histórico de versões.
 - **Imagens privadas:** envio de PNG, JPEG e WebP, validação do arquivo e leitura autenticada conforme o acesso ao artigo.
 - **Anexos PDF privados:** documentos de até 3 MB vinculados a artigos, com download autenticado. Exige migração 005 aplicada no banco escolhido.
