@@ -45,6 +45,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [realtime,setRealtime]=useState(false);
  const [contatosAbertos,setContatosAbertos]=useState(false);
  const painelRef=useRef<HTMLDivElement>(null);
+ const campoMensagemRef=useRef<HTMLTextAreaElement>(null);
  const historicoRef=useRef<HTMLDivElement>(null);
  const rolarAoFim=useRef(true);
  const ajusteHistorico=useRef<{altura:number;topo:number}|null>(null);
@@ -204,7 +205,18 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    setMensagens(atual=>atual.some(m=>m.id===mensagem.id)?atual:[...atual,{...mensagem,respostaA}]);
    setTexto("");setRespondendo(null);setAviso("");void atualizarEstado();
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível enviar a mensagem.");}
-  finally{setEnviando(false);}
+  finally{
+   setEnviando(false);
+   // Manter o campo pronto para a próxima mensagem, inclusive após clique em Enviar.
+   // Evitar mover o foco se o usuário mudou de aba ou abriu outra área durante o envio.
+   if(document.visibilityState==="visible"){
+    window.requestAnimationFrame(()=>{
+     const ativo=document.activeElement;
+     if(ativo===document.body||ativo===campoMensagemRef.current||ativo?.getAttribute("type")==="submit")
+      campoMensagemRef.current?.focus({preventScroll:true});
+    });
+   }
+  }
  }
  function escrever(valor:string){
   setTexto(valor);
@@ -329,10 +341,10 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
      </div>}
      <p className="mb-2 min-h-4 text-xs text-[var(--muted)]" aria-live="polite">{digitando}</p>
      <form onSubmit={e=>void enviarTexto(e)} className="flex items-end gap-2">
-      <textarea className={estiloCampo+" min-h-12 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto"} value={texto} onChange={e=>escrever(e.target.value)}
+      <textarea ref={campoMensagemRef} className={estiloCampo+" min-h-12 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto"} value={texto} onChange={e=>escrever(e.target.value)}
        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
        rows={2} maxLength={2000} placeholder="Digite sua mensagem... (Enter para enviar)" aria-label="Nova mensagem"
-       disabled={enviando||!estado}/>
+       readOnly={enviando} disabled={!estado}/>
       <button className="botao-primario" type="submit" disabled={enviando||!texto.trim()}>Enviar</button>
      </form>
      <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
