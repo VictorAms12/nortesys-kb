@@ -455,20 +455,40 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 }
 
 
-/* Chat: encaixar a interface na área disponível sob a barra superior,
-   sem rolagem da página inteira. Somente o histórico e a lista rolam. */
-.estrutura-chat .area-app { height:100dvh; min-height:0; overflow:hidden; }
-.estrutura-chat .topbar-app { flex-shrink:0; }
-.estrutura-chat .conteudo-app { display:flex; flex:1; flex-direction:column; min-height:0; overflow:hidden; }
+/* Chat: usa o espaço disponível da janela sem altura intrínseca nas linhas
+   do grid. O histórico e os contatos rolam, nunca o compositor. */
+.estrutura-chat { height:100dvh; min-height:0; overflow:hidden; }
+.estrutura-chat .area-app { height:100%; min-height:0; overflow:hidden; }
+.estrutura-chat .topbar-app { flex:0 0 auto; }
+.estrutura-chat .conteudo-app {
+  display:flex; flex:1 1 0%; min-height:0; flex-direction:column; overflow:hidden;
+}
 .estrutura-chat .rodape-app { display:none; }
-.pagina-chat { flex:1; display:flex; flex-direction:column; min-height:0; gap:.45rem; padding-block:.6rem .75rem; }
-.pagina-chat .trilha { margin:0; font-size:.75rem; line-height:1.15rem; }
-.chat-intro { display:flex; flex-wrap:wrap; align-items:baseline; gap:.35rem 1rem; flex-shrink:0; }
-.chat-intro .titulo-secao { font-size:clamp(1.1rem,1.8vw,1.4rem); }
-.chat-painel { flex:1; min-height:0; height:100%; position:relative; overflow:hidden; }
-.chat-painel .chat-lista { min-height:0; overscroll-behavior:contain; }
-.chat-painel .chat-area-mensagens { min-height:0; height:100%; }
-.chat-painel .chat-historico { min-height:0; overscroll-behavior:contain; }
+.pagina-chat {
+  display:flex; flex:1 1 0%; flex-direction:column;
+  min-height:0; max-height:100%; padding-block:.45rem .55rem;
+}
+.chat-painel {
+  display:grid; flex:1 1 0%; height:auto; min-height:0;
+  grid-template-rows:minmax(0,1fr);
+  position:relative; overflow:hidden;
+}
+.chat-painel .chat-lista {
+  min-height:0; max-height:100%; overflow-y:auto; overflow-x:hidden;
+  overscroll-behavior:contain;
+}
+.chat-painel .chat-area-mensagens {
+  display:flex; flex-direction:column;
+  height:auto; min-height:0; max-height:100%; overflow:hidden;
+}
+.chat-painel .chat-cabecalho-mensagens { flex:0 0 auto; }
+.chat-painel .chat-historico {
+  flex:1 1 0%; min-height:0;
+  overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+}
+.chat-painel .chat-compositor {
+  flex:0 0 auto; background:var(--surface);
+}
 .chat-botao-contatos,.chat-fechar-lista,.chat-fundo-contatos { display:none; }
 .chat-ferramentas-mensagens .botao-secundario { white-space:nowrap; }
 @media(max-width:1023px) {
@@ -487,24 +507,24 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
   .chat-botao-contatos,.chat-fechar-lista { display:inline-flex; }
 }
 @media(max-width:680px) {
-  .pagina-chat { padding-block:.35rem .45rem; gap:.3rem; }
-  .chat-intro .titulo-secao { font-size:1.1rem; }
-  .chat-subtitulo { display:none; }
+  .pagina-chat { padding-block:.3rem .4rem; }
   .chat-cabecalho-mensagens { align-items:flex-start; }
   .chat-cabecalho-mensagens .chat-ferramentas-mensagens { width:100%; }
   .chat-cabecalho-mensagens .chat-ferramentas-mensagens form { flex:1; }
   .chat-cabecalho-mensagens .chat-ferramentas-mensagens input { flex:1; min-width:0; }
   .chat-dica-envio { display:none; }
 }
-@media(max-height:650px) {
-  .pagina-chat .trilha,.chat-subtitulo { display:none; }
-  .pagina-chat { padding-block:.3rem; }
+@media(max-height:750px) {
+  .pagina-chat { padding-block:.25rem; }
   .chat-compositor .chat-dica-envio { display:none; }
+  .chat-compositor > p[aria-live="polite"] { margin-bottom:.2rem; min-height:.5rem; }
+  .chat-area-mensagens { padding-block:.5rem; }
 }
 @media(prefers-reduced-motion:reduce) {
   .chat-painel .chat-lista { transition:none; }
 }
 @media print {
+  .estrutura-chat { height:auto; overflow:visible; }
   .estrutura-chat .area-app { height:auto; overflow:visible; }
   .estrutura-chat .conteudo-app,.chat-painel { overflow:visible; }
   .chat-painel .chat-lista { display:none; }
