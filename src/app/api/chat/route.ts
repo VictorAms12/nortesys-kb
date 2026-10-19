@@ -3,7 +3,7 @@ import {NextResponse} from "next/server";
 import {NOME_COOKIE,obterSessao} from "../../../lib/sessao";
 import {verificarOrigemPost} from "../../../lib/origem";
 import {ablyConfigurado} from "../../../lib/chat-ably";
-import {estadoChat,abrirConversaPrivada,enviarMensagem,marcarLida,atualizarPresenca,avisarDigitando,ErroChat} from "../../../lib/chat-banco";
+import {estadoChat,abrirConversaPrivada,enviarMensagem,marcarLida,atualizarPresenca,avisarDigitando,apagarMensagemParaMim,apagarMensagemParaTodos,limparConversaParaMim,ErroChat} from "../../../lib/chat-banco";
 import {CHAT_UUID} from "../../../lib/chat-tipos";
 export const runtime="nodejs";export const dynamic="force-dynamic";
 const headers={"Cache-Control":"private, no-store"};
@@ -38,8 +38,28 @@ export async function POST(req:NextRequest){
    }
    case "enviar":{
      if(typeof dados.conversa!=="string"||typeof dados.texto!=="string")return erro("Dados inválidos.",400);
-     const mensagem=await enviarMensagem(u.id,dados.conversa,dados.texto);
+     if(dados.respondendoA!==undefined&&dados.respondendoA!==null&&
+        (typeof dados.respondendoA!=="number"||!Number.isSafeInteger(dados.respondendoA)||dados.respondendoA<=0))
+        return erro("Mensagem de origem inválida.",400);
+     const mensagem=await enviarMensagem(u.id,dados.conversa,dados.texto,(dados.respondendoA as number|null|undefined)??null);
      return NextResponse.json({mensagem},{status:201,headers});
+   }
+   case "apagar_mim":{
+     if(typeof dados.conversa!=="string"||!Number.isSafeInteger(dados.mensagemId))
+       return erro("Mensagem inválida.",400);
+     await apagarMensagemParaMim(u.id,dados.conversa,dados.mensagemId as number);
+     return NextResponse.json({ok:true},{headers});
+   }
+   case "apagar_todos":{
+     if(typeof dados.conversa!=="string"||!Number.isSafeInteger(dados.mensagemId))
+       return erro("Mensagem inválida.",400);
+     await apagarMensagemParaTodos(u.id,dados.conversa,dados.mensagemId as number);
+     return NextResponse.json({ok:true},{headers});
+   }
+   case "limpar":{
+     if(typeof dados.conversa!=="string")return erro("Conversa inválida.",400);
+     await limparConversaParaMim(u.id,dados.conversa);
+     return NextResponse.json({ok:true},{headers});
    }
    case "lido":{
      if(typeof dados.conversa!=="string")return erro("Conversa inválida.",400);

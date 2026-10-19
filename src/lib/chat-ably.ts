@@ -12,7 +12,7 @@ function cabecalhos(chave:string){
     "Content-Type":"application/json",Accept:"application/json"};
 }
 /** Todo evento leva somente IDs; o conteúdo privado permanece no Neon. */
-export async function publicarChat(canal:string,evento:"mensagem"|"digitando",dados:Record<string,string|number>):Promise<boolean>{
+export async function publicarChat(canal:string,evento:"mensagem"|"digitando"|"alteracao",dados:Record<string,string|number>):Promise<boolean>{
   const c=credencial();if(!c)return false;
   try{
     const resposta=await fetch(BASE+"/channels/"+encodeURIComponent(canal)+"/messages",{

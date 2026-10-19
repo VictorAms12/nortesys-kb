@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import Link from "next/link";
-import {CHAT_GERAL_ID,type EstadoChat,type MensagemChat,type UsuarioChat} from "../lib/chat-tipos";
+import {CHAT_GERAL_ID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
 type ErroResposta={erro?:string};
 const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
 async function jsonSeguro<T,>(res:Response):Promise<T>{
@@ -32,6 +32,9 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [conversa,setConversa]=useState(CHAT_GERAL_ID);
  const [mensagens,setMensagens]=useState<MensagemChat[]>([]);
  const [texto,setTexto]=useState("");
+ const [respondendo,setRespondendo]=useState<MensagemChat|null>(null);
+ const [operando,setOperando]=useState<number|null>(null);
+ const [limpando,setLimpando]=useState(false);
  const [busca,setBusca]=useState("");
  const [pesquisa,setPesquisa]=useState("");
  const [mais,setMais]=useState(false);
@@ -100,9 +103,9 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       const evento=JSON.parse(e.data) as {name?:string;data?:unknown};
       const dados=(typeof evento.data==="string"?JSON.parse(evento.data):evento.data) as Record<string,unknown>|undefined;
       if(!dados||typeof dados.conversaId!=="string")return;
-      if(evento.name==="chat_mensagem"){
+      if(evento.name==="chat_mensagem"||evento.name==="chat_alteracao"){
        if(dados.conversaId===selecionada.current)void carregar(dados.conversaId);
-       else {setNotificacao("Nova mensagem em uma de suas conversas");}
+       else if(evento.name==="chat_mensagem"){setNotificacao("Nova mensagem em uma de suas conversas");}
        void atualizarEstado();
       }else if(evento.name==="chat_digitando"&&dados.autorId!==usuarioId&&dados.conversaId===selecionada.current){
        const pessoa=autores.current.find(u=>u.id===dados.autorId);
@@ -131,17 +134,21 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   try{
    const resposta=await enviar("privada",{alvo});
    const id=String(resposta.id);
-   await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setConversa(id);setNotificacao("");setAviso("");
+   await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setNotificacao("");setAviso("");
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir a conversa.");}
  }
  async function enviarTexto(e:FormEvent){
   e.preventDefault();if(enviando||!texto.trim())return;
   setEnviando(true);
   try{
-   const resultado=await enviar("enviar",{conversa,texto});
+   const respostaPara=respondendo;
+   const resultado=await enviar("enviar",{conversa,texto,respondendoA:respostaPara?.id??null});
    const mensagem=resultado.mensagem as MensagemChat;
-   setMensagens(atual=>atual.some(m=>m.id===mensagem.id)?atual:[...atual,mensagem]);
-   setTexto("");setAviso("");void atualizarEstado();
+   const respostaA:ReferenciaMensagem|null=respostaPara?{
+     id:respostaPara.id,autor:respostaPara.autor,texto:respostaPara.texto
+   }:null;
+   setMensagens(atual=>atual.some(m=>m.id===mensagem.id)?atual:[...atual,{...mensagem,respostaA}]);
+   setTexto("");setRespondendo(null);setAviso("");void atualizarEstado();
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível enviar a mensagem.");}
   finally{setEnviando(false);}
  }
@@ -151,7 +158,32 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    ultimaDigitacao.current=Date.now();void enviar("digitando",{conversa}).catch(()=>{});
   }
  }
- function mudarConversa(id:string){setMensagens([]);setMais(false);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");}
+ async function apagarMensagem(id:number,paraTodos:boolean){
+  if(operando!==null)return;
+  if(!window.confirm(paraTodos
+    ?"Apagar esta mensagem para todos? O texto será substituído por ‘Mensagem apagada’."
+    :"Apagar esta mensagem somente para você? Não será possível recuperá-la."))return;
+  setOperando(id);
+  try{
+    await enviar(paraTodos?"apagar_todos":"apagar_mim",{conversa,mensagemId:id});
+    if(respondendo?.id===id)setRespondendo(null);
+    setAviso("");
+    await Promise.all([carregar(conversa,pesquisa),atualizarEstado()]);
+  }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível apagar a mensagem.");}
+  finally{setOperando(null);}
+ }
+ async function limparConversa(){
+  if(limpando)return;
+  if(!window.confirm("Limpar esta conversa somente para você? Todas as mensagens anteriores deixarão de aparecer na sua conta. Esta ação não pode ser desfeita."))return;
+  setLimpando(true);
+  try{
+    await enviar("limpar",{conversa});
+    setMensagens([]);setMais(false);setRespondendo(null);setAviso("");
+    await atualizarEstado();
+  }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível limpar a conversa.");}
+  finally{setLimpando(false);}
+ }
+ function mudarConversa(id:string){setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");}
  return <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
   <aside className="cartao grid min-w-0 content-start gap-4 overflow-hidden p-4" aria-label="Conversas e colaboradores">
    <div><h2 className="text-lg font-bold">Conversas</h2>
@@ -181,12 +213,16 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       <div><h2 className="text-lg font-bold">{atual?.nome??"Equipe — Geral"}</h2>
        <p className="text-xs text-[var(--muted)]">{atual?.tipo==="privada"?"Conversa privada":"Canal geral da equipe"}</p>
       </div>
+      <div className="flex flex-wrap items-center gap-2">
       <form className="flex flex-wrap items-center gap-2" onSubmit={e=>{e.preventDefault();setMensagens([]);setMais(false);setPesquisa(busca.trim().slice(0,100));}}>
        <input className={estiloCampo+" max-w-[170px]"} type="search" value={busca} onChange={e=>setBusca(e.target.value)}
         placeholder="Buscar mensagens" aria-label="Pesquisar mensagens" maxLength={100}/>
        <button className="botao-secundario" type="submit">Buscar</button>
        {pesquisa&&<button className="botao-secundario" type="button" onClick={()=>{setBusca("");setMensagens([]);setMais(false);setPesquisa("");}}>Limpar</button>}
       </form>
+      <button type="button" className="botao-secundario" onClick={()=>void limparConversa()} disabled={limpando||!estado}
+        title="Ocultar o histórico anterior somente para sua conta">{limpando?"Limpando...":"Limpar conversa"}</button>
+      </div>
     </div>
     {aviso&&<p className="mt-3 text-sm text-amber-700" role="alert">{aviso}</p>}
     {notificacao&&<button type="button" className="mt-3 rounded-lg border border-[var(--border)] p-2 text-left text-sm" onClick={()=>{setNotificacao("");void atualizarEstado();}}>{notificacao} · Ver conversas</button>}
@@ -194,16 +230,46 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
      {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>void carregar(conversa,pesquisa,mensagens[0]?.id??null)}>Carregar mensagens anteriores</button>}
      {mensagens.length===0?<p className="py-10 text-center text-sm text-[var(--muted)]">{pesquisa?"Nenhuma mensagem encontrada.":"Nenhuma mensagem ainda. Envie a primeira!"}</p>:
       <ul className="grid min-w-0 gap-3">{mensagens.map(m=><li key={m.id} className={"flex min-w-0 "+(m.autorId===usuarioId?"justify-end":"justify-start")}>
-       <article className={"min-w-0 max-w-[93%] overflow-hidden rounded-xl border border-[var(--border)] p-3 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--surface)]")}>
-        <div className="mb-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[var(--muted)]">
-         <strong>{m.autorId===usuarioId?"Você":m.autor}</strong><time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
+       <article className={"chat-balao group relative min-w-0 max-w-[93%] rounded-2xl px-3 py-2.5 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--background)]")}>
+        <div className="mb-1 flex min-w-0 items-start justify-between gap-2 text-xs text-[var(--muted)]">
+         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pt-1">
+          <strong className="max-w-full truncate">{m.autorId===usuarioId?"Você":m.autor}</strong>
+          <time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
+         </div>
+         <details className="chat-mensagem-acoes relative z-20 shrink-0"
+          onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))e.currentTarget.open=false;}}>
+          <summary className="chat-mensagem-gatilho flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-md text-lg leading-none transition-colors hover:bg-[var(--surface)] focus-visible:bg-[var(--surface)] [&::-webkit-details-marker]:hidden"
+            aria-label={"Ações da mensagem de "+m.autor} title="Ações da mensagem">
+           <span aria-hidden="true">⋯</span>
+          </summary>
+          <div className={"absolute top-full z-30 mt-1 grid min-w-44 gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1.5 text-left text-sm text-[var(--text)] shadow-lg "+(m.autorId===usuarioId?"right-0":"left-0")}>
+           {!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
+             onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");setRespondendo(m);setPesquisa("");setBusca("");}}>Responder</button>}
+           <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
+             onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");void apagarMensagem(m.id,false);}}>Apagar para mim</button>
+           {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]"
+             disabled={operando!==null} onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");void apagarMensagem(m.id,true);}}>Apagar para todos</button>}
+          </div>
+         </details>
         </div>
-        <p className="max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere]"><ConteudoMensagem texto={m.texto}/></p>
+        {m.respostaA&&<blockquote className="mb-2 min-w-0 max-w-full border-l-2 border-[var(--primary)] bg-[var(--surface)] p-2 text-xs">
+          <strong className="block text-[var(--muted)]">{m.respostaA.autor??"Mensagem anterior"}</strong>
+          <p className="line-clamp-2 break-words [overflow-wrap:anywhere]">{m.respostaA.texto}</p>
+        </blockquote>}
+        <p className={"max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere] "+(m.apagadaParaTodos?"italic text-[var(--muted)]":"")}>
+          {m.apagadaParaTodos?"Mensagem apagada":<ConteudoMensagem texto={m.texto}/>}
+        </p>
        </article>
       </li>)}</ul>}
      <div ref={final}/>
     </div>
     <div className="border-t border-[var(--border)] pt-3">
+     {respondendo&&<div className="mb-3 flex min-w-0 items-center justify-between gap-2 rounded-lg border-l-4 border-[var(--primary)] bg-[var(--surface-alt)] p-3">
+       <div className="min-w-0"><strong className="block text-xs">Respondendo a {respondendo.autorId===usuarioId?"você":respondendo.autor}</strong>
+         <p className="line-clamp-2 break-words text-xs [overflow-wrap:anywhere]">{respondendo.texto}</p>
+       </div>
+       <button className="botao-secundario shrink-0" type="button" onClick={()=>setRespondendo(null)} aria-label="Cancelar resposta">Cancelar</button>
+     </div>}
      <p className="mb-2 min-h-4 text-xs text-[var(--muted)]" aria-live="polite">{digitando}</p>
      <form onSubmit={e=>void enviarTexto(e)} className="flex items-end gap-2">
       <textarea className={estiloCampo+" min-h-12 flex-1 resize-y"} value={texto} onChange={e=>escrever(e.target.value)}

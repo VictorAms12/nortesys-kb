@@ -3,11 +3,13 @@ import {consultar} from "./banco";
 import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type ConversaChat,type UsuarioChat} from "./chat-tipos";
 import {registrarAuditoriaSegura} from "./auditoria-eventos";
 import {publicarChat} from "./chat-ably";
+import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA} from "./chat-sql";
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
 type ConversaLinha={id:string;tipo:"geral"|"privada";nome:string;nao_lidas:number;
  ultima_mensagem:string|null;ultimo_horario:string|null;outro_id:string|null};
-type MsgLinha={id:number;conversa_id:string;autor_id:string;autor:string;texto:string;criado_em:string};
+type MsgLinha={id:number;conversa_id:string;autor_id:string;autor:string;texto:string;criado_em:string;
+ apagada_para_todos:boolean;respondendo_a_id:number|null;resposta_texto:string|null;resposta_autor:string|null};
 export async function conversaPermitida(usuario:string,conversa:string):Promise<boolean>{
  if(!CHAT_UUID.test(conversa))return false;
  const rows=await consultar<{ok:number}>("SELECT 1 AS ok FROM kb_chat_participantes WHERE usuario_id=$1 AND conversa_id=$2 LIMIT 1",[usuario,conversa]);
@@ -26,35 +28,26 @@ export async function estadoChat(usuario:string,ablyConfigurado:boolean):Promise
     "ELSE 'offline' END AS presenca FROM kb_usuarios u "+
     "LEFT JOIN kb_chat_presenca p ON p.usuario_id=u.id WHERE u.ativo=true ORDER BY u.nome"
   ),
-  consultar<ConversaLinha>(
-    "SELECT c.id,c.tipo,CASE WHEN c.tipo='geral' THEN 'Equipe — Geral' "+
-    "ELSE COALESCE(outro.nome,'Colaborador indisponível') END AS nome, "+
-    "(SELECT COUNT(*)::int FROM kb_chat_mensagens m WHERE m.conversa_id=c.id "+
-    "AND m.id>p.ultima_lida_id AND m.autor_id<>$1) AS nao_lidas, "+
-    "ultima.texto AS ultima_mensagem,ultima.criado_em::text AS ultimo_horario,outro.id AS outro_id "+
-    "FROM kb_chat_conversas c JOIN kb_chat_participantes p ON p.conversa_id=c.id AND p.usuario_id=$1 "+
-    "LEFT JOIN LATERAL (SELECT m.texto,m.criado_em FROM kb_chat_mensagens m "+
-    "WHERE m.conversa_id=c.id ORDER BY m.id DESC LIMIT 1) ultima ON TRUE "+
-    "LEFT JOIN LATERAL (SELECT u.id,u.nome FROM kb_chat_participantes p2 "+
-    "JOIN kb_usuarios u ON u.id=p2.usuario_id WHERE p2.conversa_id=c.id "+
-    "AND p2.usuario_id<>$1 LIMIT 1) outro ON TRUE "+
-    "ORDER BY CASE WHEN c.tipo='geral' THEN 0 ELSE 1 END,ultima.criado_em DESC NULLS LAST,c.criado_em DESC",[usuario])
+  consultar<ConversaLinha>(SQL_CONVERSAS,[usuario])
  ]);
  const users:UsuarioChat[]=pessoas;
  const lista:ConversaChat[]=conversas.map(c=>({id:c.id,tipo:c.tipo,nome:c.nome,naoLidas:c.nao_lidas,
    ultimaMensagem:c.ultima_mensagem,ultimoHorario:c.ultimo_horario,outroId:c.outro_id}));
  return {eu:usuario,usuarios:users,conversas:lista,ablyConfigurado};
 }
+export function converterMensagem(m:MsgLinha):MensagemChat{
+ return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,autor:m.autor,
+  texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:Boolean(m.apagada_para_todos),
+  respondendoAId:m.respondendo_a_id===null?null:Number(m.respondendo_a_id),
+  respostaA:m.respondendo_a_id===null?null:{
+   id:Number(m.respondendo_a_id),autor:m.resposta_autor,
+   texto:m.resposta_texto??"[Mensagem indisponível]"
+  }};
+}
 export async function listarMensagens(usuario:string,conversa:string,antes:number|null,pesquisa:string):Promise<MensagemChat[]>{
  if(!await conversaPermitida(usuario,conversa))throw new ErroChat(404,"Conversa não encontrada.");
- const rows=await consultar<MsgLinha>(
-   "SELECT m.id,m.conversa_id,m.autor_id,u.nome AS autor,m.texto,m.criado_em::text AS criado_em "+
-   "FROM kb_chat_mensagens m JOIN kb_usuarios u ON u.id=m.autor_id "+
-   "WHERE m.conversa_id=$1 AND ($2::bigint IS NULL OR m.id<$2::bigint) "+
-   "AND ($3::text='' OR m.texto ILIKE ('%'||$3||'%')) ORDER BY m.id DESC LIMIT 60",
-   [conversa,antes,pesquisa]);
- return rows.reverse().map(m=>({id:m.id,conversaId:m.conversa_id,autorId:m.autor_id,
-   autor:m.autor,texto:m.texto,criadoEm:m.criado_em}));
+ const rows=await consultar<MsgLinha>(SQL_LISTAR_MENSAGENS,[usuario,conversa,antes,pesquisa]);
+ return rows.reverse().map(converterMensagem);
 }
 export async function abrirConversaPrivada(usuario:string,alvo:string):Promise<string>{
  if(!CHAT_UUID.test(alvo)||alvo===usuario)throw new ErroChat(400,"Escolha outro colaborador.");
@@ -92,28 +85,55 @@ async function destinatarios(usuario:string,conversa:string){
  if(!c.length)throw new ErroChat(404,"Conversa indisponível.");
  return c[0];
 }
-export async function enviarMensagem(usuario:string,conversa:string,texto:string):Promise<MensagemChat>{
+function idMensagemValido(id:unknown):id is number{
+ return typeof id==="number"&&Number.isSafeInteger(id)&&id>0;
+}
+async function atualizarOutros(distribuicao:{tipo:"geral"|"privada";outro_id:string|null},
+ usuario:string,conversa:string,evento:"mensagem"|"alteracao",id:number):Promise<void>{
+ const payload={conversaId:conversa,id};
+ if(distribuicao.tipo==="geral"){await publicarChat("kb-chat:geral",evento,payload);return;}
+ const ids=[usuario,distribuicao.outro_id].filter((valor):valor is string=>Boolean(valor));
+ await Promise.all(ids.map(u=>publicarChat("kb-chat:usuario:"+u,evento,payload)));
+}
+export async function enviarMensagem(usuario:string,conversa:string,texto:string,
+ respondendoA:number|null=null):Promise<MensagemChat>{
  if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
+ if(respondendoA!==null&&!idMensagemValido(respondendoA))
+  throw new ErroChat(400,"Mensagem de origem inválida.");
  const limpo=texto.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,"").trim();
  if(!limpo||limpo.length>2000)throw new ErroChat(400,"Mensagem deve ter de 1 a 2000 caracteres.");
  const destino=await destinatarios(usuario,conversa);
  if(!await consumirLimite(usuario))throw new ErroChat(429,"Muitas mensagens. Aguarde alguns segundos.");
- const mensagens=await consultar<MsgLinha>(
-  "INSERT INTO kb_chat_mensagens(conversa_id,autor_id,texto) "+
-  "SELECT $1,$2,$3 WHERE EXISTS (SELECT 1 FROM kb_chat_participantes "+
-  "WHERE conversa_id=$1 AND usuario_id=$2) "+
-  "RETURNING id,conversa_id,autor_id,(SELECT nome FROM kb_usuarios WHERE id=$2) AS autor,texto,criado_em::text AS criado_em",
-  [conversa,usuario,limpo]);
- if(!mensagens.length)throw new ErroChat(403,"Acesso negado à conversa.");
- const m=mensagens[0];
- await registrarAuditoriaSegura(usuario,"chat_mensagem_enviada",conversa);
- const evento={conversaId:conversa,id:m.id};
- if(destino.tipo==="geral")await publicarChat("kb-chat:geral","mensagem",evento);
- else {
-   const ids=[usuario,destino.outro_id].filter((id):id is string=>Boolean(id));
-   await Promise.all(ids.map(id=>publicarChat("kb-chat:usuario:"+id,"mensagem",evento)));
- }
- return {id:m.id,conversaId:m.conversa_id,autorId:m.autor_id,autor:m.autor,texto:m.texto,criadoEm:m.criado_em};
+ const rows=await consultar<MsgLinha>(SQL_INSERIR_MENSAGEM,[conversa,usuario,limpo,respondendoA]);
+ if(!rows.length)throw new ErroChat(400,"A mensagem respondida não está disponível para você.");
+ const m=rows[0];
+ await registrarAuditoriaSegura(usuario,respondendoA===null?"chat_mensagem_enviada":"chat_mensagem_respondida",conversa);
+ await atualizarOutros(destino,usuario,conversa,"mensagem",Number(m.id));
+ return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,
+  autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,
+  respondendoAId:respondendoA,respostaA:null};
+}
+export async function apagarMensagemParaMim(usuario:string,conversa:string,id:number):Promise<void>{
+ if(!CHAT_UUID.test(conversa)||!idMensagemValido(id))throw new ErroChat(400,"Mensagem inválida.");
+ const rows=await consultar<{mensagem_id:number}>(SQL_APAGAR_PARA_MIM,[usuario,id,conversa]);
+ if(!rows.length)throw new ErroChat(404,"Mensagem já removida ou indisponível.");
+ await registrarAuditoriaSegura(usuario,"chat_mensagem_removida_para_mim",conversa);
+ await publicarChat("kb-chat:usuario:"+usuario,"alteracao",{conversaId:conversa,id});
+}
+export async function apagarMensagemParaTodos(usuario:string,conversa:string,id:number):Promise<void>{
+ if(!CHAT_UUID.test(conversa)||!idMensagemValido(id))throw new ErroChat(400,"Mensagem inválida.");
+ const rows=await consultar<{id:number}>(SQL_APAGAR_PARA_TODOS,[usuario,id,conversa]);
+ if(!rows.length)throw new ErroChat(403,"Apenas o autor pode apagar uma mensagem não removida.");
+ const destino=await destinatarios(usuario,conversa);
+ await registrarAuditoriaSegura(usuario,"chat_mensagem_removida_todos",conversa);
+ await atualizarOutros(destino,usuario,conversa,"alteracao",id);
+}
+export async function limparConversaParaMim(usuario:string,conversa:string):Promise<void>{
+ if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
+ const rows=await consultar<{usuario_id:string}>(SQL_LIMPAR_CONVERSA,[conversa,usuario]);
+ if(!rows.length)throw new ErroChat(404,"Conversa não encontrada.");
+ await registrarAuditoriaSegura(usuario,"chat_conversa_limpa",conversa);
+ await publicarChat("kb-chat:usuario:"+usuario,"alteracao",{conversaId:conversa,id:0});
 }
 export async function marcarLida(usuario:string,conversa:string):Promise<void>{
  if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
