@@ -9,7 +9,9 @@ export const ROTULOS_AUDITORIA:Record<string,string>={
  usuario_desativar:"Desativou usuário",usuario_senha_redefinida:"Redefiniu senha",
  anexo_enviado:"Enviou PDF",anexo_removido:"Removeu PDF",imagem_enviada:"Enviou imagem",chat_aberto:"Abriu chat",
  chat_conversa_criada:"Iniciou conversa privada",chat_mensagem_enviada:"Enviou mensagem",
- chat_mensagem_lida:"Leu conversa",diagnostico_aberto:"Abriu diagnóstico guiado",
+ chat_mensagem_lida:"Leu conversa",chat_mensagem_respondida:"Respondeu mensagem",
+ chat_mensagem_removida_para_mim:"Ocultou mensagem para si",
+ chat_mensagem_removida_todos:"Apagou mensagem para todos",chat_conversa_limpa:"Limpou conversa para si",diagnostico_aberto:"Abriu diagnóstico guiado",
  registro_aberto:"Abriu gerador técnico",busca_executada:"Pesquisou na base"
 };
 export async function registrarAuditoriaSegura(usuarioId:string|null,evento:string,alvo:string,
