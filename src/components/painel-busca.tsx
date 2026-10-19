@@ -59,6 +59,8 @@ export function PainelBusca({ documentos }: Props) {
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
+    void fetch("/api/auditoria/acao",{method:"POST",credentials:"same-origin",cache:"no-store",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({evento:"busca_executada"})}).catch(()=>{});
     const termo = consulta.trim().slice(0, 120);
     router.replace(termo ? `/busca?q=${encodeURIComponent(termo)}` : "/busca", { scroll: false });
   }
