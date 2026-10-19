@@ -1,5 +1,7 @@
 # Fases 7E e 7F — triagem, busca, relacionamento e ferramentas de suporte
 
+> A funcionalidade de importação assistida foi removida por duplicar recursos do editor normal.
+
 Aplicadas sobre a branch \`fase-7c2-7c3-anexos-editorial\`, mantendo 7D fora do escopo.
 
 ## 7E

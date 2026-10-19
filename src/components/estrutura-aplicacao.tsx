@@ -25,7 +25,6 @@ const gerais:Destino[] = [
 const admin:Destino[] = [
   {href:"/admin",texto:"Visão geral",icone:"painel"},
   {href:"/admin/artigos",texto:"Gerenciar artigos",icone:"artigos"},
-  {href:"/admin/importar",texto:"Importar conteúdo",icone:"arquivo"},
   {href:"/admin/usuarios",texto:"Usuários",icone:"usuarios"},
   {href:"/admin/auditoria",texto:"Auditoria",icone:"auditoria"},
 ];
