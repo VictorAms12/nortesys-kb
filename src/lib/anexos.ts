@@ -6,6 +6,7 @@ import { consultar } from "./banco";
 import { obterSessao, NOME_COOKIE } from "./sessao";
 import { verificarOrigemPost } from "./origem";
 import { registrarEvento } from "./admin-usuarios";
+import { disposicaoAnexoPDF } from "./anexos-tipos";
 
 const TAMANHO_MAXIMO_PDF = 3 * 1024 * 1024;
 const LIMITE_FORMULARIO = TAMANHO_MAXIMO_PDF + 16_384;
@@ -157,11 +158,12 @@ export async function baixarAnexo(req:NextRequest,id:string):Promise<Response> {
     if(objeto.blob.size!==x.tamanho || objeto.blob.contentType!==x.mime) {
       await objeto.stream.cancel();return erro("Anexo indisponível.",503);
     }
-    // Sempre forçar download: não executar conteúdo ativo de PDF na origem do KB.
-    const nomeCodificado=encodeURIComponent(x.nome);
+    // O modo de visualização mantém autorização, Blob privado, CSP sandbox e no-store.
+    // Por padrão, a rota continua forçando download.
+    const visualizar = new URL(req.url).searchParams.get("visualizar")==="1";
     return new Response(objeto.stream,{headers:{...cabecalhos,
       "Content-Type":"application/pdf","Content-Length":String(x.tamanho),
-      "Content-Disposition":`attachment; filename="documento.pdf"; filename*=UTF-8''${nomeCodificado}`,
+      "Content-Disposition":disposicaoAnexoPDF(x.nome,visualizar),
       "Cross-Origin-Resource-Policy":"same-origin","Content-Security-Policy":"sandbox"}});
   } catch(falha) {
     console.error("[anexos] Falha no download",falha instanceof Error?falha.name:"desconhecida");

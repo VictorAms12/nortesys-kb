@@ -42,6 +42,7 @@ export function AnexosArtigo({artigoId,iniciais}:{artigoId:string;iniciais:Anexo
         <div className="min-w-0"><span className="break-all text-sm font-semibold">{a.nome}</span>
           <span className="ml-2 text-xs text-[var(--muted)]">{(a.tamanho/1024/1024).toFixed(2)} MB</span></div>
         <div className="flex flex-wrap gap-2">
+          <a className="botao-secundario" href={`/api/anexos/${a.id}?visualizar=1`} target="_blank" rel="noopener noreferrer" aria-label={`Visualizar ${a.nome} em nova aba`}>Visualizar</a>
           <a className="botao-secundario" href={`/api/anexos/${a.id}`}>Baixar PDF</a>
           <button className="botao-secundario" type="button" disabled={enviando} onClick={()=>void remover(a.id,a.nome)}>Remover</button>
         </div>

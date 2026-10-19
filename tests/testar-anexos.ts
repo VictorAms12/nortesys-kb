@@ -4,6 +4,7 @@ import {readFileSync} from "node:fs";
 import {test} from "node:test";
 import {PGlite} from "@electric-sql/pglite";
 import {slugificarTitulo} from "../src/components/titulo-slug-artigo";
+import {disposicaoAnexoPDF} from "../src/lib/anexos-tipos";
 
 test("Fase 7C.3: slug automatico sem acentos e caracteres especiais",()=>{
   assert.equal(slugificarTitulo("Rejeição 590 — CFOP / Operação"),"rejeicao-590-cfop-operacao");
@@ -47,4 +48,13 @@ test("Fase 7C.2: anexos privados vinculados, validacao do schema e cota",async t
       quantidade=kb_anexo_limites.quantidade+1
     WHERE kb_anexo_limites.quantidade<12 RETURNING quantidade`,[usuarioId]);
   assert.equal(bloqueado.rows.length,0);
+});
+
+test("Fase 7C.2: visualizacao inline somente quando solicitada; download continua padrao",()=>{
+  const nome="Manual de emissão — NF-e.pdf";
+  assert.equal(disposicaoAnexoPDF(nome,false).startsWith('attachment; filename="documento.pdf"'),true);
+  assert.equal(disposicaoAnexoPDF(nome,true).startsWith('inline; filename="documento.pdf"'),true);
+  assert.match(disposicaoAnexoPDF(nome,true),/filename\*=UTF-8''/);
+  assert.ok(!disposicaoAnexoPDF("arquivo\r\nX-Injetado: sim.pdf",true).includes("\r"));
+  assert.ok(!disposicaoAnexoPDF("arquivo\r\nX-Injetado: sim.pdf",true).includes("\n"));
 });

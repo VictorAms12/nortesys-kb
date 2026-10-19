@@ -6,13 +6,13 @@ Esta entrega adiciona documentos PDF a artigos existentes. Os arquivos são guar
 
 1. Selecione o **banco de testes** correto no Neon, confirme branch e database; execute o arquivo inteiro `db/005_anexos.sql` no SQL Editor.
 2. Confira se o store Blob privado está ligado ao ambiente Preview dessa branch e se a autenticação OIDC ou token de servidor funciona nesse ambiente.
-3. Crie um artigo de teste e salve. Na página de edição, envie um PDF pequeno. Confira download como editor; publique o artigo e confira como leitor.
+3. Crie um artigo de teste e salve. Na página de edição, envie um PDF pequeno. Confira **Visualizar** (nova aba) e **Baixar PDF** como editor; publique o artigo e confira as duas opções como leitor.
 4. Teste falta de sessão (401), artigo em rascunho para leitor (404), PDF inválido (415), limite acima de 3 MiB (413), cota horária (429) e falhas Blob.
 
 ## Limitações deliberadas
 
 - Upload somente de PDFs com até 3 MiB. Upload direto de PDFs maiores precisa de arquitetura separada e revisão das garantias de privacidade; a Vercel limita a carga HTTP de funções.
-- Download forçado, sem visualização inline nem parsing ou indexação do conteúdo do PDF. Nome do arquivo não é executado nem refletido em headers sem codificação.
+- PDF pode ser visualizado em nova aba (quando o navegador oferecer leitor nativo) ou baixado. Ambos utilizam a mesma rota autenticada; `?visualizar=1` habilita `Content-Disposition: inline`, preservando `Cache-Control: private, no-store`, `Content-Security-Policy: sandbox` e o Blob privado. Outros valores mantêm o download. O PDF não é indexado nem processado para pesquisa.
 - Remoção no editor é lógica (oculta o anexo e bloqueia download, sem destruir os bytes); exclusão física automática não foi implementada para preservar rastreabilidade. Upload com falha fica no banco para reconciliação.
 - Anexos são vinculados à identidade UUID do artigo, mesmo após edição de categoria/slug; duplicações não copiam anexos.
 

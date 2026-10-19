@@ -77,7 +77,10 @@ export default async function PaginaArtigo({ params }: Props) {
             <ul className="grid gap-2">{anexos.map(a=><li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] p-3">
               <div className="min-w-0"><p className="break-all text-sm font-semibold">{a.nome}</p>
                 <p className="text-xs text-[var(--muted)]">PDF · {(a.tamanho/1024/1024).toFixed(2)} MB</p></div>
-              <a href={`/api/anexos/${a.id}`} className="botao-secundario shrink-0">Baixar PDF</a>
+              <div className="flex flex-wrap gap-2">
+                <a href={`/api/anexos/${a.id}?visualizar=1`} target="_blank" rel="noopener noreferrer" className="botao-secundario shrink-0" aria-label={`Visualizar ${a.nome} em nova aba`}>Visualizar</a>
+                <a href={`/api/anexos/${a.id}`} className="botao-secundario shrink-0">Baixar PDF</a>
+              </div>
             </li>)}</ul>
           </section>}
           {Boolean(artigo.fonteOficial?.length) && <section className="mt-8 rounded-xl border border-[var(--border)] p-5">
