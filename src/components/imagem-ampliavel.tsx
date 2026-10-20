@@ -17,7 +17,7 @@ export function ImagemAmpliavel({ src, alt, legenda }: { src: string; alt: strin
         {/* O proxy exige sessão. A URL direta preserva o cookie do navegador. */}
         <Image src={src} alt={alt} width={1120} height={720} unoptimized onError={()=>setFalhou(true)} className="h-auto max-h-96 w-full rounded-xl object-contain" />
       </button>
-      <span className="somente-impressao"><Image src={src} alt={alt} width={900} height={600} className="h-auto max-w-full" unoptimized /></span>
+      <span className="somente-impressao"><Image src={src} alt={alt} width={900} height={600} className="h-auto max-w-full" unoptimized loading="eager" /></span>
       {legenda && <span className="mt-2 block text-center text-sm text-[var(--muted)]">{legenda}</span>}
       {/* Fora da árvore inline do Markdown e do formulário do editor. */}
       {ampliada && createPortal(<dialog ref={elemento=>{ modal.current = elemento; if (elemento && !elemento.open) elemento.showModal(); }} className="modal-imagem no-print" aria-label={`Imagem ampliada: ${alt}`}
