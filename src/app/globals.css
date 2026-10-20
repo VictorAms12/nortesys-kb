@@ -141,6 +141,7 @@ a { color: var(--link); text-underline-offset: 3px; }
 }
 @media print {
   body { background: white !important; color: black !important; }
+  main#conteudo:has(.secao-artigo) { --text: #111827; --muted: #374151; }
   .no-print,.pular-conteudo,.sumario-lateral { display: none !important; }
   .somente-impressao { display: block !important; }
   .conteiner { width: 100%; max-width: none; }
