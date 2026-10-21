@@ -3,13 +3,13 @@ import {consultar} from "./banco";
 import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type ConversaChat,type UsuarioChat} from "./chat-tipos";
 import {registrarAuditoriaSegura} from "./auditoria-eventos";
 import {publicarChat} from "./chat-ably";
-import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA} from "./chat-sql";
+import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA,SQL_INSERIR_IMAGEM_CHAT} from "./chat-sql";
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
 type ConversaLinha={id:string;tipo:"geral"|"privada";nome:string;nao_lidas:number;
  ultima_mensagem:string|null;ultimo_horario:string|null;outro_id:string|null};
 type MsgLinha={id:number;conversa_id:string;autor_id:string;autor:string;texto:string;criado_em:string;
- apagada_para_todos:boolean;respondendo_a_id:number|null;resposta_texto:string|null;resposta_autor:string|null};
+ apagada_para_todos:boolean;tem_imagem:boolean;respondendo_a_id:number|null;resposta_texto:string|null;resposta_autor:string|null};
 export async function conversaPermitida(usuario:string,conversa:string):Promise<boolean>{
  if(!CHAT_UUID.test(conversa))return false;
  const rows=await consultar<{ok:number}>("SELECT 1 AS ok FROM kb_chat_participantes WHERE usuario_id=$1 AND conversa_id=$2 LIMIT 1",[usuario,conversa]);
@@ -37,7 +37,7 @@ export async function estadoChat(usuario:string,ablyConfigurado:boolean):Promise
 }
 export function converterMensagem(m:MsgLinha):MensagemChat{
  return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,autor:m.autor,
-  texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:Boolean(m.apagada_para_todos),
+  texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:Boolean(m.apagada_para_todos),temImagem:Boolean(m.tem_imagem),
   respondendoAId:m.respondendo_a_id===null?null:Number(m.respondendo_a_id),
   respostaA:m.respondendo_a_id===null?null:{
    id:Number(m.respondendo_a_id),autor:m.resposta_autor,
@@ -110,7 +110,32 @@ export async function enviarMensagem(usuario:string,conversa:string,texto:string
  await registrarAuditoriaSegura(usuario,respondendoA===null?"chat_mensagem_enviada":"chat_mensagem_respondida",conversa);
  await atualizarOutros(destino,usuario,conversa,"mensagem",Number(m.id));
  return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,
-  autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,
+  autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,temImagem:false,
+  respondendoAId:respondendoA,respostaA:null};
+}
+/** Reserva a mesma cota compartilhada de mensagens antes de gravar o arquivo privado. */
+export async function reservarEnvioImagemChat(usuario:string,conversa:string):Promise<void>{
+ if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
+ await destinatarios(usuario,conversa);
+ if(!await consumirLimite(usuario))throw new ErroChat(429,"Muitas mensagens. Aguarde alguns segundos.");
+}
+/** Registra uma imagem já normalizada/armazenada; a rota compensa o Blob se o INSERT falhar. */
+export async function registrarImagemChat(usuario:string,conversa:string,texto:string,
+ respondendoA:number|null,caminho:string,mime:string,tamanho:number):Promise<MensagemChat>{
+ if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
+ if(respondendoA!==null&&!idMensagemValido(respondendoA))throw new ErroChat(400,"Mensagem de origem inválida.");
+ const limpo=texto.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,"").trim();
+ if(!limpo||limpo.length>2000)throw new ErroChat(400,"Legenda inválida.");
+ const destino=await destinatarios(usuario,conversa);
+ const rows=await consultar<MsgLinha>(SQL_INSERIR_IMAGEM_CHAT,[conversa,usuario,limpo,respondendoA,caminho,mime,tamanho]);
+ if(!rows.length)throw new ErroChat(400,"A mensagem respondida não está disponível para você.");
+ const m=rows[0];
+ await registrarAuditoriaSegura(usuario,"chat_mensagem_enviada",conversa);
+ // A falha do realtime não desfaz uma mensagem já persistida.
+ try{await atualizarOutros(destino,usuario,conversa,"mensagem",Number(m.id));}
+ catch{console.error("[chat] Notificação de imagem indisponível.");}
+ return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,
+  autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,temImagem:true,
   respondendoAId:respondendoA,respostaA:null};
 }
 export async function apagarMensagemParaMim(usuario:string,conversa:string,id:number):Promise<void>{

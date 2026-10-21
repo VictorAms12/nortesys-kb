@@ -42,7 +42,8 @@
     "testar:anexos": "tsx --test tests/testar-anexos.ts",
     "testar:ferramentas": "tsx --test tests/testar-ferramentas.ts",
     "testar:chat": "tsx --test tests/testar-chat.ts",
-    "testar:chat-acoes": "tsx --test tests/testar-chat-acoes.ts"
+    "testar:chat-acoes": "tsx --test tests/testar-chat-acoes.ts",
+    "testar:chat-imagens": "tsx --test tests/testar-chat-imagens.ts"
   },
   "engines": {
     "node": ">=20.9.0"
