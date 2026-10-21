@@ -1,6 +1,7 @@
 "use client";
 import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {CHAT_GERAL_ID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
 type ErroResposta={erro?:string};
 const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
@@ -32,6 +33,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [conversa,setConversa]=useState(CHAT_GERAL_ID);
  const [mensagens,setMensagens]=useState<MensagemChat[]>([]);
  const [texto,setTexto]=useState("");
+ const [imagemSelecionada,setImagemSelecionada]=useState<File|null>(null);
  const [respondendo,setRespondendo]=useState<MensagemChat|null>(null);
  const [operando,setOperando]=useState<number|null>(null);
  const [limpando,setLimpando]=useState(false);
@@ -47,6 +49,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const painelRef=useRef<HTMLDivElement>(null);
  const campoMensagemRef=useRef<HTMLTextAreaElement>(null);
  const botaoEnviarRef=useRef<HTMLButtonElement>(null);
+ const inputImagemRef=useRef<HTMLInputElement>(null);
  const historicoRef=useRef<HTMLDivElement>(null);
  const rolarAoFim=useRef(true);
  const ajusteHistorico=useRef<{altura:number;topo:number}|null>(null);
@@ -190,21 +193,34 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   try{
    const resposta=await enviar("privada",{alvo});
    const id=String(resposta.id);
-   rolarAoFim.current=true;await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setContatosAbertos(false);setNotificacao("");setAviso("");
+   rolarAoFim.current=true;await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setRespondendo(null);setImagemSelecionada(null);setConversa(id);setContatosAbertos(false);setNotificacao("");setAviso("");
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir a conversa.");}
  }
  async function enviarTexto(e:FormEvent){
-  e.preventDefault();if(enviando||!texto.trim())return;
+  e.preventDefault();if(enviando||(!texto.trim()&&!imagemSelecionada))return;
   setEnviando(true);
   try{
    const respostaPara=respondendo;
-   const resultado=await enviar("enviar",{conversa,texto,respondendoA:respostaPara?.id??null});
+   let resultado:Record<string,unknown>;
+   if(imagemSelecionada){
+    const form=new FormData();
+    form.set("imagem",imagemSelecionada);
+    form.set("conversa",conversa);
+    form.set("texto",texto);
+    form.set("respondendoA",respostaPara?String(respostaPara.id):"");
+    const req=await fetch("/api/chat/imagens",{method:"POST",credentials:"same-origin",
+      cache:"no-store",body:form});
+    resultado=await jsonSeguro<Record<string,unknown>>(req);
+   }else{
+    resultado=await enviar("enviar",{conversa,texto,respondendoA:respostaPara?.id??null});
+   }
    const mensagem=resultado.mensagem as MensagemChat;
    const respostaA:ReferenciaMensagem|null=respostaPara?{
      id:respostaPara.id,autor:respostaPara.autor,texto:respostaPara.texto
    }:null;
    setMensagens(atual=>atual.some(m=>m.id===mensagem.id)?atual:[...atual,{...mensagem,respostaA}]);
-   setTexto("");setRespondendo(null);setAviso("");void atualizarEstado();
+   setTexto("");setImagemSelecionada(null);if(inputImagemRef.current)inputImagemRef.current.value="";
+   setRespondendo(null);setAviso("");void atualizarEstado();
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível enviar a mensagem.");}
   finally{
    setEnviando(false);
@@ -218,6 +234,20 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     });
    }
   }
+ }
+ function escolherImagem(arquivo:File|null){
+  if(!arquivo){setImagemSelecionada(null);return;}
+  if(!["image/png","image/jpeg","image/webp"].includes(arquivo.type)){
+   setAviso("Selecione uma imagem PNG, JPEG ou WebP.");return;
+  }
+  if(arquivo.size===0||arquivo.size>2*1024*1024){
+   setAviso("A imagem precisa ter até 2 MB.");return;
+  }
+  setImagemSelecionada(arquivo);setAviso("");
+ }
+ function removerImagem(){
+  setImagemSelecionada(null);
+  if(inputImagemRef.current)inputImagemRef.current.value="";
  }
  function escrever(valor:string){
   setTexto(valor);
@@ -250,7 +280,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível limpar a conversa.");}
   finally{setLimpando(false);}
  }
- function mudarConversa(id:string){rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
+ function mudarConversa(id:string){rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);removerImagem();setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
  return <div ref={painelRef} className="chat-painel grid min-w-0 gap-3 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)]" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
   {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
   <aside className="chat-lista cartao grid min-w-0 content-start gap-4 overflow-y-auto overflow-x-hidden p-3 sm:p-4" aria-label="Conversas e colaboradores">
@@ -326,9 +356,17 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
           <strong className="block text-[var(--muted)]">{m.respostaA.autor??"Mensagem anterior"}</strong>
           <p className="line-clamp-2 break-words [overflow-wrap:anywhere]">{m.respostaA.texto}</p>
         </blockquote>}
-        <p className={"max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere] "+(m.apagadaParaTodos?"italic text-[var(--muted)]":"")}>
+        {m.temImagem&&!m.apagadaParaTodos&&
+         <a href={`/api/chat/imagens/${m.id}`} target="_blank" rel="noopener noreferrer"
+           className="mb-2 block max-w-full overflow-hidden rounded-lg" title="Abrir imagem em nova aba"
+           aria-label={"Abrir imagem de "+m.autor}>
+          <Image src={`/api/chat/imagens/${m.id}`} alt={"Imagem enviada por "+m.autor}
+           width={800} height={600} unoptimized className="h-auto max-h-64 w-auto max-w-full rounded-lg object-contain"/>
+         </a>}
+        {(m.apagadaParaTodos||!m.temImagem||m.texto!=="📷 Imagem")&&
+         <p className={"max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere] "+(m.apagadaParaTodos?"italic text-[var(--muted)]":"")}>
           {m.apagadaParaTodos?"Mensagem apagada":<ConteudoMensagem texto={m.texto}/>}
-        </p>
+         </p>}
        </article>
       </li>)}</ul>}
      <div aria-hidden="true"/>
@@ -340,15 +378,24 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
        </div>
        <button className="botao-secundario shrink-0" type="button" onClick={()=>setRespondendo(null)} aria-label="Cancelar resposta">Cancelar</button>
      </div>}
+     {imagemSelecionada&&<div className="mb-2 flex min-w-0 items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm">
+      <span className="min-w-0 truncate">📷 {imagemSelecionada.name}</span>
+      <button type="button" className="shrink-0 text-xs underline" onClick={removerImagem} disabled={enviando}>Remover</button>
+     </div>}
      <p className="mb-2 min-h-4 text-xs text-[var(--muted)]" aria-live="polite">{digitando}</p>
      <form onSubmit={e=>void enviarTexto(e)} className="flex items-end gap-2">
+      <input ref={inputImagemRef} type="file" accept="image/png,image/jpeg,image/webp"
+       className="sr-only" aria-label="Selecionar imagem para enviar" tabIndex={-1}
+       onChange={e=>{escolherImagem(e.target.files?.[0]??null);}}/>
+      <button type="button" className="botao-secundario shrink-0" title="Anexar imagem (PNG, JPEG ou WebP; até 2 MB)"
+       onClick={()=>inputImagemRef.current?.click()} disabled={!estado||enviando} aria-label="Anexar imagem">📎</button>
       <textarea ref={campoMensagemRef} className={estiloCampo+" min-h-12 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto"} value={texto} onChange={e=>escrever(e.target.value)}
        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
        rows={2} maxLength={2000} placeholder="Digite sua mensagem... (Enter para enviar)" aria-label="Nova mensagem"
        readOnly={enviando} disabled={!estado}/>
-      <button ref={botaoEnviarRef} className="botao-primario" type="submit" disabled={enviando||!texto.trim()}>Enviar</button>
+      <button ref={botaoEnviarRef} className="botao-primario" type="submit" disabled={enviando||(!texto.trim()&&!imagemSelecionada)}>{enviando?"Enviando...":"Enviar"}</button>
      </form>
-     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
+     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Imagens: PNG, JPEG ou WebP, até 2 MB. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
     </div>
   </section>
  </div>;
