@@ -20,7 +20,7 @@ test("7H/7J: migração aditiva, avaliações por usuário e fila de exclusão f
   "INSERT INTO kb_artigo_feedback(usuario_id,artigo_url,resolveu) VALUES($1,$2,$3) "+
   "ON CONFLICT(usuario_id,artigo_url) DO UPDATE SET resolveu=EXCLUDED.resolveu,atualizado_em=NOW()",[u,url,resolveu]);
  await salvar(a,true);await salvar(b,false);await salvar(b,true);
- let resumo=await db.query<{sim:number;nao:number}>("SELECT COUNT(*) FILTER(WHERE resolveu)::int AS sim,COUNT(*) FILTER(WHERE NOT resolveu)::int AS nao FROM kb_artigo_feedback WHERE artigo_url=$1",[url]);
+ const resumo=await db.query<{sim:number;nao:number}>("SELECT COUNT(*) FILTER(WHERE resolveu)::int AS sim,COUNT(*) FILTER(WHERE NOT resolveu)::int AS nao FROM kb_artigo_feedback WHERE artigo_url=$1",[url]);
  assert.equal(resumo.rows[0].sim,2);
  assert.equal(resumo.rows[0].nao,0);
  await assert.rejects(db.query("INSERT INTO kb_artigo_feedback(usuario_id,artigo_url,resolveu) VALUES($1,$2,true)",[a,"https://segredo"]),/kb_artigo_feedback_artigo_url_check/);
