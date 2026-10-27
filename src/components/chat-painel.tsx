@@ -1,8 +1,9 @@
 "use client";
-import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
+import {useCallback,useEffect,useRef,useState,type FormEvent,type ClipboardEvent as ReactClipboardEvent} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {CHAT_GERAL_ID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
+import {imagensDaTransferencia,validarArquivoImagemChat} from "../lib/chat-clipboard";
 type ErroResposta={erro?:string};
 const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
 async function jsonSeguro<T,>(res:Response):Promise<T>{
@@ -34,6 +35,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [mensagens,setMensagens]=useState<MensagemChat[]>([]);
  const [texto,setTexto]=useState("");
  const [imagemSelecionada,setImagemSelecionada]=useState<File|null>(null);
+ const [imagemPrevia,setImagemPrevia]=useState<string|null>(null);
  const [respondendo,setRespondendo]=useState<MensagemChat|null>(null);
  const [operando,setOperando]=useState<number|null>(null);
  const [limpando,setLimpando]=useState(false);
@@ -50,8 +52,13 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const campoMensagemRef=useRef<HTMLTextAreaElement>(null);
  const botaoEnviarRef=useRef<HTMLButtonElement>(null);
  const inputImagemRef=useRef<HTMLInputElement>(null);
+ const imagemPreviaRef=useRef<string|null>(null);
  const historicoRef=useRef<HTMLDivElement>(null);
  const rolarAoFim=useRef(true);
+ // Revoga URLs temporárias quando o usuário sai do chat.
+ useEffect(()=>()=>{
+  if(imagemPreviaRef.current)URL.revokeObjectURL(imagemPreviaRef.current);
+ },[]);
  const ajusteHistorico=useRef<{altura:number;topo:number}|null>(null);
  // Tamanho explícito calculado pela posição REAL do chat na janela, incluindo
  // as barras variáveis do navegador, zoom e cabeçalhos que quebram linha.
@@ -193,7 +200,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   try{
    const resposta=await enviar("privada",{alvo});
    const id=String(resposta.id);
-   rolarAoFim.current=true;await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setRespondendo(null);setImagemSelecionada(null);setConversa(id);setContatosAbertos(false);setNotificacao("");setAviso("");
+   rolarAoFim.current=true;await atualizarEstado();setPesquisa("");setBusca("");setMensagens([]);setMais(false);setRespondendo(null);removerImagem();setConversa(id);setContatosAbertos(false);setNotificacao("");setAviso("");
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir a conversa.");}
  }
  async function enviarTexto(e:FormEvent){
@@ -219,7 +226,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
      id:respostaPara.id,autor:respostaPara.autor,texto:respostaPara.texto
    }:null;
    setMensagens(atual=>atual.some(m=>m.id===mensagem.id)?atual:[...atual,{...mensagem,respostaA}]);
-   setTexto("");setImagemSelecionada(null);if(inputImagemRef.current)inputImagemRef.current.value="";
+   setTexto("");removerImagem();
    setRespondendo(null);setAviso("");void atualizarEstado();
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível enviar a mensagem.");}
   finally{
@@ -235,17 +242,28 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    }
   }
  }
- function escolherImagem(arquivo:File|null){
-  if(!arquivo){setImagemSelecionada(null);return;}
-  if(!["image/png","image/jpeg","image/webp"].includes(arquivo.type)){
-   setAviso("Selecione uma imagem PNG, JPEG ou WebP.");return;
-  }
-  if(arquivo.size===0||arquivo.size>2*1024*1024){
-   setAviso("A imagem precisa ter até 2 MB.");return;
-  }
-  setImagemSelecionada(arquivo);setAviso("");
+ function escolherImagem(arquivo:File|null,quantidade=1){
+  if(!arquivo)return;
+  const problema=validarArquivoImagemChat(arquivo);
+  if(problema){setAviso(problema);return;}
+  const previa=URL.createObjectURL(arquivo);
+  if(imagemPreviaRef.current)URL.revokeObjectURL(imagemPreviaRef.current);
+  imagemPreviaRef.current=previa;
+  setImagemPrevia(previa);
+  setImagemSelecionada(arquivo);
+  setAviso(quantidade>1?"Somente uma imagem por mensagem. A primeira foi anexada.":"");
+ }
+ function colarImagem(e:ReactClipboardEvent<HTMLTextAreaElement>){
+  if(!estado||enviando)return;
+  const imagens=imagensDaTransferencia(e.clipboardData);
+  if(!imagens.length)return; // Ctrl+V de texto continua nativo.
+  e.preventDefault(); // Não mistura HTML/texto da captura no campo.
+  escolherImagem(imagens[0],imagens.length);
  }
  function removerImagem(){
+  if(imagemPreviaRef.current)URL.revokeObjectURL(imagemPreviaRef.current);
+  imagemPreviaRef.current=null;
+  setImagemPrevia(null);
   setImagemSelecionada(null);
   if(inputImagemRef.current)inputImagemRef.current.value="";
  }
@@ -378,24 +396,30 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
        </div>
        <button className="botao-secundario shrink-0" type="button" onClick={()=>setRespondendo(null)} aria-label="Cancelar resposta">Cancelar</button>
      </div>}
-     {imagemSelecionada&&<div className="mb-2 flex min-w-0 items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm">
-      <span className="min-w-0 truncate">📷 {imagemSelecionada.name}</span>
-      <button type="button" className="shrink-0 text-xs underline" onClick={removerImagem} disabled={enviando}>Remover</button>
+     {imagemSelecionada&&<div className="mb-2 flex min-w-0 items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm" role="group" aria-label="Imagem anexada à mensagem">
+      {imagemPrevia&&<Image src={imagemPrevia} alt="Prévia da imagem que será enviada"
+        width={96} height={72} unoptimized className="h-16 w-20 shrink-0 rounded-md border border-[var(--border)] bg-[var(--surface)] object-contain"/>}
+      <div className="min-w-0 flex-1">
+       <p className="truncate font-medium" title={imagemSelecionada.name||"Imagem colada"}>{imagemSelecionada.name||"Imagem colada"}</p>
+       <p className="text-xs text-[var(--muted)]">Pronta para enviar · {Math.ceil(imagemSelecionada.size/1024)} KB</p>
+      </div>
+      <button type="button" className="botao-secundario shrink-0 text-xs" onClick={removerImagem} disabled={enviando} aria-label="Remover imagem anexada">Remover</button>
      </div>}
      <p className="mb-2 min-h-4 text-xs text-[var(--muted)]" aria-live="polite">{digitando}</p>
      <form onSubmit={e=>void enviarTexto(e)} className="flex items-end gap-2">
       <input ref={inputImagemRef} type="file" accept="image/png,image/jpeg,image/webp"
        className="sr-only" aria-label="Selecionar imagem para enviar" tabIndex={-1}
-       onChange={e=>{escolherImagem(e.target.files?.[0]??null);}}/>
+       onChange={e=>{const arquivo=e.target.files?.[0];if(arquivo)escolherImagem(arquivo);}}/>
       <button type="button" className="botao-secundario shrink-0" title="Anexar imagem (PNG, JPEG ou WebP; até 2 MB)"
        onClick={()=>inputImagemRef.current?.click()} disabled={!estado||enviando} aria-label="Anexar imagem">📎</button>
       <textarea ref={campoMensagemRef} className={estiloCampo+" min-h-12 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto"} value={texto} onChange={e=>escrever(e.target.value)}
+       onPaste={colarImagem}
        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
        rows={2} maxLength={2000} placeholder="Digite sua mensagem... (Enter para enviar)" aria-label="Nova mensagem"
        readOnly={enviando} disabled={!estado}/>
       <button ref={botaoEnviarRef} className="botao-primario" type="submit" disabled={enviando||(!texto.trim()&&!imagemSelecionada)}>{enviando?"Enviando...":"Enviar"}</button>
      </form>
-     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Imagens: PNG, JPEG ou WebP, até 2 MB. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
+     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Cole prints com Ctrl+V ou use o anexo. Imagens: PNG, JPEG ou WebP, até 2 MB. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
     </div>
   </section>
  </div>;
