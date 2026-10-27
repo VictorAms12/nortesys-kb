@@ -5,6 +5,7 @@ import {test} from "node:test";
 import {PGlite} from "@electric-sql/pglite";
 import {SQL_APAGAR_PARA_TODOS,SQL_APAGAR_PARA_MIM,SQL_INSERIR_IMAGEM_CHAT,SQL_LER_IMAGEM_CHAT} from "../src/lib/chat-sql";
 import {termoEstatisticoSeguro} from "../src/lib/estatisticas-busca";
+import {hojeISO,artigoPrecisaRevisao} from "../src/lib/apresentacao";
 
 test("7H/7J: migração aditiva, avaliações por usuário e fila de exclusão física",async t=>{
  const db=new PGlite();t.after(()=>db.close());
@@ -97,4 +98,15 @@ test("7H: chat continua apagando antes da 009; migração retroage e trigger reg
  assert.deepEqual(fila.rows.map(x=>x.caminho),[anterior.caminho,posterior.caminho].sort());
  await db.exec(readFileSync("db/009_fases_7h_7j_feedback.sql","utf8"));
  assert.equal((await db.query("SELECT COUNT(*)::int AS total FROM kb_chat_imagens_limpeza")).rows[0]?.total,2);
+});
+
+test("7J: revisão de artigos respeita o dia local de Araguaína",()=>{
+ const antesDaMeiaNoite=new Date("2026-10-27T01:00:00.000Z");
+ assert.equal(hojeISO(antesDaMeiaNoite),"2026-10-26");
+ assert.equal(artigoPrecisaRevisao({revisarAte:"2026-10-26"},hojeISO(antesDaMeiaNoite)),false);
+ assert.equal(artigoPrecisaRevisao({revisarAte:"2026-10-25"},hojeISO(antesDaMeiaNoite)),true);
+ assert.equal(hojeISO(new Date("2026-10-27T03:15:00.000Z")),"2026-10-27");
+});
+test("7J: pesquisa longa não é truncada nem armazenada com parte descartada",()=>{
+ assert.equal(termoEstatisticoSeguro("procedimento ".repeat(9)),null);
 });
