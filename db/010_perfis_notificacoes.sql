@@ -41,8 +41,7 @@ END $fase8_trigger$;
 -- As notificações externas não enviam o corpo de mensagens nem dados do cliente.
 CREATE TABLE IF NOT EXISTS kb_push_subscricoes (
  usuario_id UUID NOT NULL REFERENCES kb_usuarios(id) ON DELETE CASCADE,
- endpoint_hash CHAR(64) NOT NULL CHECK (endpoint_hash ~ '^[0-9a-f]{64}
-),
+ endpoint_hash CHAR(64) NOT NULL,
  endpoint TEXT NOT NULL CHECK (length(endpoint) BETWEEN 50 AND 2000),
  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
  PRIMARY KEY(usuario_id,endpoint_hash)
