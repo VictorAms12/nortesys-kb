@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {exigirPapel} from "../../../lib/autenticacao-servidor";
 import {consultar} from "../../../lib/banco";
+import {migracao009Aplicada} from "../../../lib/migracao-009";
 import {carregarTodosArtigos} from "../../../lib/artigos-banco";
 import {artigoPrecisaRevisao,hojeISO} from "../../../lib/apresentacao";
 
@@ -11,6 +12,7 @@ type Busca={termo:string;total:number};
 function titulo(mapa:Map<string,string>,url:string){return mapa.get(url)??url;}
 export default async function Indicadores(){
  await exigirPapel(["administrador"]);
+ if(!(await migracao009Aplicada()))return <section className="cartao p-6 space-y-3"><h2 className="titulo-secao">Indicadores</h2><p className="text-sm text-[var(--muted)]">Aguardando a migração 009 no Neon. O painel será habilitado automaticamente após a criação das tabelas.</p><Link className="botao-secundario inline-flex" href="/admin">Voltar ao painel</Link></section>;
  const [artigos,acessos,feedback,lacunas,resumo]=await Promise.all([
   carregarTodosArtigos("administrador"),
   consultar<Acesso>(`SELECT artigo_url,COUNT(*)::int AS leitores FROM kb_leituras
