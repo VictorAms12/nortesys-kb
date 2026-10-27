@@ -97,7 +97,7 @@ test("7H: chat continua apagando antes da 009; migração retroage e trigger reg
  const fila=await db.query<{caminho:string}>("SELECT caminho FROM kb_chat_imagens_limpeza ORDER BY caminho");
  assert.deepEqual(fila.rows.map(x=>x.caminho),[anterior.caminho,posterior.caminho].sort());
  await db.exec(readFileSync("db/009_fases_7h_7j_feedback.sql","utf8"));
- assert.equal((await db.query("SELECT COUNT(*)::int AS total FROM kb_chat_imagens_limpeza")).rows[0]?.total,2);
+ assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_chat_imagens_limpeza")).rows[0]?.total,2);
 });
 
 test("7J: revisão de artigos respeita o dia local de Araguaína",()=>{
