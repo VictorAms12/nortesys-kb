@@ -28,8 +28,13 @@ BEGIN
  ON CONFLICT (destinatario_id,mensagem_id) DO NOTHING;
  RETURN NEW;
 END $fase8$;
-DROP TRIGGER IF EXISTS kb_chat_notificacoes_fase8 ON kb_chat_mensagens;
-CREATE TRIGGER kb_chat_notificacoes_fase8
- AFTER INSERT ON kb_chat_mensagens
- FOR EACH ROW EXECUTE FUNCTION kb_criar_notificacoes_chat();
+DO $fase8_trigger$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='kb_chat_mensagens'::regclass
+   AND tgname='kb_chat_notificacoes_fase8') THEN
+  CREATE TRIGGER kb_chat_notificacoes_fase8
+  AFTER INSERT ON kb_chat_mensagens
+  FOR EACH ROW EXECUTE FUNCTION kb_criar_notificacoes_chat();
+ END IF;
+END $fase8_trigger$;
 COMMIT;
