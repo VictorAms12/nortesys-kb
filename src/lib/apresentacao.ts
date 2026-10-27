@@ -4,9 +4,14 @@ export function artigoPrecisaRevisao(artigo: Pick<Artigo, "revisarAte">, hoje: s
   return Boolean(artigo.revisarAte && artigo.revisarAte < hoje);
 }
 
-export function hojeISO(): string {
-  // Essa função é usada apenas durante o pré-render no servidor.
-  return new Date().toISOString().slice(0, 10);
+/** Data de calendário da equipe (Tocantins), sem adiantar vencimentos por UTC. */
+export function hojeISO(data: Date = new Date()): string {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Araguaina", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(data);
+  const obter = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find(parte => parte.type === tipo)?.value ?? "";
+  return `${obter("year")}-${obter("month")}-${obter("day")}`;
 }
 
 export function formatarData(iso: string): string {

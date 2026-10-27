@@ -29,6 +29,8 @@ const admin:Destino[] = [
   {href:"/admin/artigos",texto:"Gerenciar artigos",icone:"artigos"},
   {href:"/admin/usuarios",texto:"Usuários",icone:"usuarios"},
   {href:"/admin/auditoria",texto:"Auditoria",icone:"auditoria"},
+  {href:"/admin/indicadores",texto:"Indicadores",icone:"painel"},
+  {href:"/admin/manutencao",texto:"Manutenção",icone:"ajustes"},
 ];
 function observar(callback:()=>void) {
   window.addEventListener("storage",callback); window.addEventListener(EVENTO,callback);
@@ -102,7 +104,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
       </div>
       <div className="rolagem-sidebar">
         <nav aria-label="Conhecimento" className="grupo-navegacao"><p className="titulo-navegacao">CONHECIMENTO</p>{gerais.map(linkItem)}</nav>
-        {papel!=="leitor"&&<nav aria-label="Administração" className="grupo-navegacao"><p className="titulo-navegacao">ADMINISTRAÇÃO</p>{admin.filter(d=>papel==="administrador"|| !["/admin/usuarios","/admin/auditoria"].includes(d.href)).map(linkItem)}</nav>}
+        {papel!=="leitor"&&<nav aria-label="Administração" className="grupo-navegacao"><p className="titulo-navegacao">ADMINISTRAÇÃO</p>{admin.filter(d=>papel==="administrador"|| !["/admin/usuarios","/admin/auditoria","/admin/indicadores","/admin/manutencao"].includes(d.href)).map(linkItem)}</nav>}
       </div>
       <div className="rodape-sidebar">
         <div className="perfil-sidebar" title={`${nome} · ${papel}`}><div className="avatar-sidebar">{nome.trim().slice(0,1).toUpperCase()}</div><div className="texto-perfil"><strong>{nome}</strong><small>{papel}</small></div></div>

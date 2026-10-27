@@ -8,7 +8,7 @@ import {SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_INSERIR_IMAGEM_CHAT,
 
 test("8: imagens privadas, migração idempotente e autorização individual",async t=>{
  const db=new PGlite();t.after(()=>db.close());
- for(const n of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens"])
+ for(const n of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","009_fases_7h_7j_feedback"])
   await db.exec(readFileSync(`db/${n}.sql`,"utf8"));
  await db.exec(readFileSync("db/008_chat_imagens.sql","utf8"));
  const [autor,receptor,intruso]=[randomUUID(),randomUUID(),randomUUID()];

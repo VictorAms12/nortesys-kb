@@ -62,6 +62,11 @@ export function PainelBusca({ documentos }: Props) {
     void fetch("/api/auditoria/acao",{method:"POST",credentials:"same-origin",cache:"no-store",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({evento:"busca_executada"})}).catch(()=>{});
     const termo = consulta.trim().slice(0, 120);
+    if(termo.length>=MINIMO_CARACTERES_BUSCA&&executarBusca(fuse,termo).length===0){
+      // Registro agregado apenas após busca explícita, sem armazenar a identidade.
+      void fetch("/api/busca/lacuna",{method:"POST",credentials:"same-origin",cache:"no-store",
+        headers:{"Content-Type":"application/json"},body:JSON.stringify({termo})}).catch(()=>{});
+    }
     router.replace(termo ? `/busca?q=${encodeURIComponent(termo)}` : "/busca", { scroll: false });
   }
 

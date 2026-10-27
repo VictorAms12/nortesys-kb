@@ -44,6 +44,7 @@
     "testar:chat": "tsx --test tests/testar-chat.ts",
     "testar:chat-acoes": "tsx --test tests/testar-chat-acoes.ts",
     "testar:chat-imagens": "tsx --test tests/testar-chat-imagens.ts",
+    "testar:fases-7h-7j": "tsx --test tests/testar-fases-7h-7j.ts",
     "testar:chat-clipboard": "tsx --test tests/testar-chat-clipboard.ts"
   },
   "engines": {

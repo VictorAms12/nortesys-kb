@@ -14,7 +14,7 @@ type Linha={id:number;texto:string;respondendo_a_id:number|null;
 
 test("7G.3: ações preservam privacidade por participante e mantêm integridade",async t=>{
  const db=new PGlite();t.after(()=>db.close());
- for(const item of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens"]){
+ for(const item of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","009_fases_7h_7j_feedback"]){
   await db.exec(readFileSync("db/"+item+".sql","utf8"));
  }
  // Migration 007 pode ser repetida após implantação.

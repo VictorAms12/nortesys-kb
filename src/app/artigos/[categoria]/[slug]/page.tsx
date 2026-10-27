@@ -11,6 +11,9 @@ import { artigoPrecisaRevisao, formatarData, hojeISO } from "../../../../lib/apr
 import { extrairPassos } from "../../../../lib/markdown";
 import { TIPOS_CONTEUDO } from "../../../../lib/tipos-conteudo";
 import { favoritoAtivo } from "../../../../lib/interacoes";
+import { feedbackUsuario } from "../../../../lib/feedback-artigo";
+import { migracao009Aplicada } from "../../../../lib/migracao-009";
+import { FeedbackArtigo } from "../../../../components/feedback-artigo";
 import { InteracoesArtigo } from "../../../../components/interacoes-artigo";
 import { listarAnexosPorChave } from "../../../../lib/anexos";
 import { sugerirArtigosRelacionados } from "../../../../lib/artigos-relacionados";
@@ -31,7 +34,8 @@ export default async function PaginaArtigo({ params }: Props) {
   if (!artigo) notFound();
   const categoria = encontrarCategoria(artigo.categoria);
   const relacionados = sugerirArtigosRelacionados(artigo, await carregarTodosArtigos(sessao.papel));
-  const [favorito, anexos] = await Promise.all([favoritoAtivo(sessao.id,artigo.url), listarAnexosPorChave(artigo.categoria,artigo.slug)]);
+  const [favorito, anexos, feedbackDisponivel] = await Promise.all([favoritoAtivo(sessao.id,artigo.url), listarAnexosPorChave(artigo.categoria,artigo.slug), migracao009Aplicada()]);
+  const feedback = feedbackDisponivel ? await feedbackUsuario(sessao.id,artigo.url) : null;
   const revisaoVencida = artigoPrecisaRevisao(artigo, hojeISO());
   const passos = artigo.tipo === "solucao" ? extrairPassos(artigo.secoes[3]?.conteudo ?? "") : artigo.tipo === "tutorial" ? extrairPassos(artigo.secoes[2]?.conteudo ?? "") : "";
   return (
@@ -97,6 +101,7 @@ export default async function PaginaArtigo({ params }: Props) {
             <h2 className="mb-2 text-lg font-bold">Fontes oficiais para conferência</h2>
             <ul className="list-inside list-disc space-y-2 break-all text-sm">{artigo.fonteOficial?.map((url)=><li key={url}><a href={url} target="_blank" rel="noopener noreferrer">{url}</a></li>)}</ul>
           </section>}
+          {feedbackDisponivel && <FeedbackArtigo url={artigo.url} inicial={feedback}/>}
         </div>
         <aside className="sumario-lateral no-print xl:sticky xl:top-24" aria-label="Sumário do artigo">
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-[var(--muted)]">Neste artigo</h2>
