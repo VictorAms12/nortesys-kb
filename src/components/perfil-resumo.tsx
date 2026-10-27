@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
-type Perfil={nome:string;usuario:string;papel:string;bio?:string|null;preferencias?:{avisos:boolean;navegador:boolean;geral:boolean}};
+import Image from "next/image";
+type Perfil={id:string;avatarCaminho?:string|null;nome:string;usuario:string;papel:string;bio?:string|null;preferencias?:{avisos:boolean;navegador:boolean;geral:boolean}};
 export function PerfilResumo(){
  const [perfil,setPerfil]=useState<Perfil|null>(null);
  const [erro,setErro]=useState("");
