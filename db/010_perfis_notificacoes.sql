@@ -37,4 +37,15 @@ BEGIN
   FOR EACH ROW EXECUTE FUNCTION kb_criar_notificacoes_chat();
  END IF;
 END $fase8_trigger$;
+-- Inscrições de push autenticadas, somente endpoints de serviços conhecidos.
+-- As notificações externas não enviam o corpo de mensagens nem dados do cliente.
+CREATE TABLE IF NOT EXISTS kb_push_subscricoes (
+ usuario_id UUID NOT NULL REFERENCES kb_usuarios(id) ON DELETE CASCADE,
+ endpoint_hash CHAR(64) NOT NULL CHECK (endpoint_hash ~ '^[0-9a-f]{64}
+),
+ endpoint TEXT NOT NULL CHECK (length(endpoint) BETWEEN 50 AND 2000),
+ criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+ PRIMARY KEY(usuario_id,endpoint_hash)
+);
+CREATE INDEX IF NOT EXISTS kb_push_subscricoes_usuario_idx ON kb_push_subscricoes(usuario_id);
 COMMIT;
