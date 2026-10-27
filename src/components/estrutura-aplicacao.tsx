@@ -108,7 +108,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
         {papel!=="leitor"&&<nav aria-label="Administração" className="grupo-navegacao"><p className="titulo-navegacao">ADMINISTRAÇÃO</p>{admin.filter(d=>papel==="administrador"|| !["/admin/usuarios","/admin/auditoria","/admin/indicadores","/admin/manutencao"].includes(d.href)).map(linkItem)}</nav>}
       </div>
       <div className="rodape-sidebar">
-        <div className="perfil-sidebar" title={`${nome} · ${papel}`}><div className="avatar-sidebar">{nome.trim().slice(0,1).toUpperCase()}</div><div className="texto-perfil"><strong>{nome}</strong><small>{papel}</small></div></div>
+        <Link href="/perfil" className="perfil-sidebar no-underline text-[var(--text)]" title={`Abrir perfil de ${nome}`}><div className="avatar-sidebar">{nome.trim().slice(0,1).toUpperCase()}</div><div className="texto-perfil"><strong>{nome}</strong><small>{papel}</small></div></Link>
         <button type="button" className="botao-icone recolher-sidebar" aria-label={recolhida?"Expandir menu lateral":"Recolher menu lateral"} title={recolhida?"Expandir menu":"Recolher menu"} onClick={alternar}><IconeInterface nome={recolhida?"expandir":"recolher"}/></button>
       </div>
     </aside>
