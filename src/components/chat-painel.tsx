@@ -2,6 +2,7 @@
 import {useCallback,useEffect,useRef,useState,type FormEvent,type ClipboardEvent as ReactClipboardEvent} from "react";
 import Link from "next/link";
 import Image from "next/image";
+import {ImagemChatAmpliavel} from "./chat-imagem-ampliavel";
 import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
 import {imagensDaTransferencia,validarArquivoImagemChat} from "../lib/chat-clipboard";
 type ErroResposta={erro?:string};
@@ -381,13 +382,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
           <strong className="block text-[var(--muted)]">{m.respostaA.autor??"Mensagem anterior"}</strong>
           <p className="line-clamp-2 break-words [overflow-wrap:anywhere]">{m.respostaA.texto}</p>
         </blockquote>}
-        {m.temImagem&&!m.apagadaParaTodos&&
-         <a href={`/api/chat/imagens/${m.id}`} target="_blank" rel="noopener noreferrer"
-           className="mb-2 block max-w-full overflow-hidden rounded-lg" title="Abrir imagem em nova aba"
-           aria-label={"Abrir imagem de "+m.autor}>
-          <Image src={`/api/chat/imagens/${m.id}`} alt={"Imagem enviada por "+m.autor}
-           width={800} height={600} unoptimized className="h-auto max-h-64 w-auto max-w-full rounded-lg object-contain"/>
-         </a>}
+        {m.temImagem&&!m.apagadaParaTodos&&<ImagemChatAmpliavel id={m.id} autor={m.autor}/>}
         {(m.apagadaParaTodos||!m.temImagem||m.texto!=="📷 Imagem")&&
          <p className={"max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere] "+(m.apagadaParaTodos?"italic text-[var(--muted)]":"")}>
           {m.apagadaParaTodos?"Mensagem apagada":<ConteudoMensagem texto={m.texto}/>}
