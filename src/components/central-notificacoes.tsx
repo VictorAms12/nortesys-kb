@@ -8,21 +8,25 @@ export function CentralNotificacoes(){
  const [aberto,setAberto]=useState(false);
  const [aviso,setAviso]=useState("");
  const ultimo=useRef<number|null>(null);
+ const preferencias=useRef({avisos:true,navegador:false,geral:true});
  const atualizar=useCallback(async()=>{
-  if(document.hidden)return;
   try{
    const r=await fetch("/api/notificacoes",{cache:"no-store",credentials:"same-origin"});
    if(!r.ok)return;
    const d=await r.json() as Dados;
    if(d.indisponivel)return;
    const maior=Math.max(0,...d.itens.map(x=>x.id));
-   if(ultimo.current!==null&&maior>ultimo.current&&location.pathname!=="/chat")
-    setAviso("Nova mensagem no chat da equipe");
+   const recentes=d.itens.filter(x=>!x.vistaEm&&ultimo.current!==null&&x.id>ultimo.current);
+   const nova=recentes.find(x=>x.tipo!=="geral"||preferencias.current.geral);
+   if(nova&&preferencias.current.avisos&&location.pathname!=="/chat"&&!document.hidden)setAviso("Nova mensagem de "+nova.autor);
+   if(nova&&document.hidden&&preferencias.current.navegador&&"Notification" in window&&Notification.permission==="granted")
+    new Notification("Nova mensagem no Nortesys KB",{body:"Abra o site para consultar a conversa.",tag:"kb-chat-"+nova.conversaId});
    ultimo.current=maior;
    setDados(d);
   }catch{/* Mantém o restante do sistema utilizável. */}
  },[]);
  useEffect(()=>{
+  void fetch("/api/perfil",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.preferencias)preferencias.current=d.preferencias;}).catch(()=>{});
   const inicial=window.setTimeout(()=>void atualizar(),0);
   const intervalo=window.setInterval(()=>void atualizar(),12000);
   const visivel=()=>void atualizar();
