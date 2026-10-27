@@ -4,6 +4,7 @@ import {NOME_COOKIE,obterSessao} from "../../../../lib/sessao";
 import {verificarOrigemPost} from "../../../../lib/origem";
 import {termoEstatisticoSeguro} from "../../../../lib/estatisticas-busca";
 import {consultar} from "../../../../lib/banco";
+import {migracao009Aplicada} from "../../../../lib/migracao-009";
 import {carregarTodosArtigos} from "../../../../lib/artigos-banco";
 import {criarIndiceBusca} from "../../../../lib/indice-busca";
 import {criarBuscador,executarBusca} from "../../../../lib/busca";
@@ -21,6 +22,7 @@ export async function POST(req:NextRequest){
   const parsed:unknown=JSON.parse(raw);
   const termo=termoEstatisticoSeguro(parsed&&typeof parsed==="object"?(parsed as {termo?:unknown}).termo:null);
   if(!termo)return fail(400);
+  if(!(await migracao009Aplicada()))return NextResponse.json({ok:true,registrado:false},{headers:{"Cache-Control":"private, no-store"}});
   // Nunca confiar no navegador para afirmar que a pesquisa não retornou resultado.
   const busca=criarBuscador(criarIndiceBusca(await carregarTodosArtigos(usuario.papel)));
   if(executarBusca(busca,termo).length>0)return NextResponse.json({ok:true});
