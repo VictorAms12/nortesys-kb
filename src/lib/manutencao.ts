@@ -1,10 +1,12 @@
 import "server-only";
 import {del} from "@vercel/blob";
 import {consultar} from "./banco";
+import {migracao009Aplicada} from "./migracao-009";
 
 type Fila={caminho:string};
 /** Rotina manual, lote pequeno e reserva por 2 minutos para evitar exclusões concorrentes. */
 export async function executarManutencao():Promise<{limpas:number;falhas:number;temporarios:number}>{
+ if(!(await migracao009Aplicada()))throw Error("Migração 009 pendente.");
  const temporarios=await consultar<{total:number}>(`WITH sessao AS (
  DELETE FROM kb_sessoes WHERE expira_em<NOW() RETURNING token_hash
  ), tentativas AS (
@@ -37,10 +39,12 @@ export async function executarManutencao():Promise<{limpas:number;falhas:number;
  return {limpas,falhas,temporarios:temporarios[0]?.total??0};
 }
 export async function situacaoManutencao(){
+ const habilitada=await migracao009Aplicada();
  const [fila,sessoes]=await Promise.all([
-  consultar<{total:number;pendentes:number}>(
-   "SELECT COUNT(*)::int AS total,COUNT(*) FILTER (WHERE reservada_ate IS NULL OR reservada_ate<NOW())::int AS pendentes FROM kb_chat_imagens_limpeza"),
+  habilitada?consultar<{total:number;pendentes:number}>(
+   "SELECT COUNT(*)::int AS total,COUNT(*) FILTER (WHERE reservada_ate IS NULL OR reservada_ate<NOW())::int AS pendentes FROM kb_chat_imagens_limpeza"):
+   Promise.resolve([{total:0,pendentes:0}]),
   consultar<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_sessoes WHERE expira_em<NOW()")
  ]);
- return {fila:fila[0]?.total??0,pendentes:fila[0]?.pendentes??0,sessoesExpiradas:sessoes[0]?.total??0};
+ return {habilitada,fila:fila[0]?.total??0,pendentes:fila[0]?.pendentes??0,sessoesExpiradas:sessoes[0]?.total??0};
 }
