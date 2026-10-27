@@ -71,3 +71,30 @@ test("7J: registros agregados e filtro preventivo de termos sensíveis",async()=
   assert.equal(rows.rows[0].quantidade,1,"Rate limit impede contagem duplicada rápida");
  }finally{await db.close();}
 });
+
+test("7H: chat continua apagando antes da 009; migração retroage e trigger registra novos anexos",async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ for(const nome of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens"])
+  await db.exec(readFileSync("db/"+nome+".sql","utf8"));
+ const usuario=randomUUID(),conversa=randomUUID();
+ await db.query("INSERT INTO kb_usuarios(id,usuario,nome,papel,senha_salt,senha_hash) VALUES($1,'testecompat','Conta Teste','leitor',$2,$3)",
+  [usuario,"a".repeat(32),"b".repeat(128)]);
+ await db.query("INSERT INTO kb_chat_conversas(id,tipo,chave) VALUES($1,'privada',$2)",[conversa,"compat-"+randomUUID()]);
+ await db.query("INSERT INTO kb_chat_participantes(conversa_id,usuario_id) VALUES($1,$2)",[conversa,usuario]);
+ const inserir=async()=>{
+  const caminho=`kb-chat-imagens/${randomUUID()}.png`;
+  const r=await db.query<{id:number}>(SQL_INSERIR_IMAGEM_CHAT,[conversa,usuario,"Imagem",null,caminho,"image/png",250]);
+  return {id:Number(r.rows[0].id),caminho};
+ };
+ const anterior=await inserir();
+ assert.equal((await db.query(SQL_APAGAR_PARA_TODOS,[usuario,anterior.id,conversa])).rows.length,1);
+ await db.exec(readFileSync("db/009_fases_7h_7j_feedback.sql","utf8"));
+ const origem=await db.query<{caminho:string}>("SELECT caminho FROM kb_chat_imagens_limpeza");
+ assert.deepEqual(origem.rows.map(x=>x.caminho),[anterior.caminho],"Migração captura apagamentos anteriores");
+ const posterior=await inserir();
+ assert.equal((await db.query(SQL_APAGAR_PARA_TODOS,[usuario,posterior.id,conversa])).rows.length,1);
+ const fila=await db.query<{caminho:string}>("SELECT caminho FROM kb_chat_imagens_limpeza ORDER BY caminho");
+ assert.deepEqual(fila.rows.map(x=>x.caminho),[anterior.caminho,posterior.caminho].sort());
+ await db.exec(readFileSync("db/009_fases_7h_7j_feedback.sql","utf8"));
+ assert.equal((await db.query("SELECT COUNT(*)::int AS total FROM kb_chat_imagens_limpeza")).rows[0]?.total,2);
+});
