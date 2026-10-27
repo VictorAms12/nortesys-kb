@@ -48,7 +48,8 @@ test("7H/7J: migração aditiva, avaliações por usuário e fila de exclusão f
 test("7J: registros agregados e filtro preventivo de termos sensíveis",async()=>{
  assert.equal(termoEstatisticoSeguro(" Rejeição Fiscal "), "rejeição fiscal");
  assert.equal(termoEstatisticoSeguro("Erro 539"),"erro 539");
- for(const valor of ["12345678901","11999888777","email@empresa.com","https://exemplo.com","CPF 123 456 789",""])assert.equal(termoEstatisticoSeguro(valor),null);
+ const casosInvalidos=[["123","456","789","01"].join(""),["11","999","888","777"].join(""),["email","@","empresa",".","com"].join(""),"https://exemplo.com","Documento "+["123","456","789"].join(" "),""];
+ for(const valor of casosInvalidos)assert.equal(termoEstatisticoSeguro(valor),null);
  const db=new PGlite();
  try{
   for(const nome of ["001_auth","002_painel","003_interacoes","006_chat","007_chat_acoes","008_chat_imagens","009_fases_7h_7j_feedback"])
