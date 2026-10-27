@@ -3,6 +3,7 @@ import {consultar} from "./banco";
 import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type ConversaChat,type UsuarioChat} from "./chat-tipos";
 import {registrarAuditoriaSegura} from "./auditoria-eventos";
 import {publicarChat} from "./chat-ably";
+import {enviarPushChat} from "./push-web";
 import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA,SQL_INSERIR_IMAGEM_CHAT} from "./chat-sql";
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
@@ -109,6 +110,7 @@ export async function enviarMensagem(usuario:string,conversa:string,texto:string
  const m=rows[0];
  await registrarAuditoriaSegura(usuario,respondendoA===null?"chat_mensagem_enviada":"chat_mensagem_respondida",conversa);
  await atualizarOutros(destino,usuario,conversa,"mensagem",Number(m.id));
+ await enviarPushChat(usuario,conversa);
  return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,
   autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,temImagem:false,
   respondendoAId:respondendoA,respostaA:null};
@@ -134,6 +136,7 @@ export async function registrarImagemChat(usuario:string,conversa:string,texto:s
  // A falha do realtime não desfaz uma mensagem já persistida.
  try{await atualizarOutros(destino,usuario,conversa,"mensagem",Number(m.id));}
  catch{console.error("[chat] Notificação de imagem indisponível.");}
+ await enviarPushChat(usuario,conversa);
  return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,
   autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,temImagem:true,
   respondendoAId:respondendoA,respostaA:null};
