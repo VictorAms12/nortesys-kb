@@ -8,7 +8,7 @@ export async function GET(req:NextRequest){
  if(!u)return NextResponse.json({erro:"Não autorizado"},{status:401});
  const rows=await consultar<{bio:string|null;preferencias:unknown}>(
   "SELECT bio,preferencias_notificacoes AS preferencias FROM kb_usuarios WHERE id=$1",[u.id]);
- return NextResponse.json({nome:u.nome,usuario:u.usuario,papel:u.papel,...rows[0]},{headers:{"Cache-Control":"private, no-store"}});
+ return NextResponse.json({id:u.id,nome:u.nome,usuario:u.usuario,papel:u.papel,...rows[0]},{headers:{"Cache-Control":"private, no-store"}});
 }
 
 export async function PATCH(req:NextRequest){
