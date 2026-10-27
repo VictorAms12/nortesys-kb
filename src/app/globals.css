@@ -526,3 +526,17 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
   .chat-painel { height:auto !important; min-height:0; display:block; }
   .chat-painel .chat-lista { display:none; }
 }
+
+/* Fase 8 — interfaces de comunicação, sem interferir nas dimensões do chat. */
+.contador-notificacoes { position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;display:grid;place-items:center;border-radius:999px;background:var(--primary);color:var(--surface);font-size:10px;font-weight:750; }
+.painel-notificacoes {position:absolute;right:0;top:calc(100% + 10px);width:min(355px,calc(100vw - 24px));max-height:min(480px,75dvh);z-index:75;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px #0002;overflow:hidden;animation:entrada-item 180ms ease-out;}
+.notificacao-item {display:block;color:var(--text);text-decoration:none;padding:.85rem 1rem;border-bottom:1px solid var(--border);transition:background 150ms ease;}
+.notificacao-item:hover,.notificacao-item:focus-visible{background:var(--surface-alt);}
+.notificacao-item.nao-lida{border-left:3px solid var(--primary);background:color-mix(in srgb,var(--primary) 6%,var(--surface));}
+.toast-mensagem{position:fixed;z-index:90;right:18px;bottom:22px;max-width:min(350px,calc(100vw - 36px));padding:14px 18px;border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:12px;background:var(--surface);color:var(--text);text-decoration:none;box-shadow:0 10px 32px #0002;animation:entrada-item 180ms ease-out;}
+.chat-balao {border:1px solid var(--border);transition:border-color 150ms ease,background-color 150ms ease;}
+.chat-balao:hover {border-color:color-mix(in srgb,var(--primary) 45%,var(--border));}
+.chat-historico li {animation:entrada-item 170ms ease-out both;}
+.chat-lista button {transition:background-color 150ms ease,border-color 150ms ease,transform 150ms ease;}
+.chat-lista button:hover {background:var(--surface-alt);}
+@media (prefers-reduced-motion:reduce){.chat-historico li,.painel-notificacoes,.toast-mensagem{animation:none!important;}}
