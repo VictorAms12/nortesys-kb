@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
+import {usePathname} from "next/navigation";
 import {useCallback,useEffect,useRef,useState} from "react";
 type Aviso={id:number;conversaId:string;autor:string;criadaEm:string;vistaEm:string|null;tipo:string};
 type Dados={itens:Aviso[];naoLidas:number;indisponivel?:boolean};
 export function CentralNotificacoes(){
  const [dados,setDados]=useState<Dados>({itens:[],naoLidas:0});
+ const pathname=usePathname();
  const [aberto,setAberto]=useState(false);
  const [aviso,setAviso]=useState("");
  const ultimo=useRef<number|null>(null);
@@ -34,6 +36,25 @@ export function CentralNotificacoes(){
   document.addEventListener("visibilitychange",visivel);
   return ()=>{window.clearTimeout(inicial);window.clearInterval(intervalo);window.removeEventListener("focus",visivel);document.removeEventListener("visibilitychange",visivel);};
  },[atualizar]);
+ useEffect(()=>{
+  // O ChatPainel mantém sua própria conexão dentro de /chat.
+  // Fora dele, este componente escuta eventos sem jamais receber conteúdo privado.
+  if(pathname==="/chat")return;
+  let fechado=false;let canal:EventSource|null=null;
+  void fetch("/api/chat/token",{cache:"no-store",credentials:"same-origin"})
+   .then(r=>r.ok?r.json():null)
+   .then((token:{token:string;channels:string[]}|null)=>{
+    if(fechado||!token?.token||!token.channels?.length)return;
+    const params=new URLSearchParams({channels:token.channels.join(","),v:"1.2",accessToken:token.token});
+    canal=new EventSource("https://main.realtime.ably.net/sse?"+params);
+    canal.onmessage=e=>{
+     try{const evento=JSON.parse(e.data) as {name?:string};
+      if(evento.name==="chat_mensagem"||evento.name==="chat_alteracao")void atualizar();
+     }catch{/* evento inválido */}
+    };
+   }).catch(()=>{});
+  return()=>{fechado=true;canal?.close();};
+ },[pathname,atualizar]);
  useEffect(()=>{
   if(!aviso)return;
   const t=window.setTimeout(()=>setAviso(""),5000);return()=>window.clearTimeout(t);
