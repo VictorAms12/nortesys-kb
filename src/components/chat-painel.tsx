@@ -316,14 +316,18 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    </div>}
    <div className="border-t border-[var(--border)] pt-4">
     <h3 className="mb-2 font-bold">Colaboradores</h3>
-    <div className="grid gap-1">{usuarios.map(u=><button type="button" key={u.id} onClick={()=>void abrirPrivada(u.id)}
-     className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-[var(--surface-alt)]"
-     title={"Iniciar conversa privada com "+u.nome}>
-     <span aria-hidden="true">{selo(u.presenca)}</span><span className="min-w-0 flex-1 truncate">{u.nome}</span>
-     <span className="text-[10px] text-[var(--muted)]">{statusLabel(u.presenca)}</span>
-    </button>)}</div>
-    <p className="mt-2 text-xs text-[var(--muted)]">Selecione um colega para conversar. Para informações da conta, abra seu perfil:</p>
-    <div className="mt-2 flex flex-wrap gap-2">{usuarios.map(u=><Link key={u.id} href={"/perfil/"+u.id} className="text-xs underline">{u.nome}</Link>)}</div>
+    <div className="grid gap-1">{usuarios.map(u=><div key={u.id} className="flex min-w-0 items-center rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-alt)]">
+     <button type="button" onClick={()=>void abrirPrivada(u.id)}
+      className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left text-sm"
+      title={"Conversar com "+u.nome}>
+      <span aria-hidden="true">{selo(u.presenca)}</span>
+      <span className="min-w-0 flex-1 truncate">{u.nome}</span>
+      <span className="text-[10px] text-[var(--muted)]">{statusLabel(u.presenca)}</span>
+     </button>
+     <Link href={"/perfil/"+u.id} className="botao-icone !h-8 !w-8 shrink-0" title={"Perfil de "+u.nome} aria-label={"Ver perfil de "+u.nome}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-7 8-7s8 2 8 7"/></svg>
+     </Link>
+    </div>)}</div>
    </div>
   </aside>
   <section className="chat-area-mensagens cartao flex min-h-0 min-w-0 max-w-full flex-col overflow-hidden p-3 sm:p-4" aria-label="Mensagens">
