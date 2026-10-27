@@ -33,7 +33,7 @@ function ConteudoMensagem({texto}:{texto:string}){
 export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [estado,setEstado]=useState<EstadoChat|null>(null);
  const [conversa,setConversa]=useState(CHAT_GERAL_ID);
- useEffect(()=>{const id=new URLSearchParams(window.location.search).get("conversa");if(id&&CHAT_UUID.test(id))setConversa(id);},[]);
+ useEffect(()=>{const id=new URLSearchParams(window.location.search).get("conversa");if(!id||!CHAT_UUID.test(id))return;const t=window.setTimeout(()=>setConversa(id),0);return()=>window.clearTimeout(t);},[]);
  const [mensagens,setMensagens]=useState<MensagemChat[]>([]);
  const [texto,setTexto]=useState("");
  const [imagemSelecionada,setImagemSelecionada]=useState<File|null>(null);
