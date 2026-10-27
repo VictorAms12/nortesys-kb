@@ -39,7 +39,7 @@ CREATE INDEX IF NOT EXISTS kb_chat_imagens_limpeza_disponiveis_idx
 -- Captura exclusões globais no próprio banco, inclusive com a versão atual do chat.
 -- A fila é criada na mesma transação que torna o anexo inacessível.
 CREATE OR REPLACE FUNCTION kb_registrar_imagem_chat_excluida()
-RETURNS TRIGGER LANGUAGE plpgsql AS $
+RETURNS TRIGGER LANGUAGE plpgsql AS $chat_img$
 BEGIN
  IF NEW.apagada_para_todos_em IS NOT NULL
     AND OLD.apagada_para_todos_em IS NULL
@@ -49,7 +49,7 @@ BEGIN
    ON CONFLICT(caminho) DO NOTHING;
  END IF;
  RETURN NEW;
-END $;
+END $chat_img$;
 DROP TRIGGER IF EXISTS kb_chat_imagem_exclusao_global ON kb_chat_mensagens;
 CREATE TRIGGER kb_chat_imagem_exclusao_global
   AFTER UPDATE OF apagada_para_todos_em ON kb_chat_mensagens
