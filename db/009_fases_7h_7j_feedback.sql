@@ -1,5 +1,5 @@
 -- Fases 7H/7J: fila de limpeza de imagens e indicadores anônimos + feedback de artigos.
--- Aplicar no banco de Preview, depois no de Production antes do novo código.
+-- Aplicar primeiro em Preview e depois em Production; app usa compatibilidade enquanto pendente.
 -- Exige 001-008; transação aditiva e idempotente, sem excluir dados anteriores.
 BEGIN;
 CREATE TABLE IF NOT EXISTS kb_artigo_feedback (
@@ -36,6 +36,25 @@ CREATE TABLE IF NOT EXISTS kb_chat_imagens_limpeza (
 );
 CREATE INDEX IF NOT EXISTS kb_chat_imagens_limpeza_disponiveis_idx
   ON kb_chat_imagens_limpeza(criada_em) WHERE reservada_ate IS NULL;
+-- Captura exclusões globais no próprio banco, inclusive com a versão atual do chat.
+-- A fila é criada na mesma transação que torna o anexo inacessível.
+CREATE OR REPLACE FUNCTION kb_registrar_imagem_chat_excluida()
+RETURNS TRIGGER LANGUAGE plpgsql AS $
+BEGIN
+ IF NEW.apagada_para_todos_em IS NOT NULL
+    AND OLD.apagada_para_todos_em IS NULL
+    AND NEW.imagem_caminho IS NOT NULL THEN
+   INSERT INTO kb_chat_imagens_limpeza(caminho,mensagem_id)
+   VALUES(NEW.imagem_caminho,NEW.id)
+   ON CONFLICT(caminho) DO NOTHING;
+ END IF;
+ RETURN NEW;
+END $;
+DROP TRIGGER IF EXISTS kb_chat_imagem_exclusao_global ON kb_chat_mensagens;
+CREATE TRIGGER kb_chat_imagem_exclusao_global
+  AFTER UPDATE OF apagada_para_todos_em ON kb_chat_mensagens
+  FOR EACH ROW EXECUTE FUNCTION kb_registrar_imagem_chat_excluida();
+
 -- Inclui imagens de mensagens apagadas antes desta migração.
 INSERT INTO kb_chat_imagens_limpeza(caminho,mensagem_id)
  SELECT imagem_caminho,id FROM kb_chat_mensagens
