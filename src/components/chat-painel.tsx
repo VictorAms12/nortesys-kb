@@ -2,7 +2,7 @@
 import {useCallback,useEffect,useRef,useState,type FormEvent,type ClipboardEvent as ReactClipboardEvent} from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {CHAT_GERAL_ID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
+import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
 import {imagensDaTransferencia,validarArquivoImagemChat} from "../lib/chat-clipboard";
 type ErroResposta={erro?:string};
 const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
@@ -32,6 +32,7 @@ function ConteudoMensagem({texto}:{texto:string}){
 export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [estado,setEstado]=useState<EstadoChat|null>(null);
  const [conversa,setConversa]=useState(CHAT_GERAL_ID);
+ useEffect(()=>{const id=new URLSearchParams(window.location.search).get("conversa");if(id&&CHAT_UUID.test(id))setConversa(id);},[]);
  const [mensagens,setMensagens]=useState<MensagemChat[]>([]);
  const [texto,setTexto]=useState("");
  const [imagemSelecionada,setImagemSelecionada]=useState<File|null>(null);
