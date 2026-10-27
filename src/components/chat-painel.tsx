@@ -322,6 +322,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
      <span aria-hidden="true">{selo(u.presenca)}</span><span className="min-w-0 flex-1 truncate">{u.nome}</span>
      <span className="text-[10px] text-[var(--muted)]">{statusLabel(u.presenca)}</span>
     </button>)}</div>
+    <p className="mt-2 text-xs text-[var(--muted)]">Selecione um colega para conversar. Para informações da conta, abra seu perfil:</p>
+    <div className="mt-2 flex flex-wrap gap-2">{usuarios.map(u=><Link key={u.id} href={"/perfil/"+u.id} className="text-xs underline">{u.nome}</Link>)}</div>
    </div>
   </aside>
   <section className="chat-area-mensagens cartao flex min-h-0 min-w-0 max-w-full flex-col overflow-hidden p-3 sm:p-4" aria-label="Mensagens">
