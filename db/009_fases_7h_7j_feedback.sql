@@ -36,4 +36,9 @@ CREATE TABLE IF NOT EXISTS kb_chat_imagens_limpeza (
 );
 CREATE INDEX IF NOT EXISTS kb_chat_imagens_limpeza_disponiveis_idx
   ON kb_chat_imagens_limpeza(criada_em) WHERE reservada_ate IS NULL;
+-- Inclui imagens de mensagens apagadas antes desta migração.
+INSERT INTO kb_chat_imagens_limpeza(caminho,mensagem_id)
+ SELECT imagem_caminho,id FROM kb_chat_mensagens
+ WHERE apagada_para_todos_em IS NOT NULL AND imagem_caminho IS NOT NULL
+ ON CONFLICT(caminho) DO NOTHING;
 COMMIT;
