@@ -30,7 +30,8 @@ export default async function Indicadores(){
      AND data>=NOW()-INTERVAL '30 days') AS atividade`)
  ]);
  const artigosVisiveis=new Map(artigos.map(a=>[a.url,a.titulo]));
- const vencidos=artigos.filter(a=>a.status==="obsoleto"||artigoPrecisaRevisao(a,hojeISO())).slice(0,12);
+ const vencidosTodos=artigos.filter(a=>a.status==="obsoleto"||artigoPrecisaRevisao(a,hojeISO()));
+ const vencidos=vencidosTodos.slice(0,12);
  const k=resumo[0]??{leitores:0,avaliacoes:0,resolvidos:0,lacunas:0,atividade:0};
  const percentual=k.avaliacoes?Math.round(100*k.resolvidos/k.avaliacoes):null;
  return <div className="space-y-6">
@@ -39,7 +40,7 @@ export default async function Indicadores(){
   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
    {[["Leitores com acesso recente",k.leitores],["Artigos criados/editados (30 dias)",k.atividade],
      ["Feedbacks registrados",k.avaliacoes],["Respostas positivas",percentual===null?"—":percentual+"%"],
-     ["Pesquisas sem resultado (30 dias)",k.lacunas],["Artigos vencidos/obsoletos",vencidos.length]].map(([rotulo,valor])=>
+     ["Pesquisas sem resultado (30 dias)",k.lacunas],["Artigos vencidos/obsoletos",vencidosTodos.length]].map(([rotulo,valor])=>
      <div className="cartao p-5" key={rotulo}><strong className="block text-2xl tabular-nums">{valor}</strong>
      <span className="text-sm text-[var(--muted)]">{rotulo}</span></div>)}
   </div>
