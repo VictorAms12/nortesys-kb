@@ -1,9 +1,10 @@
 import "server-only";
 import {consultar} from "./banco";
 import {urlArtigoValida} from "./interacoes";
+import {migracao009Aplicada} from "./migracao-009";
 
 export async function feedbackUsuario(usuario:string,url:string):Promise<boolean|null>{
- if(!urlArtigoValida(url))return null;
+ if(!urlArtigoValida(url)||!(await migracao009Aplicada()))return null;
  const linhas=await consultar<{resolveu:boolean}>(
   "SELECT resolveu FROM kb_artigo_feedback WHERE usuario_id=$1 AND artigo_url=$2 LIMIT 1",[usuario,url]);
  return linhas.length?linhas[0].resolveu:null;
