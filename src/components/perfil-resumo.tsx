@@ -22,7 +22,7 @@ export function PerfilResumo(){
    const r=await fetch("/api/notificacoes/push",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({endpoint:subscricao.endpoint})});
    if(!r.ok)throw Error();
-   setPerfil(d=>d?{...d,preferencias:{avisos:true,geral:true,navegador:false,...d.preferencias,navegador:true}}:d);
+   setPerfil(d=>d?{...d,preferencias:{avisos:true,geral:true,...d.preferencias,navegador:true}}:d);
    setErro("Dispositivo registrado. Salve as preferências para ativar os avisos.");
   }catch{setErro("Não foi possível ativar as notificações neste dispositivo.");}
  }
