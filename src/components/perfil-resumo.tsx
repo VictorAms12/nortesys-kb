@@ -37,7 +37,7 @@ export function PerfilResumo(){
     if(!r.ok)throw Error();
     await assinatura.unsubscribe();
    }
-   setPerfil(atual=>atual?{...atual,preferencias:{avisos:true,geral:true,navegador:false,...atual.preferencias,navegador:false}}:atual);
+   setPerfil(atual=>atual?{...atual,preferencias:{avisos:true,geral:true,...atual.preferencias,navegador:false}}:atual);
    setErro("Dispositivo desvinculado. Salve as preferências para desativar em todos os aparelhos.");
   }catch{setErro("Não foi possível remover este dispositivo.");}
  }
