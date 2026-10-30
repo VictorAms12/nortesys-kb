@@ -8,7 +8,7 @@ import {SQL_LISTAR_NOTIFICACOES,SQL_CONTAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES,
 
 test("Fase 8: migração idempotente, notificação privada e preferências por usuário",async t=>{
  const db=new PGlite();t.after(()=>db.close());
- for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes"])
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes","011_chat_silenciar"])
   await db.exec(readFileSync("db/"+file+".sql","utf8"));
  await db.exec(readFileSync("db/010_perfis_notificacoes.sql","utf8"));
  const pessoas=[randomUUID(),randomUUID(),randomUUID()];
@@ -34,7 +34,7 @@ test("Fase 8: migração idempotente, notificação privada e preferências por 
 
 test("Fase 8: Web Push reassocia dispositivo sem enviar avisos a contas antigas",async t=>{
  const db=new PGlite();t.after(()=>db.close());
- for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes"])
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes","011_chat_silenciar"])
   await db.exec(readFileSync("db/"+file+".sql","utf8"));
  const primeiro=randomUUID(),segundo=randomUUID();
  for(const [i,id] of [primeiro,segundo].entries())
@@ -64,7 +64,7 @@ test("Fase 8: UI não expõe texto privado nas notificações",()=>{
 
 test("Fase 8: contador completo, mensagens ocultas e leitura da conversa sem vazar avisos",async t=>{
  const db=new PGlite();t.after(()=>db.close());
- for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes"])
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes","011_chat_silenciar"])
   await db.exec(readFileSync("db/"+file+".sql","utf8"));
  const [autor,destinatario,terceiro]=[randomUUID(),randomUUID(),randomUUID()];
  for(const [i,id] of [autor,destinatario,terceiro].entries())
@@ -104,7 +104,7 @@ test("Fase 8: comparação de IDs grandes não perde precisão",()=>{
 
 test("Fase 8: preferência do canal geral filtra avisos sem afetar mensagens",async t=>{
  const db=new PGlite();t.after(()=>db.close());
- for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes"])
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes","011_chat_silenciar"])
   await db.exec(readFileSync("db/"+file+".sql","utf8"));
  const autor=randomUUID(),destino=randomUUID();
  for(const [i,id] of [autor,destino].entries())await db.query(
@@ -121,4 +121,26 @@ test("Fase 8: preferência do canal geral filtra avisos sem afetar mensagens",as
  await db.query("UPDATE kb_usuarios SET preferencias_notificacoes=$2::jsonb WHERE id=$1",[
   destino,JSON.stringify({avisos:true,geral:true,navegador:false})]);
  assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destino])).rows[0].total,1);
+});
+
+test("Fase 8: silenciar conversa só afeta os alertas do próprio participante",async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes","011_chat_silenciar"])
+  await db.exec(readFileSync("db/"+file+".sql","utf8"));
+ await db.exec(readFileSync("db/011_chat_silenciar.sql","utf8"));
+ const [autor,primeiro,segundo]=[randomUUID(),randomUUID(),randomUUID()];
+ for(const [i,id] of [autor,primeiro,segundo].entries())
+  await db.query("INSERT INTO kb_usuarios(id,usuario,nome,papel,senha_salt,senha_hash) VALUES($1,$2,$3,'leitor',$4,$5)",
+   [id,"silenciofase8"+i,"Pessoa "+i,"a".repeat(32),"b".repeat(128)]);
+ const geral="00000000-0000-4000-8000-000000000001";
+ for(const id of [autor,primeiro,segundo])
+  await db.query("INSERT INTO kb_chat_participantes(conversa_id,usuario_id) VALUES($1,$2)",[geral,id]);
+ await db.query("UPDATE kb_chat_participantes SET silenciada=true WHERE usuario_id=$1 AND conversa_id=$2",[primeiro,geral]);
+ await db.query("INSERT INTO kb_chat_mensagens(conversa_id,autor_id,texto) VALUES($1,$2,'Novo aviso')",[geral,autor]);
+ const count=async(usuario:string)=>(await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[usuario])).rows[0].total;
+ assert.equal(await count(primeiro),0,"A conta silenciada não recebe alerta");
+ assert.equal(await count(segundo),1,"O colega continua recebendo alerta");
+ assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_chat_mensagens WHERE conversa_id=$1",[geral])).rows[0].total,1,"Mensagem não foi apagada");
+ await db.query("UPDATE kb_chat_participantes SET silenciada=false WHERE usuario_id=$1 AND conversa_id=$2",[primeiro,geral]);
+ assert.equal(await count(primeiro),1,"Reativação restaura o acesso ao histórico de avisos");
 });
