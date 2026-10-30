@@ -2,14 +2,17 @@
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {useCallback,useEffect,useRef,useState} from "react";
-type Aviso={id:number;conversaId:string;autor:string;criadaEm:string;vistaEm:string|null;tipo:string};
+type Aviso={id:string;conversaId:string;autor:string;criadaEm:string;vistaEm:string|null;tipo:string};
 type Dados={itens:Aviso[];naoLidas:number;indisponivel?:boolean};
 export function CentralNotificacoes(){
  const [dados,setDados]=useState<Dados>({itens:[],naoLidas:0});
  const pathname=usePathname();
  const [aberto,setAberto]=useState(false);
- const [aviso,setAviso]=useState("");
- const ultimo=useRef<number|null>(null);
+ const [aviso,setAviso]=useState<{texto:string;conversaId:string}|null>(null);
+ const ancora=useRef<HTMLDivElement|null>(null);
+ const sincronizacao=useRef<BroadcastChannel|null>(null);
+ const ultimo=useRef<string|null>(null);
+ const depois=(id:string,atual:string)=>id.length>atual.length||(id.length===atual.length&&id>atual);
  const preferencias=useRef({avisos:true,navegador:false,geral:true});
  const atualizar=useCallback(async()=>{
   try{
@@ -17,64 +20,93 @@ export function CentralNotificacoes(){
    if(!r.ok)return;
    const d=await r.json() as Dados;
    if(d.indisponivel)return;
-   const maior=Math.max(0,...d.itens.map(x=>x.id));
-   const recentes=d.itens.filter(x=>!x.vistaEm&&ultimo.current!==null&&x.id>ultimo.current);
+   const maior=d.itens.reduce((m,x)=>depois(x.id,m)?x.id:m,"0");
+   const recentes=d.itens.filter(x=>!x.vistaEm&&ultimo.current!==null&&depois(x.id,ultimo.current));
    const nova=recentes.find(x=>x.tipo!=="geral"||preferencias.current.geral);
-   if(nova&&preferencias.current.avisos&&location.pathname!=="/chat"&&!document.hidden)setAviso("Nova mensagem de "+nova.autor);
+   if(nova&&preferencias.current.avisos&&location.pathname!=="/chat"&&!document.hidden)setAviso({texto:"Nova mensagem de "+nova.autor,conversaId:nova.conversaId});
    if(nova&&document.hidden&&preferencias.current.navegador&&"Notification" in window&&Notification.permission==="granted")
     new Notification("Nova mensagem no Nortesys KB",{body:"Abra o site para consultar a conversa.",tag:"kb-chat-"+nova.conversaId});
-   ultimo.current=maior;
+   if(ultimo.current===null||depois(maior,ultimo.current))ultimo.current=maior;
    setDados(d);
   }catch{/* Mantém o restante do sistema utilizável. */}
  },[]);
  useEffect(()=>{
+  if(typeof BroadcastChannel!=="undefined"){
+   const canal=new BroadcastChannel("kb-notificacoes-atualizadas");
+   canal.onmessage=()=>void atualizar();
+   sincronizacao.current=canal;
+  }
   void fetch("/api/perfil",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.preferencias)preferencias.current=d.preferencias;}).catch(()=>{});
   const inicial=window.setTimeout(()=>void atualizar(),0);
   const intervalo=window.setInterval(()=>void atualizar(),12000);
   const visivel=()=>void atualizar();
   window.addEventListener("focus",visivel);
   document.addEventListener("visibilitychange",visivel);
-  return ()=>{window.clearTimeout(inicial);window.clearInterval(intervalo);window.removeEventListener("focus",visivel);document.removeEventListener("visibilitychange",visivel);};
+  return ()=>{window.clearTimeout(inicial);window.clearInterval(intervalo);window.removeEventListener("focus",visivel);document.removeEventListener("visibilitychange",visivel);sincronizacao.current?.close();sincronizacao.current=null;};
  },[atualizar]);
  useEffect(()=>{
-  // O ChatPainel mantém sua própria conexão dentro de /chat.
-  // Fora dele, este componente escuta eventos sem jamais receber conteúdo privado.
+  // O chat já mantém seu próprio fluxo; nas demais páginas usamos SSE de leitura.
   if(pathname==="/chat")return;
-  let fechado=false;let canal:EventSource|null=null;
-  void fetch("/api/chat/token",{cache:"no-store",credentials:"same-origin"})
-   .then(r=>r.ok?r.json():null)
-   .then((token:{token:string;channels:string[]}|null)=>{
-    if(fechado||!token?.token||!token.channels?.length)return;
+  let encerrado=false;
+  let canal:EventSource|null=null;
+  let renovar:number|undefined;
+  let ultimoEvento="";
+  let eventoEm=0;
+  const conectar=async()=>{
+   canal?.close();canal=null;
+   try{
+    const resposta=await fetch("/api/chat/token",{cache:"no-store",credentials:"same-origin"});
+    if(!resposta.ok)throw Error("Realtime indisponível");
+    const token=await resposta.json() as {token:string;channels:string[];expires:number};
+    if(encerrado||!token?.token||!token.channels?.length)return;
     const params=new URLSearchParams({channels:token.channels.join(","),v:"1.2",accessToken:token.token});
+    if(ultimoEvento&&Date.now()-eventoEm<110000)params.set("lastEvent",ultimoEvento);
     canal=new EventSource("https://main.realtime.ably.net/sse?"+params);
     canal.onmessage=e=>{
-     try{const evento=JSON.parse(e.data) as {name?:string};
-      if(evento.name==="chat_mensagem"||evento.name==="chat_alteracao")void atualizar();
-     }catch{/* evento inválido */}
+     if(e.lastEventId){ultimoEvento=e.lastEventId;eventoEm=Date.now();}
+     try{
+      const msg=JSON.parse(e.data) as {name?:string};
+      if(msg.name==="chat_mensagem"||msg.name==="chat_alteracao")void atualizar();
+     }catch{/* Evento ignorado; polling mantém recuperação. */}
     };
-   }).catch(()=>{});
-  return()=>{fechado=true;canal?.close();};
+    // Token dura 30 minutos. Renovar antes da expiração e fechar a conexão antiga.
+    renovar=window.setTimeout(()=>{if(!encerrado)void conectar();},Math.max(60000,Math.min(25*60000,token.expires-Date.now()-60000)));
+   }catch{
+    if(!encerrado)renovar=window.setTimeout(()=>void conectar(),60000);
+   }
+  };
+  void conectar();
+  return()=>{encerrado=true;canal?.close();if(renovar!==undefined)window.clearTimeout(renovar);};
  },[pathname,atualizar]);
  useEffect(()=>{
+  if(!aberto)return;
+  const key=(e:KeyboardEvent)=>{if(e.key==="Escape")setAberto(false);};
+  const outside=(e:PointerEvent)=>{if(e.target instanceof Node&&!ancora.current?.contains(e.target))setAberto(false);};
+  document.addEventListener("keydown",key);
+  document.addEventListener("pointerdown",outside);
+  return()=>{document.removeEventListener("keydown",key);document.removeEventListener("pointerdown",outside);};
+ },[aberto]);
+ useEffect(()=>{
   if(!aviso)return;
-  const t=window.setTimeout(()=>setAviso(""),5000);return()=>window.clearTimeout(t);
+  const t=window.setTimeout(()=>setAviso(null),5000);return()=>window.clearTimeout(t);
  },[aviso]);
  useEffect(()=>{
   const original=document.title;
   if(dados.naoLidas)document.title="("+Math.min(dados.naoLidas,99)+(dados.naoLidas>99?"+":"")+") Nortesys KB";
   return ()=>{document.title=original;};
  },[dados.naoLidas]);
- async function marcar(id:number|null){
+ async function marcar(id:string|null){
   try{
    const r=await fetch("/api/notificacoes",{method:"POST",headers:{"Content-Type":"application/json"},
      body:JSON.stringify(id===null?{todas:true}:{ids:[id]})});
    if(!r.ok)return;
    setDados(d=>({...d,itens:d.itens.map(x=>id===null||x.id===id?{...x,vistaEm:new Date().toISOString()}:x),
-    naoLidas:id===null?0:Math.max(0,d.naoLidas-1)}));
+    naoLidas:id===null?0:Math.max(0,d.naoLidas-(d.itens.some(x=>x.id===id&&!x.vistaEm)?1:0))}));
+   sincronizacao.current?.postMessage({tipo:"lido"});
   }catch{/* Tente novamente mais tarde. */}
  }
  return <>
-  <div className="relative">
+  <div className="relative" ref={ancora}>
    <button type="button" className="botao-icone relative" onClick={()=>setAberto(v=>!v)}
     aria-expanded={aberto} aria-label="Notificações" title="Notificações">
     <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 8-3 8-3 10h18c0-2-3-2-3-10M10 21h4"/></svg>
@@ -93,6 +125,6 @@ export function CentralNotificacoes(){
       </Link>):<p className="p-4 text-sm text-[var(--muted)]">Nenhum aviso recente.</p>}</div>
    </section>}
   </div>
-  {aviso&&<Link href="/chat" className="toast-mensagem" onClick={()=>setAviso("")} role="status">{aviso}</Link>}
+  {aviso&&<Link href={"/chat?conversa="+encodeURIComponent(aviso.conversaId)} className="toast-mensagem" onClick={()=>setAviso(null)} role="status">{aviso.texto}<span className="block text-xs opacity-80">Abrir conversa</span></Link>}
  </>;
 }
