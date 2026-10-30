@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {PGlite} from "@electric-sql/pglite";
+import {maisRecente} from "../src/lib/notificacoes-client";
 import {SQL_LISTAR_NOTIFICACOES,SQL_CONTAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES_CONVERSA,NOTIFICACAO_ID} from "../src/lib/notificacoes-sql";
 
 test("Fase 8: migração idempotente, notificação privada e preferências por usuário",async t=>{
@@ -92,4 +93,32 @@ test("Fase 8: contador completo, mensagens ocultas e leitura da conversa sem vaz
  await db.query("INSERT INTO kb_chat_mensagens_ocultas(usuario_id,mensagem_id) VALUES($1,$2)",[destinatario,ultima.rows[0].id]);
  assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destinatario])).rows[0].total,0,
   "Mensagem ocultada não permanece no contador");
+});
+
+test("Fase 8: comparação de IDs grandes não perde precisão",()=>{
+ assert.equal(maisRecente("9007199254740993","9007199254740992"),true);
+ assert.equal(maisRecente("9007199254740992","9007199254740993"),false);
+ assert.equal(maisRecente("100","99"),true);
+ assert.equal(maisRecente("99","100"),false);
+});
+
+test("Fase 8: preferência do canal geral filtra avisos sem afetar mensagens",async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes"])
+  await db.exec(readFileSync("db/"+file+".sql","utf8"));
+ const autor=randomUUID(),destino=randomUUID();
+ for(const [i,id] of [autor,destino].entries())await db.query(
+  "INSERT INTO kb_usuarios(id,usuario,nome,papel,senha_salt,senha_hash) VALUES($1,$2,$3,'leitor',$4,$5)",
+  [id,"geralfase8"+i,"Pessoa Geral "+i,"a".repeat(32),"b".repeat(128)]);
+ const conversa="00000000-0000-4000-8000-000000000001";
+ for(const id of [autor,destino])
+  await db.query("INSERT INTO kb_chat_participantes(conversa_id,usuario_id) VALUES($1,$2)",[conversa,id]);
+ await db.query("UPDATE kb_usuarios SET preferencias_notificacoes=$2::jsonb WHERE id=$1",[
+  destino,JSON.stringify({avisos:true,geral:false,navegador:false})]);
+ await db.query("INSERT INTO kb_chat_mensagens(conversa_id,autor_id,texto) VALUES($1,$2,'Canal geral')",[conversa,autor]);
+ assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destino])).rows[0].total,0);
+ assert.equal((await db.query(SQL_LISTAR_NOTIFICACOES,[destino])).rows.length,0);
+ await db.query("UPDATE kb_usuarios SET preferencias_notificacoes=$2::jsonb WHERE id=$1",[
+  destino,JSON.stringify({avisos:true,geral:true,navegador:false})]);
+ assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destino])).rows[0].total,1);
 });
