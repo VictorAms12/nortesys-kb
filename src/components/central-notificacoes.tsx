@@ -25,8 +25,10 @@ export function CentralNotificacoes(){
    const recentes=d.itens.filter(x=>!x.vistaEm&&ultimo.current!==null&&depois(x.id,ultimo.current));
    const nova=recentes.find(x=>x.tipo!=="geral"||preferencias.current.geral);
    if(nova&&preferencias.current.avisos&&location.pathname!=="/chat"&&!document.hidden)setAviso({texto:"Nova mensagem de "+nova.autor,conversaId:nova.conversaId});
-   if(nova&&document.hidden&&preferencias.current.navegador&&"Notification" in window&&Notification.permission==="granted")
-    new Notification("Nova mensagem no Nortesys KB",{body:"Abra o site para consultar a conversa.",tag:"kb-chat-"+nova.conversaId});
+   if(nova&&document.hidden&&preferencias.current.navegador&&"Notification" in window&&Notification.permission==="granted"){
+    const n=new Notification("Nova mensagem no Nortesys KB",{body:"Abra o site para consultar a conversa.",tag:"kb-chat"});
+    n.onclick=()=>{window.focus();window.location.assign("/chat?conversa="+encodeURIComponent(nova.conversaId));n.close();};
+   }
    if(ultimo.current===null||depois(maior,ultimo.current))ultimo.current=maior;
    setDados(d);
   }catch{/* Mantém o restante do sistema utilizável. */}
