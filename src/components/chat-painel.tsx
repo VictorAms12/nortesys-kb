@@ -125,7 +125,14 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    const lista=data.mensagens;
    setMensagens(atual=>antes===null?lista:[...lista,...atual.filter(m=>!lista.some(a=>a.id===m.id))]);
    setMais(lista.length===60);
-   if(!q&&antes===null&&!document.hidden)void enviar("lido",{conversa:id}).then(()=>atualizarEstado()).catch(()=>{});
+   if(!q&&antes===null&&!document.hidden)void enviar("lido",{conversa:id}).then(()=>{
+    window.dispatchEvent(new Event("kb-notificacoes-atualizadas"));
+    if(typeof BroadcastChannel!=="undefined"){
+     const canal=new BroadcastChannel("kb-notificacoes-atualizadas");
+     canal.postMessage({tipo:"lido"});canal.close();
+    }
+    return atualizarEstado();
+   }).catch(()=>{});
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir as mensagens.");}
  },[atualizarEstado]);
  useEffect(()=>{
