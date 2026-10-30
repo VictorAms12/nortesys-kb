@@ -540,3 +540,46 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 .chat-lista button {transition:background-color 150ms ease,border-color 150ms ease,transform 150ms ease;}
 .chat-lista button:hover {background:var(--surface-alt);}
 @media (prefers-reduced-motion:reduce){.chat-historico li,.painel-notificacoes,.toast-mensagem{animation:none!important;}}
+
+/* Fase 8 — acabamento visual e estados de interação da aplicação inteira. */
+:root { --raio-interacao: .65rem; --tempo-interacao: 160ms; }
+::selection { background: color-mix(in srgb, var(--primary) 24%, transparent); color: var(--text); }
+.botao-primario,.botao-secundario,.botao-copiar,.botao-icone,.item-navegacao,.link-sumario,.link-cartao {
+ transition: background-color var(--tempo-interacao) ease,
+  color var(--tempo-interacao) ease,
+  border-color var(--tempo-interacao) ease,
+  box-shadow var(--tempo-interacao) ease,
+  transform var(--tempo-interacao) ease;
+}
+.botao-primario:active:not(:disabled),.botao-secundario:active:not(:disabled),.botao-icone:active:not(:disabled) {transform:translateY(1px);}
+.botao-primario:disabled,.botao-secundario:disabled,.botao-icone:disabled {opacity:.54;cursor:not-allowed;}
+:where(button,input,textarea,select) {font:inherit;}
+:where(input,textarea,select):focus-visible {outline:2px solid var(--primary);outline-offset:2px;}
+.item-navegacao:focus-visible,.perfil-sidebar:focus-visible {outline:2px solid var(--primary);outline-offset:2px;}
+.item-navegacao-ativo {box-shadow:inset 3px 0 var(--primary);font-weight:720;}
+.rolagem-sidebar {scrollbar-color:var(--border) transparent;scrollbar-width:thin;}
+.perfil-sidebar {border-radius:var(--raio-interacao);padding:.25rem;text-decoration:none;color:var(--text);}
+.perfil-sidebar:hover {background:var(--surface-alt);}
+.topbar-app .botao-icone:focus-visible {outline-color:var(--primary);}
+.mensagem-vazia {background:var(--surface);border-style:dashed;}
+.cartao:focus-within {border-color:color-mix(in srgb,var(--primary) 40%,var(--border));}
+.campo-pesquisa,.campo-filtro select,.login-form input {transition:border-color var(--tempo-interacao) ease,box-shadow var(--tempo-interacao) ease;}
+.campo-pesquisa:focus,.campo-filtro select:focus,.login-form input:focus {border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 13%,transparent);}
+.chat-lista button:focus-visible,.chat-mensagem-acoes summary:focus-visible {outline:2px solid var(--primary);outline-offset:2px;}
+.chat-compositor textarea:focus-visible {outline:2px solid var(--primary);outline-offset:1px;}
+.chat-balao {overflow-wrap:anywhere;}
+.chat-historico {scrollbar-color:var(--border) transparent;scrollbar-width:thin;}
+.painel-notificacoes {box-shadow:0 15px 40px #0002;}
+.notificacao-item {line-height:1.45;}
+.notificacao-item:not(.nao-lida) {opacity:.87;}
+.notificacao-item:active {background:var(--surface-alt);}
+.toast-mensagem {display:block;line-height:1.45;}
+@media(max-width:480px){
+ .painel-notificacoes {right:-58px;width:min(335px,calc(100vw - 20px));max-height:min(410px,70dvh);}
+ .toast-mensagem {right:10px;bottom:12px;width:min(360px,calc(100vw - 20px));}
+ .chat-compositor .botao-primario {min-height:44px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .botao-primario,.botao-secundario,.botao-copiar,.botao-icone,.item-navegacao,
+ .link-sumario,.link-cartao,.campo-pesquisa,.login-form input {transition:none!important;transform:none!important;}
+}
