@@ -7,6 +7,7 @@ import { AlternarTema } from "./alternar-tema";
 import { AtalhoBusca } from "./atalho-busca";
 import { IndicadorChat } from "./indicador-chat";
 import { CentralNotificacoes } from "./central-notificacoes";
+import { MenuConta } from "./menu-conta";
 import { IconeInterface, type NomeIcone } from "./icone-interface";
 import { lerPreferencia, salvarPreferencia } from "../lib/preferencias-navegador";
 
@@ -49,6 +50,8 @@ function atual(path:string, href:string){
 function tituloPagina(path:string):string {
   if(path==="/")return "Início";
   if(path.startsWith("/admin/artigos/"))return "Editor de artigos";
+  if(path.startsWith("/perfil/"))return "Perfil do colaborador";
+  if(path==="/perfil")return "Minha conta";
   if(path.startsWith("/artigos/"))return "Leitura de artigo";
   if(path.startsWith("/categorias/"))return "Artigos por categoria";
   return [...gerais,...admin].find(i=>i.href===path)?.texto || "Base de conhecimento";
@@ -115,7 +118,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
     <div className="area-app" inert={mobileAberta}>
       <header className="topbar-app no-print">
         <div className="topbar-esquerda"><button type="button" className="botao-icone abrir-menu-mobile" aria-label="Abrir menu" aria-controls="navegacao-lateral" aria-expanded={mobileAberta} onClick={()=>setMobileAberta(true)}><IconeInterface nome="menu"/></button><span className="caminho-topbar">Nortesys KB <span aria-hidden="true">/</span> <strong>{tituloPagina(pathname)}</strong></span></div>
-        <div className="topbar-direita"><AtalhoBusca/><IndicadorChat/><CentralNotificacoes/><AlternarTema/><form action="/api/autenticacao/sair" method="post"><button type="submit" className="botao-icone" title="Encerrar sessão" aria-label="Sair da conta"><IconeInterface nome="sair"/></button></form></div>
+        <div className="topbar-direita"><AtalhoBusca/><IndicadorChat/><CentralNotificacoes/><AlternarTema/><MenuConta nome={nome} papel={papel}/></div>
       </header>
       <div className="conteudo-app">{children}</div>
       <footer className="rodape-app no-print"><div className="conteiner">Nortesys KB · Ambiente interno · Acesso restrito</div></footer>

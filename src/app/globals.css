@@ -583,3 +583,14 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
  .botao-primario,.botao-secundario,.botao-copiar,.botao-icone,.item-navegacao,
  .link-sumario,.link-cartao,.campo-pesquisa,.login-form input {transition:none!important;transform:none!important;}
 }
+
+/* Fase 8 — Menu de conta acessível no cabeçalho. */
+.menu-conta-ancora {position:relative;flex:none;}
+.menu-conta-gatilho {border-color:var(--border);padding:3px;overflow:hidden;}
+.menu-conta-inicial {display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--surface-alt);color:var(--primary);font-size:.9rem;font-weight:800;}
+.menu-conta-painel {position:absolute;right:0;top:calc(100% + 8px);z-index:80;min-width:238px;max-width:min(310px,calc(100vw - 20px));padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:0 14px 38px #0002;animation:entrada-item .16s ease-out;}
+.menu-conta-cabecalho {padding:12px 10px;border-bottom:1px solid var(--border);margin-bottom:5px;}
+.menu-conta-item {display:block;color:var(--text);font-size:.87rem;font-weight:550;text-decoration:none;border-radius:7px;padding:11px 10px;width:100%;background:transparent;cursor:pointer;transition:background-color .15s ease;}
+.menu-conta-item:hover,.menu-conta-item:focus-visible {background:var(--surface-alt);}
+.menu-conta-divisor {border-top:1px solid var(--border);margin:5px 0;}
+@media(prefers-reduced-motion:reduce){.menu-conta-painel{animation:none}.menu-conta-item{transition:none}}

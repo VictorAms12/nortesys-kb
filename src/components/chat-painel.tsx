@@ -128,6 +128,17 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    if(!q&&antes===null&&!document.hidden)void enviar("lido",{conversa:id}).then(()=>atualizarEstado()).catch(()=>{});
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir as mensagens.");}
  },[atualizarEstado]);
+ useEffect(()=>{
+  const contato=new URLSearchParams(window.location.search).get("contato");
+  if(!contato||!CHAT_UUID.test(contato)||contato===usuarioId)return;
+  let ativo=true;
+  void enviar("privada",{alvo:contato}).then(r=>{
+   if(!ativo||typeof r.id!=="string"||!CHAT_UUID.test(r.id))return;
+   rolarAoFim.current=true;setConversa(r.id);setPesquisa("");setMensagens([]);
+   setRespondendo(null);setContatosAbertos(false);void atualizarEstado();
+  }).catch(e=>{if(ativo)setAviso(e instanceof Error?e.message:"Não foi possível abrir a conversa.");});
+  return()=>{ativo=false;};
+ },[usuarioId,atualizarEstado]);
  useEffect(()=>{const t=window.setTimeout(()=>void atualizarEstado(),0);return ()=>window.clearTimeout(t);},[atualizarEstado]);
  useEffect(()=>{const t=window.setTimeout(()=>void carregar(conversa,pesquisa),0);return ()=>window.clearTimeout(t);},[conversa,pesquisa,carregar]);
  useEffect(()=>{

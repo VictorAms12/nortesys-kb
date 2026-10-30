@@ -6,7 +6,7 @@ import {consultar} from "../../../lib/banco";
 export const dynamic="force-dynamic";
 type Pessoa={id:string;nome:string;usuario:string;papel:string;bio:string|null;avatar_caminho:string|null;presenca:string};
 export default async function Colaborador({params}:{params:Promise<{id:string}>}){
- await exigirSessao();
+ const sessao=await exigirSessao();
  const {id}=await params;
  if(!/^[0-9a-f-]{36}$/i.test(id))notFound();
  const pessoas=await consultar<Pessoa>(`SELECT u.id,u.nome,u.usuario,u.papel,u.bio,u.avatar_caminho,
@@ -24,6 +24,6 @@ export default async function Colaborador({params}:{params:Promise<{id:string}>}
  <div><h2 className="text-xl font-bold">{pessoa.nome}</h2><p className="text-sm text-[var(--muted)]">@{pessoa.usuario} · {pessoa.papel}</p></div></div>
  <p className="text-sm text-[var(--muted)]">Disponibilidade aproximada: {pessoa.presenca}</p>
  <p className="border-t border-[var(--border)] pt-4 text-sm">{pessoa.bio||"Sem apresentação profissional cadastrada."}</p>
- <Link href="/chat" className="botao-primario">Abrir chat da equipe</Link>
+ {sessao.id!==pessoa.id?<Link href={"/chat?contato="+encodeURIComponent(pessoa.id)} className="botao-primario">Enviar mensagem privada</Link>:<Link href="/perfil" className="botao-primario">Editar meu perfil</Link>}
  </div></main>;
 }
