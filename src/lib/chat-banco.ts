@@ -4,6 +4,7 @@ import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type ConversaC
 import {registrarAuditoriaSegura} from "./auditoria-eventos";
 import {publicarChat} from "./chat-ably";
 import {enviarPushChat} from "./push-web";
+import {SQL_MARCAR_NOTIFICACOES_CONVERSA} from "./notificacoes-sql";
 import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA,SQL_INSERIR_IMAGEM_CHAT} from "./chat-sql";
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
@@ -160,6 +161,9 @@ export async function limparConversaParaMim(usuario:string,conversa:string):Prom
  if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
  const rows=await consultar<{usuario_id:string}>(SQL_LIMPAR_CONVERSA,[conversa,usuario]);
  if(!rows.length)throw new ErroChat(404,"Conversa não encontrada.");
+ await consultar(SQL_MARCAR_NOTIFICACOES_CONVERSA,[usuario,conversa]).catch(()=>{
+  console.error("[chat] Não foi possível limpar avisos da conversa.");
+ });
  await registrarAuditoriaSegura(usuario,"chat_conversa_limpa",conversa);
  await publicarChat("kb-chat:usuario:"+usuario,"alteracao",{conversaId:conversa,id:0});
 }
@@ -170,6 +174,10 @@ export async function marcarLida(usuario:string,conversa:string):Promise<void>{
   "COALESCE((SELECT MAX(m.id) FROM kb_chat_mensagens m WHERE m.conversa_id=$1),0)) "+
   "WHERE p.usuario_id=$2 AND p.conversa_id=$1 RETURNING p.usuario_id",[conversa,usuario]);
  if(!rows.length)throw new ErroChat(404,"Conversa não encontrada.");
+ // Uma conversa aberta marca também seus avisos como lidos, sem afetar outras conversas.
+ await consultar(SQL_MARCAR_NOTIFICACOES_CONVERSA,[usuario,conversa]).catch(()=>{
+  console.error("[chat] Falha ao sincronizar avisos lidos.");
+ });
  // Leitura não é auditada por mensagem para evitar milhares de eventos repetitivos.
 }
 export async function atualizarPresenca(usuario:string,ativo:boolean):Promise<void>{
