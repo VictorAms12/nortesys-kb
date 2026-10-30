@@ -4,6 +4,7 @@ import {usePathname} from "next/navigation";
 import {useCallback,useEffect,useRef,useState} from "react";
 type Aviso={id:string;conversaId:string;autor:string;criadaEm:string;vistaEm:string|null;tipo:string};
 type Dados={itens:Aviso[];naoLidas:number;indisponivel?:boolean};
+function depois(id:string,atual:string){return id.length>atual.length||(id.length===atual.length&&id>atual);}
 export function CentralNotificacoes(){
  const [dados,setDados]=useState<Dados>({itens:[],naoLidas:0});
  const pathname=usePathname();
@@ -12,7 +13,7 @@ export function CentralNotificacoes(){
  const ancora=useRef<HTMLDivElement|null>(null);
  const sincronizacao=useRef<BroadcastChannel|null>(null);
  const ultimo=useRef<string|null>(null);
- const depois=(id:string,atual:string)=>id.length>atual.length||(id.length===atual.length&&id>atual);
+
  const preferencias=useRef({avisos:true,navegador:false,geral:true});
  const atualizar=useCallback(async()=>{
   try{
