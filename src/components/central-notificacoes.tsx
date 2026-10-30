@@ -53,15 +53,17 @@ export function CentralNotificacoes(){
   if(typeof BroadcastChannel!=="undefined"){
    const canal=new BroadcastChannel("kb-notificacoes-atualizadas");
    canal.onmessage=(evento:MessageEvent)=>{
-    if(evento.data?.tipo==="preferencias"&&evento.data.preferencias)
+    if(evento.data?.tipo==="preferencias"&&evento.data.preferencias){
      preferencias.current=evento.data.preferencias;
+     ultimo.current=null;
+    }
     void atualizar();
    };
    sincronizacao.current=canal;
   }
   const mudanca=(e:Event)=>{
    const p=(e as CustomEvent).detail;
-   if(p)preferencias.current=p;
+   if(p){preferencias.current=p;ultimo.current=null;}
    void atualizar();
   };
   window.addEventListener("kb-preferencias-atualizadas",mudanca);
