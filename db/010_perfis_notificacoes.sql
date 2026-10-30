@@ -47,4 +47,6 @@ CREATE TABLE IF NOT EXISTS kb_push_subscricoes (
  PRIMARY KEY(usuario_id,endpoint_hash)
 );
 CREATE INDEX IF NOT EXISTS kb_push_subscricoes_usuario_idx ON kb_push_subscricoes(usuario_id);
+-- Uma inscrição física pertence a uma conta por vez no navegador compartilhado.
+CREATE UNIQUE INDEX IF NOT EXISTS kb_push_endpoint_unico_idx ON kb_push_subscricoes(endpoint_hash);
 COMMIT;
