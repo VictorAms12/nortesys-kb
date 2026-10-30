@@ -2,6 +2,7 @@
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {useCallback,useEffect,useRef,useState} from "react";
+import {reservarAlerta} from "../lib/notificacoes-client";
 type Aviso={id:string;conversaId:string;autor:string;criadaEm:string;vistaEm:string|null;tipo:string};
 type Dados={itens:Aviso[];naoLidas:number;indisponivel?:boolean};
 function depois(id:string,atual:string){return id.length>atual.length||(id.length===atual.length&&id>atual);}
@@ -13,6 +14,7 @@ export function CentralNotificacoes(){
  const ancora=useRef<HTMLDivElement|null>(null);
  const sincronizacao=useRef<BroadcastChannel|null>(null);
  const ultimo=useRef<string|null>(null);
+ const identidade=useRef("anon");
 
  const preferencias=useRef({avisos:true,navegador:false,geral:true});
  const atualizar=useCallback(async()=>{
@@ -24,10 +26,24 @@ export function CentralNotificacoes(){
    const maior=d.itens.reduce((m,x)=>depois(x.id,m)?x.id:m,"0");
    const recentes=d.itens.filter(x=>!x.vistaEm&&ultimo.current!==null&&depois(x.id,ultimo.current));
    const nova=recentes.find(x=>x.tipo!=="geral"||preferencias.current.geral);
-   if(nova&&preferencias.current.avisos&&location.pathname!=="/chat"&&!document.hidden)setAviso({texto:"Nova mensagem de "+nova.autor,conversaId:nova.conversaId});
-   if(nova&&document.hidden&&preferencias.current.navegador&&"Notification" in window&&Notification.permission==="granted"){
-    const n=new Notification("Nova mensagem no Nortesys KB",{body:"Abra o site para consultar a conversa.",tag:"kb-chat"});
-    n.onclick=()=>{window.focus();window.location.assign("/chat?conversa="+encodeURIComponent(nova.conversaId));n.close();};
+   if(nova){
+    const toast=preferencias.current.avisos&&!document.hidden&&location.pathname!=="/chat";
+    const nativo=document.hidden&&preferencias.current.navegador&&"Notification" in window&&Notification.permission==="granted";
+    let pushAtivo=false;
+    if(nativo&&"serviceWorker" in navigator){
+     try{
+      const reg=await navigator.serviceWorker.getRegistration("/kb-notification-worker.js");
+      pushAtivo=Boolean(await reg?.pushManager?.getSubscription());
+     }catch{/* Não interromper avisos internos. */}
+    }
+    if((toast||(nativo&&!pushAtivo))&&await reservarAlerta(nova.id,identidade.current)){
+     if(toast)setAviso({texto:"Nova mensagem de "+nova.autor,conversaId:nova.conversaId});
+     if(nativo&&!pushAtivo){
+      const alerta=new Notification("Nova mensagem no Nortesys KB",{
+       body:"Abra o site para consultar a conversa.",tag:"kb-chat"});
+      alerta.onclick=()=>{window.focus();window.location.assign("/chat?conversa="+encodeURIComponent(nova.conversaId));alerta.close();};
+     }
+    }
    }
    if(ultimo.current===null||depois(maior,ultimo.current))ultimo.current=maior;
    setDados(d);
@@ -36,16 +52,30 @@ export function CentralNotificacoes(){
  useEffect(()=>{
   if(typeof BroadcastChannel!=="undefined"){
    const canal=new BroadcastChannel("kb-notificacoes-atualizadas");
-   canal.onmessage=()=>void atualizar();
+   canal.onmessage=(evento:MessageEvent)=>{
+    if(evento.data?.tipo==="preferencias"&&evento.data.preferencias)
+     preferencias.current=evento.data.preferencias;
+    void atualizar();
+   };
    sincronizacao.current=canal;
   }
-  void fetch("/api/perfil",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{if(d?.preferencias)preferencias.current=d.preferencias;}).catch(()=>{});
+  const mudanca=(e:Event)=>{
+   const p=(e as CustomEvent).detail;
+   if(p)preferencias.current=p;
+   void atualizar();
+  };
+  window.addEventListener("kb-preferencias-atualizadas",mudanca);
+  window.addEventListener("kb-notificacoes-atualizadas",atualizar);
+  void fetch("/api/perfil",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+   if(d?.id)identidade.current=d.id;
+   if(d?.preferencias)preferencias.current=d.preferencias;
+  }).catch(()=>{});
   const inicial=window.setTimeout(()=>void atualizar(),0);
   const intervalo=window.setInterval(()=>void atualizar(),12000);
   const visivel=()=>void atualizar();
   window.addEventListener("focus",visivel);
   document.addEventListener("visibilitychange",visivel);
-  return ()=>{window.clearTimeout(inicial);window.clearInterval(intervalo);window.removeEventListener("focus",visivel);document.removeEventListener("visibilitychange",visivel);sincronizacao.current?.close();sincronizacao.current=null;};
+  return ()=>{window.clearTimeout(inicial);window.clearInterval(intervalo);window.removeEventListener("focus",visivel);document.removeEventListener("visibilitychange",visivel);sincronizacao.current?.close();sincronizacao.current=null;window.removeEventListener("kb-preferencias-atualizadas",mudanca);window.removeEventListener("kb-notificacoes-atualizadas",atualizar);};
  },[atualizar]);
  useEffect(()=>{
   // O chat já mantém seu próprio fluxo; nas demais páginas usamos SSE de leitura.
@@ -94,8 +124,8 @@ export function CentralNotificacoes(){
   const t=window.setTimeout(()=>setAviso(null),5000);return()=>window.clearTimeout(t);
  },[aviso]);
  useEffect(()=>{
-  const original=document.title;
-  if(dados.naoLidas)document.title="("+Math.min(dados.naoLidas,99)+(dados.naoLidas>99?"+":"")+") Nortesys KB";
+  const original=document.title.replace(/^\\(\\d+\\+?\\)\\s+/,"");
+  document.title=dados.naoLidas?"("+Math.min(dados.naoLidas,99)+(dados.naoLidas>99?"+":"")+") "+original:original;
   return ()=>{document.title=original;};
  },[dados.naoLidas]);
  async function marcar(id:string|null){
