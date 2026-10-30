@@ -6,8 +6,8 @@ import {verificarOrigemPost} from "../../../lib/origem";
 export async function GET(req:NextRequest){
  const u=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
  if(!u)return NextResponse.json({erro:"Não autorizado"},{status:401});
- const rows=await consultar<{bio:string|null;preferencias:unknown}>(
-  "SELECT bio,preferencias_notificacoes AS preferencias FROM kb_usuarios WHERE id=$1",[u.id]);
+ const rows=await consultar<{bio:string|null;avatarCaminho:string|null;preferencias:unknown}>(
+  "SELECT bio,avatar_caminho AS "avatarCaminho",preferencias_notificacoes AS preferencias FROM kb_usuarios WHERE id=$1",[u.id]);
  return NextResponse.json({id:u.id,nome:u.nome,usuario:u.usuario,papel:u.papel,...rows[0]},{headers:{"Cache-Control":"private, no-store"}});
 }
 
