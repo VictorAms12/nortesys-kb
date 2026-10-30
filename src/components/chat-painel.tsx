@@ -216,6 +216,14 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const usuarios=(estado?.usuarios??[]).filter(u=>u.id!==usuarioId);
  const atual=abertas.find(c=>c.id===conversa);
  const totalNaoLidas=abertas.reduce((n,c)=>n+c.naoLidas,0);
+ async function alternarSilencio(c:{id:string;silenciada:boolean}){
+  try{
+   await enviar("silenciar",{conversa:c.id,silenciada:!c.silenciada});
+   setEstado(atual=>atual?{...atual,conversas:atual.conversas.map(x=>x.id===c.id?{...x,silenciada:!c.silenciada}:x)}:atual);
+   setAviso(c.silenciada?"Notificações da conversa reativadas.":"Conversa silenciada neste perfil.");
+   window.dispatchEvent(new Event("kb-notificacoes-atualizadas"));
+  }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível alterar os avisos.");}
+ }
  async function abrirPrivada(alvo:string){
   try{
    const resposta=await enviar("privada",{alvo});
@@ -327,12 +335,20 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    </div><button type="button" className="chat-fechar-lista botao-secundario" onClick={()=>setContatosAbertos(false)} aria-label="Fechar conversas">Fechar</button></div>
    {!estado?<p className="text-sm text-[var(--muted)]">Carregando conversas...</p>:
    <div className="grid min-w-0 gap-1" role="group" aria-label="Selecionar conversa">
-    {abertas.map(c=><button type="button" key={c.id} onClick={()=>mudarConversa(c.id)}
-      className={"flex min-w-0 w-full items-center justify-between gap-2 overflow-hidden rounded-lg border p-3 text-left text-sm "+(c.id===conversa?"border-[var(--primary)]":"border-[var(--border)]")}>
-      <span className="block min-w-0 flex-1 overflow-hidden"><strong className="block truncate">{c.nome}</strong>
-       <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[var(--muted)]">{c.ultimaMensagem?.slice(0,65)||"Sem mensagens"}</span>
-      </span>{c.naoLidas>0&&<span className="etiqueta" aria-label={c.naoLidas+" mensagens não lidas"}>{c.naoLidas}</span>}
-    </button>)}
+    {abertas.map(c=><div key={c.id} className={"flex min-w-0 w-full items-center gap-1 overflow-hidden rounded-lg border "+(c.id===conversa?"border-[var(--primary)]":"border-[var(--border)]")}>
+      <button type="button" onClick={()=>mudarConversa(c.id)}
+       className="flex min-w-0 flex-1 items-center gap-2 p-3 text-left text-sm">
+       <span className="block min-w-0 flex-1 overflow-hidden"><strong className="block truncate">{c.nome}</strong>
+        <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[var(--muted)]">{c.ultimaMensagem?.slice(0,65)||"Sem mensagens"}</span>
+       </span>{c.naoLidas>0&&<span className="etiqueta" aria-label={c.naoLidas+" mensagens não lidas"}>{c.naoLidas}</span>}
+      </button>
+      <button type="button" onClick={()=>void alternarSilencio(c)}
+       title={c.silenciada?"Reativar alertas":"Silenciar alertas"} aria-label={(c.silenciada?"Reativar notificações de ":"Silenciar notificações de ")+c.nome}
+       aria-pressed={c.silenciada} className="botao-icone !h-9 !w-9 shrink-0 !mr-1">
+       {c.silenciada?<svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m3 3 18 18M18 8a6 6 0 0 0-10-4M6 10c0 6-3 6-3 8h15M10 21h4"/></svg>:
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 8-3 8-3 10h18c0-2-3-2-3-10M10 21h4"/></svg>}
+      </button>
+     </div>)}
    </div>}
    <div className="border-t border-[var(--border)] pt-4">
     <h3 className="mb-2 font-bold">Colaboradores</h3>

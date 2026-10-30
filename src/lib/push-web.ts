@@ -45,7 +45,7 @@ export async function enviarPushChat(autor:string,conversa:string):Promise<void>
  JOIN kb_chat_participantes p ON p.usuario_id=s.usuario_id AND p.conversa_id=$2
  JOIN kb_chat_conversas c ON c.id=$2
  JOIN kb_usuarios u ON u.id=s.usuario_id AND u.ativo=true
- WHERE s.usuario_id<>$1 AND u.preferencias_notificacoes->>'navegador'='true'
+ WHERE s.usuario_id<>$1 AND p.silenciada=FALSE AND u.preferencias_notificacoes->>'navegador'='true'
  AND (c.tipo<>'geral' OR u.preferencias_notificacoes->>'geral'='true')
  ORDER BY s.criado_em DESC LIMIT 50`,[autor,conversa]);
   await Promise.allSettled(subs.filter(x=>endpointPushValido(x.endpoint)).map(async({endpoint})=>{

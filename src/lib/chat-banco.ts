@@ -9,7 +9,7 @@ import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
 type ConversaLinha={id:string;tipo:"geral"|"privada";nome:string;nao_lidas:number;
- ultima_mensagem:string|null;ultimo_horario:string|null;outro_id:string|null};
+ ultima_mensagem:string|null;ultimo_horario:string|null;outro_id:string|null;silenciada:boolean};
 type MsgLinha={id:number;conversa_id:string;autor_id:string;autor:string;texto:string;criado_em:string;
  apagada_para_todos:boolean;tem_imagem:boolean;respondendo_a_id:number|null;resposta_texto:string|null;resposta_autor:string|null};
 export async function conversaPermitida(usuario:string,conversa:string):Promise<boolean>{
@@ -34,7 +34,7 @@ export async function estadoChat(usuario:string,ablyConfigurado:boolean):Promise
  ]);
  const users:UsuarioChat[]=pessoas;
  const lista:ConversaChat[]=conversas.map(c=>({id:c.id,tipo:c.tipo,nome:c.nome,naoLidas:c.nao_lidas,
-   ultimaMensagem:c.ultima_mensagem,ultimoHorario:c.ultimo_horario,outroId:c.outro_id}));
+   ultimaMensagem:c.ultima_mensagem,ultimoHorario:c.ultimo_horario,outroId:c.outro_id,silenciada:c.silenciada}));
  return {eu:usuario,usuarios:users,conversas:lista,ablyConfigurado};
 }
 export function converterMensagem(m:MsgLinha):MensagemChat{
@@ -165,6 +165,14 @@ export async function limparConversaParaMim(usuario:string,conversa:string):Prom
   console.error("[chat] Não foi possível limpar avisos da conversa.");
  });
  await registrarAuditoriaSegura(usuario,"chat_conversa_limpa",conversa);
+ await publicarChat("kb-chat:usuario:"+usuario,"alteracao",{conversaId:conversa,id:0});
+}
+export async function definirSilencio(usuario:string,conversa:string,silenciada:boolean):Promise<void>{
+ if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
+ const linhas=await consultar<{usuario_id:string}>(
+  "UPDATE kb_chat_participantes SET silenciada=$3 WHERE usuario_id=$1 AND conversa_id=$2 RETURNING usuario_id",
+  [usuario,conversa,silenciada]);
+ if(!linhas.length)throw new ErroChat(404,"Conversa indisponível.");
  await publicarChat("kb-chat:usuario:"+usuario,"alteracao",{conversaId:conversa,id:0});
 }
 export async function marcarLida(usuario:string,conversa:string):Promise<void>{

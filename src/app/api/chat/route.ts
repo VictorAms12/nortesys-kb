@@ -3,7 +3,7 @@ import {NextResponse} from "next/server";
 import {NOME_COOKIE,obterSessao} from "../../../lib/sessao";
 import {verificarOrigemPost} from "../../../lib/origem";
 import {ablyConfigurado} from "../../../lib/chat-ably";
-import {estadoChat,abrirConversaPrivada,enviarMensagem,marcarLida,atualizarPresenca,avisarDigitando,apagarMensagemParaMim,apagarMensagemParaTodos,limparConversaParaMim,ErroChat} from "../../../lib/chat-banco";
+import {estadoChat,abrirConversaPrivada,enviarMensagem,marcarLida,atualizarPresenca,avisarDigitando,apagarMensagemParaMim,apagarMensagemParaTodos,limparConversaParaMim,definirSilencio,ErroChat} from "../../../lib/chat-banco";
 import {CHAT_UUID} from "../../../lib/chat-tipos";
 export const runtime="nodejs";export const dynamic="force-dynamic";
 const headers={"Cache-Control":"private, no-store"};
@@ -59,6 +59,12 @@ export async function POST(req:NextRequest){
    case "limpar":{
      if(typeof dados.conversa!=="string")return erro("Conversa inválida.",400);
      await limparConversaParaMim(u.id,dados.conversa);
+     return NextResponse.json({ok:true},{headers});
+   }
+   case "silenciar":{
+     if(typeof dados.conversa!=="string"||typeof dados.silenciada!=="boolean")
+       return erro("Dados inválidos.",400);
+     await definirSilencio(u.id,dados.conversa,dados.silenciada);
      return NextResponse.json({ok:true},{headers});
    }
    case "lido":{

@@ -7,6 +7,7 @@ const VISIVEIS = `FROM kb_notificacoes n
  JOIN kb_chat_mensagens m ON m.id=n.mensagem_id AND m.conversa_id=n.conversa_id
  WHERE n.destinatario_id=$1
  AND (c.tipo<>'geral' OR COALESCE((destinatario.preferencias_notificacoes->>'geral')::boolean,true))
+ AND p.silenciada=FALSE
  AND m.apagada_para_todos_em IS NULL
  AND m.id>p.limpa_ate_id
  AND NOT EXISTS(SELECT 1 FROM kb_chat_mensagens_ocultas h
