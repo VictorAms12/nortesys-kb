@@ -92,3 +92,42 @@ Para executar os novos testes, use `npm run verificar:revisao` no PR.
 A entrega de Web Push com o navegador fechado exige chaves VAPID válidas e
 um teste real em Preview. **O READY da Vercel e o SQL instalado não
 substituem a homologação entre contas.**
+
+## Complementos de 30/10 — navegação, preferências e alertas por conversa
+
+- Cabeçalho: menu de conta com avatar, perfil, chat e saída, com Escape,
+  clique fora e feedback de foco. O menu acompanha mudança de foto entre abas.
+- Perfil dos colegas: abre diretamente uma conversa privada após verificar a
+  sessão e a existência da conta; não abre um chat consigo próprio.
+- Preferências pessoais: alterações salvas são refletidas imediatamente nas
+  abas abertas, sem exibir avisos retroativos.
+- Os alertas de uma conversa podem ser silenciados pelo botão de sino na
+  lista de conversas. O estado é exclusivo do usuário que clicou e não
+  impede mensagens, não apaga histórico e não bloqueia contadores do chat.
+- Ao silenciar, a central e o Web Push deixam de notificar aquela conversa;
+  ao reativar, os avisos disponíveis voltam a aparecer.
+- Esta opção usa `db/011_chat_silenciar.sql`, aplicado somente no Neon
+  Preview `dev-fase-7c1`. Esta migração é obrigatória antes de publicar
+  a implementação na produção.
+
+### VAPID no Preview
+
+Foi criado um par de chaves P-256 específico do Preview, configurado na
+Vercel apenas para a branch `feat/fase-8-repaginacao-comunicacao`, sob as
+variáveis sensíveis `WEB_PUSH_PUBLIC_KEY` e `WEB_PUSH_PRIVATE_KEY`.
+**Nenhuma chave foi adicionada ao repositório ou à Production.**
+Configuração não equivale a garantia de entrega: testar a permissão,
+assinatura, recebimento com a aba fechada e clique para abrir o chat.
+
+### Critérios de aceite restantes
+
+1. Logar com duas contas independentes no Preview e testar mensagens
+   privadas/gerais e os efeitos do silenciamento em cada conta.
+2. Verificar a central de notificações, o badge no título e as notificações
+   nativas ao trocar de aba e reabrir o navegador.
+3. Testar fotos de perfil e permissões de leitura com usuários diferentes.
+4. Testar em smartphone e desktop, com movimento reduzido.
+5. Confirmar que Preview usa o banco de Preview antes de inserir
+   dados reais de teste.
+
+Não aplicar migrações 010/011 nem ativar novas variáveis na produção nesta fase.
