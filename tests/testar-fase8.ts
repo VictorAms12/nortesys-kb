@@ -30,6 +30,26 @@ test("Fase 8: migração idempotente, notificação privada e preferências por 
  await db.query("UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND mensagem_id=$2",[b,id]);
  assert.equal((await db.query<{c:number}>("SELECT COUNT(*)::int AS c FROM kb_notificacoes WHERE destinatario_id=$1 AND vista_em IS NULL",[b])).rows[0].c,0);
 });
+
+test("Fase 8: Web Push reassocia dispositivo sem enviar avisos a contas antigas",async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes"])
+  await db.exec(readFileSync("db/"+file+".sql","utf8"));
+ const primeiro=randomUUID(),segundo=randomUUID();
+ for(const [i,id] of [primeiro,segundo].entries())
+  await db.query("INSERT INTO kb_usuarios(id,usuario,nome,papel,senha_salt,senha_hash) VALUES($1,$2,$3,'leitor',$4,$5)",
+   [id,"pushfase8"+i,"Pessoa Push "+i,"a".repeat(32),"b".repeat(128)]);
+ const endpoint="https://fcm.googleapis.com/fcm/send/"+"z".repeat(64);
+ const hash="f".repeat(64);
+ const sql=`INSERT INTO kb_push_subscricoes(usuario_id,endpoint_hash,endpoint)
+  VALUES($1,$2,$3) ON CONFLICT(endpoint_hash) DO UPDATE
+  SET usuario_id=EXCLUDED.usuario_id,endpoint=EXCLUDED.endpoint,criado_em=NOW()`;
+ await db.query(sql,[primeiro,hash,endpoint]);
+ await db.query(sql,[segundo,hash,endpoint]);
+ const rows=await db.query<{usuario_id:string}>("SELECT usuario_id FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash]);
+ assert.equal(rows.rows.length,1,"Dispositivo tem um único proprietário");
+ assert.equal(rows.rows[0].usuario_id,segundo,"A conta atual assume o dispositivo");
+});
 test("Fase 8: UI não expõe texto privado nas notificações",()=>{
  const codigo=readFileSync("src/components/central-notificacoes.tsx","utf8");
  assert.match(codigo,/\/api\/notificacoes/);
