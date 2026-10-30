@@ -69,3 +69,26 @@ Antes de qualquer deploy em Production será necessário aplicar `db/010_perfis_
 
 A revisão visual autenticada e a confirmação do Web Push no navegador real são
 passos de homologação; build READY não comprova esses cenários.
+
+## Correções de confiabilidade posteriores
+
+- A API usa IDs de notificação `BIGINT` como strings; o usuário só pode
+  marcar notificações da própria conta como lidas.
+- O contador considera todos os avisos visíveis, enquanto a lista mostra os
+  40 mais recentes. Mensagens apagadas, ocultadas ou anteriores a uma limpeza
+  de conversa não aparecem nos avisos.
+- Ao ler ou limpar uma conversa, o backend sincroniza as respectivas
+  notificações. O contador pode ser atualizado entre abas.
+- O fluxo SSE do Ably renova o token antes de expirar, fecha a conexão anterior
+  e mantém polling periódico caso o serviço esteja indisponível.
+- O upload de foto possui limite de corpo multipart mesmo sem Content-Length,
+  decodificação/normalização de imagem e limpeza do arquivo anterior.
+- Web Push pode ser ativado ou removido por dispositivo no Perfil; inscrição
+  fica associada a uma única conta de cada vez (índice único no endpoint).
+  O usuário deve salvar as preferências após ativar ou desativar o dispositivo.
+- O Service Worker permite abrir o chat ao clicar na notificação.
+
+Para executar os novos testes, use `npm run verificar:revisao` no PR.
+A entrega de Web Push com o navegador fechado exige chaves VAPID válidas e
+um teste real em Preview. **O READY da Vercel e o SQL instalado não
+substituem a homologação entre contas.**
