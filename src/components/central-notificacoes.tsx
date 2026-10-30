@@ -124,7 +124,7 @@ export function CentralNotificacoes(){
   const t=window.setTimeout(()=>setAviso(null),5000);return()=>window.clearTimeout(t);
  },[aviso]);
  useEffect(()=>{
-  const original=document.title.replace(/^\\(\\d+\\+?\\)\\s+/,"");
+  const original=document.title.replace(/^\(\d+\+?\)\s+/,"");
   document.title=dados.naoLidas?"("+Math.min(dados.naoLidas,99)+(dados.naoLidas>99?"+":"")+") "+original:original;
   return ()=>{document.title=original;};
  },[dados.naoLidas]);
