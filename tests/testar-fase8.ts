@@ -4,7 +4,8 @@ import {randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {PGlite} from "@electric-sql/pglite";
 import {maisRecente} from "../src/lib/notificacoes-client";
-import {SQL_LISTAR_NOTIFICACOES,SQL_CONTAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES_CONVERSA,NOTIFICACAO_ID} from "../src/lib/notificacoes-sql";
+import {SQL_MARCAR_LIDA_VISIVEL,SQL_TOTAL_NAO_LIDAS} from "../src/lib/chat-sql";
+import {SQL_LISTAR_NOTIFICACOES,SQL_CONTAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES_CONVERSA,SQL_MARCAR_NOTIFICACOES_ATE,NOTIFICACAO_ID} from "../src/lib/notificacoes-sql";
 
 test("Fase 8: migração idempotente, notificação privada e preferências por usuário",async t=>{
  const db=new PGlite();t.after(()=>db.close());
@@ -143,4 +144,53 @@ test("Fase 8: silenciar conversa só afeta os alertas do próprio participante",
  assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_chat_mensagens WHERE conversa_id=$1",[geral])).rows[0].total,1,"Mensagem não foi apagada");
  await db.query("UPDATE kb_chat_participantes SET silenciada=false WHERE usuario_id=$1 AND conversa_id=$2",[primeiro,geral]);
  assert.equal(await count(primeiro),1,"Reativação restaura o acesso ao histórico de avisos");
+});
+
+test("Fase 8: leitura só confirma IDs realmente recebidos pelo cliente",async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ for(const file of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","010_perfis_notificacoes","011_chat_silenciar"])
+  await db.exec(readFileSync("db/"+file+".sql","utf8"));
+ const [autor,destinatario,intruso]=[randomUUID(),randomUUID(),randomUUID()];
+ for(const [i,id] of [autor,destinatario,intruso].entries())
+  await db.query("INSERT INTO kb_usuarios(id,usuario,nome,papel,senha_salt,senha_hash) VALUES($1,$2,$3,'leitor',$4,$5)",
+   [id,"leiturafase8"+i,"Leitura "+i,"a".repeat(32),"b".repeat(128)]);
+ const conversa=randomUUID();
+ await db.query("INSERT INTO kb_chat_conversas(id,tipo,chave) VALUES($1,'privada',$2)",
+  [conversa,"dm:"+[autor,destinatario].sort().join(":")]);
+ for(const id of [autor,destinatario])
+  await db.query("INSERT INTO kb_chat_participantes(conversa_id,usuario_id) VALUES($1,$2)",[conversa,id]);
+ const enviar=async(texto:string)=>{
+  const res=await db.query<{id:number}>("INSERT INTO kb_chat_mensagens(conversa_id,autor_id,texto) VALUES($1,$2,$3) RETURNING id",
+   [conversa,autor,texto]);
+  return res.rows[0].id;
+ };
+ const primeiro=await enviar("Recebida primeiro");
+ const segundo=await enviar("Recebida depois");
+ const terceiro=await enviar("Chegou durante a consulta");
+ const confirmar=async(id:number,usuario=destinatario)=>{
+  const resultado=await db.query<{existe:boolean;alterou:boolean}>(SQL_MARCAR_LIDA_VISIVEL,[conversa,usuario,id]);
+  if(resultado.rows[0]?.existe)await db.query(SQL_MARCAR_NOTIFICACOES_ATE,[usuario,conversa,id]);
+  return resultado.rows[0];
+ };
+ assert.equal((await confirmar(primeiro)).alterou,true);
+ assert.equal((await db.query<{total:number}>(SQL_TOTAL_NAO_LIDAS,[destinatario])).rows[0].total,2);
+ assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destinatario])).rows[0].total,2);
+ assert.equal((await confirmar(primeiro)).alterou,false,"Confirmação repetida não atualiza leitura");
+ assert.equal((await confirmar(terceiro,intruso)).existe,false,"Terceiro não recebe acesso à conversa");
+ const quarto=await enviar("Mensagem chegou após a resposta");
+ assert.ok(quarto>terceiro&&terceiro>segundo);
+ await confirmar(terceiro);
+ assert.equal((await db.query<{total:number}>(SQL_TOTAL_NAO_LIDAS,[destinatario])).rows[0].total,1);
+ assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destinatario])).rows[0].total,1,
+  "Nova mensagem não deve ser marcada como vista pelo ACK anterior");
+ const marcador=await db.query<{ultima_lida_id:number}>(
+  "SELECT ultima_lida_id FROM kb_chat_participantes WHERE usuario_id=$1 AND conversa_id=$2",[destinatario,conversa]);
+ assert.equal(Number(marcador.rows[0].ultima_lida_id),terceiro);
+});
+test("Fase 8: publicação externa nunca bloqueia envio de mensagem após persistência",()=>{
+ const codigo=readFileSync("src/lib/chat-banco.ts","utf8");
+ assert.match(codigo,/after\(async\(\)=>/);
+ assert.match(codigo,/Promise\.allSettled/);
+ assert.match(codigo,/agendarEntrega\(destino,usuario,conversa,Number\(m\.id\)\)/);
+ assert.doesNotMatch(codigo,/await enviarPushChat\(usuario,conversa\)/);
 });
