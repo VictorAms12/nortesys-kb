@@ -11,8 +11,8 @@ export default async function PaginaDiagnostico(){
   const documentos=criarIndiceBusca(await carregarTodosArtigos(usuario.papel));
   return <main id="conteudo" className="conteiner py-9 sm:py-12">
     <nav className="trilha" aria-label="Caminho de navegação"><Link href="/">Início</Link><span>/</span><span>Diagnóstico</span></nav>
-    <div className="mb-8"><p className="sobre-titulo">Triagem orientada</p>
-      <h1 className="titulo-pagina mt-2">Diagnóstico guiado</h1>
+    <div className="mb-8">
+      <h1 className="titulo-pagina">Diagnóstico guiado</h1>
       <p className="mt-3 max-w-3xl text-[var(--muted)]">Responda perguntas simples sobre o problema para encontrar procedimentos já disponíveis na base.</p>
     </div>
     <RastreadorAuditoria evento="diagnostico_aberto"/><DiagnosticoGuiado documentos={documentos}/>

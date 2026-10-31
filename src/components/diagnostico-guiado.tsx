@@ -20,16 +20,16 @@ export function DiagnosticoGuiado({documentos}:{documentos:DocumentoBusca[]}) {
   function avancar(id:string) {setHistorico(atuais=>[...atuais,etapaId]);setEtapaId(id);setCodigo("");}
   function voltar() {const anterior=historico.at(-1);if(!anterior){selecionar("");return;}setEtapaId(anterior);setHistorico(atuais=>atuais.slice(0,-1));setCodigo("");}
   return <div className="grid gap-5">
-    {!fluxo?<section className="grid gap-3 sm:grid-cols-2" aria-label="Escolha um diagnóstico">
-      {FLUXOS_DIAGNOSTICO.map(f=><button key={f.id} type="button" className="cartao p-5 text-left hover:border-[var(--primary)]" onClick={()=>selecionar(f.id)}>
+    {!fluxo?<section className="diagnosticos-lista" aria-label="Escolha um diagnóstico">
+      {FLUXOS_DIAGNOSTICO.map(f=><button key={f.id} type="button" className="diagnostico-opcao text-left" onClick={()=>selecionar(f.id)}>
         <h2 className="font-bold text-lg">{f.titulo}</h2><p className="mt-2 text-sm leading-6 text-[var(--muted)]">{f.descricao}</p>
-        <span className="mt-3 inline-block text-sm font-semibold">Iniciar triagem →</span>
+        <span className="mt-2 inline-block text-xs text-[var(--link)]">Iniciar triagem</span>
       </button>)}
     </section>: <section className="cartao grid gap-4 p-5 sm:p-7">
       <div><p className="sobre-titulo">{fluxo.titulo}</p><h2 className="titulo-secao mt-2">{etapa?.titulo}</h2>
         <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{etapa?.descricao}</p></div>
       {etapa?.opcoes && <div className="grid gap-2">{etapa.opcoes.map(op=>
-        <button key={op.proximo} type="button" className="botao-secundario text-left" onClick={()=>avancar(op.proximo)}>{op.rotulo} →</button>
+        <button key={op.proximo} type="button" className="botao-secundario text-left" onClick={()=>avancar(op.proximo)}>{op.rotulo}</button>
       )}</div>}
       {etapa?.solicitarCodigo && <label className="grid gap-2 text-sm font-semibold">Código ou mensagem exata
         <input className="block w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[var(--text)]"
