@@ -9,6 +9,7 @@ const tarefas = [
   ["scripts/verificar-documentacao.mjs"],
   ["scripts/verificar-dados-sensiveis.mjs"],
   ["tests/testar-migracoes.mjs"],
+  ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-corpo-limitado.ts"],
   ["node_modules/tsx/dist/cli.mjs", "scripts/validar-artigos.ts"],
   ...["testar-validacao", "testar-busca", "testar-seguranca", "testar-usuarios", "testar-fase6",
     "testar-hidratacao-imagens"].map(nome => ["node_modules/tsx/dist/cli.mjs", `tests/${nome}.ts`]),
