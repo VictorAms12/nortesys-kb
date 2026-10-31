@@ -19,7 +19,7 @@ export function IndicadorChat(){
   }
   const marcar=()=>{ultimoMovimento.current=Date.now();};
   const ping=()=>{
-    if(document.hidden)return;
+    if(document.hidden||pathname==="/chat")return; // ChatPainel cuida da presença na rota /chat.
     void fetch("/api/chat",{method:"POST",credentials:"same-origin",cache:"no-store",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({acao:"presenca",ativo:Date.now()-ultimoMovimento.current<5*60*1000})}).catch(()=>{});

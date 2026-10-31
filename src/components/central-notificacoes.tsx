@@ -15,14 +15,16 @@ export function CentralNotificacoes(){
  const sincronizacao=useRef<BroadcastChannel|null>(null);
  const ultimo=useRef<string|null>(null);
  const identidade=useRef("anon");
+ const consultaAtual=useRef(0);
 
  const preferencias=useRef({avisos:true,navegador:false,geral:true});
  const atualizar=useCallback(async()=>{
+  const versao=++consultaAtual.current;
   try{
    const r=await fetch("/api/notificacoes",{cache:"no-store",credentials:"same-origin"});
    if(!r.ok)return;
    const d=await r.json() as Dados;
-   if(d.indisponivel)return;
+   if(d.indisponivel||versao!==consultaAtual.current)return;
    const maior=d.itens.reduce((m,x)=>depois(x.id,m)?x.id:m,"0");
    const recentes=d.itens.filter(x=>!x.vistaEm&&ultimo.current!==null&&depois(x.id,ultimo.current));
    const nova=recentes.find(x=>x.tipo!=="geral"||preferencias.current.geral);
@@ -46,7 +48,7 @@ export function CentralNotificacoes(){
     }
    }
    if(ultimo.current===null||depois(maior,ultimo.current))ultimo.current=maior;
-   setDados(d);
+   if(versao===consultaAtual.current)setDados(d);
   }catch{/* Mantém o restante do sistema utilizável. */}
  },[]);
  useEffect(()=>{
@@ -135,9 +137,12 @@ export function CentralNotificacoes(){
    const r=await fetch("/api/notificacoes",{method:"POST",headers:{"Content-Type":"application/json"},
      body:JSON.stringify(id===null?{todas:true}:{ids:[id]})});
    if(!r.ok)return;
+   // Descarta GETs iniciados antes da confirmação e reconcilia com o servidor.
+   consultaAtual.current++;
    setDados(d=>({...d,itens:d.itens.map(x=>id===null||x.id===id?{...x,vistaEm:new Date().toISOString()}:x),
     naoLidas:id===null?0:Math.max(0,d.naoLidas-(d.itens.some(x=>x.id===id&&!x.vistaEm)?1:0))}));
    sincronizacao.current?.postMessage({tipo:"lido"});
+   void atualizar();
   }catch{/* Tente novamente mais tarde. */}
  }
  return <>
