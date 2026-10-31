@@ -50,20 +50,20 @@ export function MenuConta({nome,papel}:{nome:string;papel:string}){
   formulario.submit();
  }
  return <div className="menu-conta-ancora" ref={raiz}>
-  <button type="button" className="botao-icone menu-conta-gatilho" aria-haspopup="menu"
+  <button type="button" className="botao-icone menu-conta-gatilho" aria-haspopup="true"
    aria-expanded={aberto} title={"Conta de "+nome} aria-label="Abrir menu da conta" onClick={()=>setAberto(x=>!x)}>
    {conta?.avatarCaminho&&!falhouImagem?
     <Image src={"/api/perfil/avatar/"+conta.id+"?v="+encodeURIComponent(conta.avatarCaminho.split("/").at(-1)??"0")}
      alt="" width={36} height={36} unoptimized onError={()=>setFalhouImagem(true)} className="h-8 w-8 rounded-lg object-cover"/>:
     <span className="menu-conta-inicial" aria-hidden="true">{nome.trim().slice(0,1).toUpperCase()}</span>}
   </button>
-  {aberto&&<section className="menu-conta-painel" role="menu" aria-label="Opções da conta">
+  {aberto&&<section className="menu-conta-painel" role="region" aria-label="Opções da conta">
    <div className="menu-conta-cabecalho">
     <strong className="block truncate text-sm">{nome}</strong>
     <span className="block text-xs text-[var(--muted)] capitalize">{papel}</span>
    </div>
-   <Link href="/perfil" role="menuitem" className="menu-conta-item" onClick={()=>setAberto(false)}>Meu perfil e preferências</Link>
-   <Link href="/chat" role="menuitem" className="menu-conta-item" onClick={()=>setAberto(false)}>Chat da equipe</Link>
+   <Link href="/perfil" className="menu-conta-item" onClick={()=>setAberto(false)}>Meu perfil e preferências</Link>
+   <Link href="/chat" className="menu-conta-item" onClick={()=>setAberto(false)}>Chat da equipe</Link>
    <div className="menu-conta-divisor"/>
    <form action="/api/autenticacao/sair" method="post" onSubmit={e=>void encerrar(e)}>
     <button type="submit" disabled={saindo} className="menu-conta-item w-full text-left">{saindo?"Encerrando...":"Sair da conta"}</button>
