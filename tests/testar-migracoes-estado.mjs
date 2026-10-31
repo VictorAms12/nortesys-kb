@@ -39,3 +39,11 @@ test("assinatura incompleta ou trigger desabilitado impede reconciliação",asyn
  assert.equal(estado.at(-1).situacao,"parcial");
  assert.ok(estado.at(-1).faltantes.some(x=>x.includes("kb_usuarios_proteger_ultimo_admin")));
 });
+
+test("planejamento recusa lacunas, divergência e estruturas incompletas",async()=>{
+ const {planejarReconciliacao}=await import("../scripts/migracoes-estado.mjs");
+ const presente=(nome)=>({nome,checksum:"a".repeat(64),situacao:"sem_historico"});
+ assert.equal(planejarReconciliacao([presente("001_auth.sql"),presente("002_painel.sql")]).length,2);
+ assert.throws(()=>planejarReconciliacao([presente("001_auth.sql"),{nome:"002_painel.sql",situacao:"pendente"},presente("003_interacoes.sql")]),/depois de uma etapa pendente/);
+ assert.throws(()=>planejarReconciliacao([{nome:"001_auth.sql",situacao:"checksum_divergente"}]),/inseguro/);
+});

@@ -23,6 +23,8 @@
     "usuario:remover": "node --env-file=.env.local scripts/db-usuarios.mjs remover",
     "usuario:senha": "node --env-file=.env.local scripts/db-usuarios.mjs senha",
     "testar:usuarios": "tsx tests/testar-usuarios.ts",
+    "db:status": "node --env-file=.env.local scripts/db-usuarios.mjs status",
+    "db:reconciliar": "node --env-file=.env.local scripts/db-usuarios.mjs reconciliar",
     "db:migrar": "node --env-file=.env.local scripts/db-usuarios.mjs migrar",
     "db:verificar": "node --env-file=.env.local scripts/db-usuarios.mjs verificar",
     "db:limpar": "node --env-file=.env.local scripts/db-usuarios.mjs limpar",
