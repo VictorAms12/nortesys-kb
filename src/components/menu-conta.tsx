@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import {useEffect,useRef,useState,type FormEvent} from "react";
+import {invalidarPerfilCompartilhado,obterPerfilCompartilhado} from "../lib/perfil-cliente";
 type Conta={id:string;avatarCaminho:string|null};
 export function MenuConta({nome,papel}:{nome:string;papel:string}){
  const [aberto,setAberto]=useState(false);
@@ -11,9 +12,9 @@ export function MenuConta({nome,papel}:{nome:string;papel:string}){
  const raiz=useRef<HTMLDivElement>(null);
  useEffect(()=>{
   let ativo=true;
-  const atualizar=()=>{void fetch("/api/perfil",{cache:"no-store",credentials:"same-origin"})
-   .then(r=>r.ok?r.json():null).then((p:Conta|null)=>{if(ativo&&p?.id){setConta(p);setFalhouImagem(false);}}).catch(()=>{});};
-  atualizar();
+  const atualizar=()=>{invalidarPerfilCompartilhado();void obterPerfilCompartilhado()
+   .then((p:Conta|null)=>{if(ativo&&p?.id){setConta(p);setFalhouImagem(false);}}).catch(()=>{});};
+  void obterPerfilCompartilhado().then((p:Conta|null)=>{if(ativo&&p?.id)setConta(p);}).catch(()=>{});
   window.addEventListener("kb-perfil-atualizado",atualizar);
   const canal=typeof BroadcastChannel!=="undefined"?new BroadcastChannel("kb-perfil-atualizado"):null;
   if(canal)canal.onmessage=atualizar;

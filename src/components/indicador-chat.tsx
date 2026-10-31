@@ -9,14 +9,17 @@ export function IndicadorChat(){
  const ultimoMovimento=useRef(0);
  useEffect(()=>{
   let vivo=true;
+  let emCurso=false;
   async function atualizar(){
-    if(document.hidden)return;
+    if(document.hidden||emCurso)return;
+    emCurso=true;
     try{
       const r=await fetch("/api/chat/nao-lidas",{cache:"no-store",credentials:"same-origin"});
       if(!r.ok)return;
       const j=await r.json() as {total:number};
       if(vivo)setNaoLidas(Math.max(0,Number(j.total)||0));
     }catch{/* Não bloquear interface quando chat estiver indisponível. */}
+    finally{emCurso=false;}
   }
   const marcar=()=>{ultimoMovimento.current=Date.now();};
   const ping=()=>{
@@ -26,10 +29,15 @@ export function IndicadorChat(){
       body:JSON.stringify({acao:"presenca",ativo:Date.now()-ultimoMovimento.current<5*60*1000})}).catch(()=>{});
   };
   marcar();void atualizar();ping();
-  const t=window.setInterval(()=>{void atualizar();ping();},45000);
+  const t=window.setInterval(()=>{if(!document.hidden){void atualizar();ping();}},90000);
+  const visibilidade=()=>{if(!document.hidden){void atualizar();ping();}};
   for(const evt of ["pointerdown","keydown","mousemove","touchstart"])window.addEventListener(evt,marcar,{passive:true});
   window.addEventListener("focus",atualizar);
+  window.addEventListener("kb-chat-atualizado",atualizar);
+  document.addEventListener("visibilitychange",visibilidade);
   return ()=>{vivo=false;window.clearInterval(t);window.removeEventListener("focus",atualizar);
+    window.removeEventListener("kb-chat-atualizado",atualizar);
+    document.removeEventListener("visibilitychange",visibilidade);
     for(const evt of ["pointerdown","keydown","mousemove","touchstart"])window.removeEventListener(evt,marcar);};
  },[pathname]);
  return <Link href="/chat" title="Abrir chat da equipe" aria-label={"Chat da equipe"+(naoLidas?" — "+naoLidas+" mensagens não lidas":"")}

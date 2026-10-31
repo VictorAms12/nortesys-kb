@@ -3,6 +3,7 @@ import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {reservarAlerta} from "../lib/notificacoes-client";
+import {obterPerfilCompartilhado} from "../lib/perfil-cliente";
 type Aviso={id:string;conversaId:string;autor:string;criadaEm:string;vistaEm:string|null;tipo:string};
 type Dados={itens:Aviso[];naoLidas:number;indisponivel?:boolean};
 function depois(id:string,atual:string){return id.length>atual.length||(id.length===atual.length&&id>atual);}
@@ -17,6 +18,8 @@ export function CentralNotificacoes(){
  const ultimo=useRef<string|null>(null);
  const identidade=useRef("anon");
  const consultaAtual=useRef(0);
+ const tempoRealConectado=useRef(false);
+ const ultimaReconciliacao=useRef(0);
 
  const preferencias=useRef({avisos:true,navegador:false,geral:true});
  const atualizar=useCallback(async()=>{
@@ -79,13 +82,18 @@ export function CentralNotificacoes(){
   };
   window.addEventListener("kb-preferencias-atualizadas",mudanca);
   window.addEventListener("kb-notificacoes-atualizadas",atualizar);
-  void fetch("/api/perfil",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  void obterPerfilCompartilhado().then(d=>{
    if(d?.id)identidade.current=d.id;
    if(d?.preferencias)preferencias.current=d.preferencias;
   }).catch(()=>{});
   const inicial=window.setTimeout(()=>void atualizar(),0);
-  const intervalo=window.setInterval(()=>void atualizar(),12000);
-  const visivel=()=>void atualizar();
+  const intervalo=window.setInterval(()=>{
+   if(document.hidden)return;
+   if(tempoRealConectado.current&&Date.now()-ultimaReconciliacao.current<300_000)return;
+   ultimaReconciliacao.current=Date.now();
+   void atualizar();
+  },60_000);
+  const visivel=()=>{if(!document.hidden)void atualizar();};
   window.addEventListener("focus",visivel);
   document.addEventListener("visibilitychange",visivel);
   return ()=>{window.clearTimeout(inicial);window.clearInterval(intervalo);window.removeEventListener("focus",visivel);document.removeEventListener("visibilitychange",visivel);sincronizacao.current?.close();sincronizacao.current=null;window.removeEventListener("kb-preferencias-atualizadas",mudanca);window.removeEventListener("kb-notificacoes-atualizadas",atualizar);};
@@ -108,11 +116,16 @@ export function CentralNotificacoes(){
     const params=new URLSearchParams({channels:token.channels.join(","),v:"1.2",accessToken:token.token});
     if(ultimoEvento&&Date.now()-eventoEm<110000)params.set("lastEvent",ultimoEvento);
     canal=new EventSource("https://main.realtime.ably.net/sse?"+params);
+    canal.onopen=()=>{tempoRealConectado.current=true;};
+    canal.onerror=()=>{tempoRealConectado.current=false;};
     canal.onmessage=e=>{
      if(e.lastEventId){ultimoEvento=e.lastEventId;eventoEm=Date.now();}
      try{
       const msg=JSON.parse(e.data) as {name?:string};
-      if(msg.name==="chat_mensagem"||msg.name==="chat_alteracao")void atualizar();
+      if(msg.name==="chat_mensagem"||msg.name==="chat_alteracao"){
+       window.dispatchEvent(new Event("kb-chat-atualizado"));
+       void atualizar();
+      }
      }catch{/* Evento ignorado; polling mantém recuperação. */}
     };
     // Token dura 30 minutos. Renovar antes da expiração e fechar a conexão antiga.
@@ -122,7 +135,7 @@ export function CentralNotificacoes(){
    }
   };
   void conectar();
-  return()=>{encerrado=true;canal?.close();if(renovar!==undefined)window.clearTimeout(renovar);};
+  return()=>{encerrado=true;tempoRealConectado.current=false;canal?.close();if(renovar!==undefined)window.clearTimeout(renovar);};
  },[pathname,atualizar]);
  useEffect(()=>{
   if(!aberto)return;
