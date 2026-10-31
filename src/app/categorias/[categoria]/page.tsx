@@ -30,7 +30,11 @@ export default async function PaginaCategoria({ params }: Props) {
         <span className="icone-categoria" aria-hidden="true"><IconeInterface nome={categoria.icone as NomeIcone}/></span>
         <div><h1 className="titulo-pagina">{categoria.nome}</h1><p className="mt-2 max-w-2xl leading-7 text-[var(--muted)]">{categoria.descricao}</p></div>
       </div>
-      <FiltrosCategoria artigos={artigos} hoje={hojeISO()} />
+      {artigos.length?<FiltrosCategoria artigos={artigos} hoje={hojeISO()} />:
+       <section className="estado-vazio" aria-label="Categoria sem artigos">
+        <p>Nenhum artigo nesta categoria ainda.</p>
+        {sessao.papel!=="leitor"&&<Link className="link-discreto mt-2" href="/admin/artigos/novo">Criar artigo</Link>}
+       </section>}
     </main>
   );
 }
