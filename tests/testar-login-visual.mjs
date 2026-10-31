@@ -16,5 +16,5 @@ assert.match(form, /setMostrarSenha/);
 assert.match(form, /disabled=\{!pronta \|\| enviando\}/);
 assert.match(css, /\.login-shell/);
 assert.match(css, /\.login-password-wrap/);
-assert.match(css, /@media \(max-width:760px\)/);
+assert.match(css, /@media\(max-width:680px\)/);
 console.log("Login visual: estrutura, rota de autenticação, interação e responsividade conferidas.");
