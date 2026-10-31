@@ -218,3 +218,18 @@ test("Fase 8: polling do chat preserva referência e não redesenha mensagens in
  const respostaNova=[msg(5,{respostaA:{id:2,autor:"Outro",texto:"Alterado"}}),msg(6)];
  assert.equal(mensagensIguais(mensagens,respostaNova),false,"Atualização de resposta precisa atualizar UI");
 });
+
+test("Fase 8: rotas críticas e interface têm proteções de sessão e dispositivos",()=>{
+ const chat=readFileSync("src/components/chat-painel.tsx","utf8");
+ const central=readFileSync("src/components/central-notificacoes.tsx","utf8");
+ const conta=readFileSync("src/components/menu-conta.tsx","utf8");
+ const perfil=readFileSync("src/components/perfil-resumo.tsx","utf8");
+ assert.match(chat,/enviandoRef\.current/,"Envio dupicado deve ser bloqueado antes da próxima renderização");
+ assert.match(chat,/res\.status===401/,"Chat deve encerrar sessão visual expirada");
+ assert.match(central,/r\.status===401/,"Notificações devem detectar expiração da sessão");
+ assert.match(central,/consultaAtual\.current/,"Requisição antiga de notificações não substitui estado atual");
+ assert.match(conta,/await inscricao\.unsubscribe\(\)/,"Logout desvincula notificações do aparelho");
+ assert.match(conta,/formulario\.submit\(\)/,"Falha do push não impede o logout nativo");
+ assert.match(perfil,/fotoEmEnvio\.current/,"Foto de perfil não pode iniciar uploads concorrentes");
+ assert.match(perfil,/Tentar novamente/,"Falha transitória oferece recuperação");
+});
