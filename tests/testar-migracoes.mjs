@@ -44,7 +44,7 @@ test("Todas as migrações são reaplicáveis em um Postgres isolado",async t=>{
 test("Migração 015 restaura o gatilho 009 ausente e enfileira somente exclusão global",async context=>{
  const db=new PGlite();
  context.after(()=>db.close());
- const nomes=readdirSync("db").filter(x=>/^\\d{3}_.+\\.sql$/.test(x)).sort();
+ const nomes=readdirSync("db").filter(x=>x.endsWith(".sql")&&/^[0-9]{3}_/.test(x)).sort();
  for(const nome of nomes.filter(x=>!x.startsWith("015_"))){
   await db.transaction(async tx=>{
    for(const instrucao of dividirInstrucoesSql(readFileSync("db/"+nome,"utf8")))await tx.query(instrucao);
