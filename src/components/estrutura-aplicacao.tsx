@@ -50,24 +50,11 @@ function atual(path:string, href:string){
   if(href==="/admin")return path==="/admin";
   return path===href || path.startsWith(href+"/");
 }
-export function EstruturaAplicacao({nome,papel,versao,children}:{nome:string; papel:Papel; versao:string; children:ReactNode}) {
+export function EstruturaAplicacao({nome,papel,versao,contadores,dataBase,children}:{nome:string; papel:Papel; versao:string; contadores:Record<string,number>; dataBase:string; children:ReactNode}) {
   const pathname=usePathname();
   const recolhida=useSyncExternalStore(observar,leituraSidebar,estadoServidor);
   const [mobileAberta,setMobileAberta]=useState(false);
   const menu = useRef<HTMLElement>(null);
-  const [contadores,setContadores]=useState<Record<string,number>>({});
-  const [dataBase,setDataBase]=useState("");
-  useEffect(()=>{
-   let ativo=true;
-   const controller=new AbortController();
-   void fetch("/api/busca/sugestoes",{cache:"no-store",signal:controller.signal}).then(r=>r.ok?r.json():null)
-   .then((d:{categorias?:{slug:string;quantidade:number}[];atualizadoEm?:string}|null)=>{
-    if(!ativo||!d)return;
-    setContadores(Object.fromEntries((d.categorias??[]).map(c=>[c.slug,c.quantidade])));
-    if(d.atualizadoEm)setDataBase(d.atualizadoEm);
-   }).catch(()=>{});
-   return()=>{ativo=false;controller.abort();};
-  },[]);
   useEffect(()=>{
     if(!mobileAberta)return;
     const anterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;

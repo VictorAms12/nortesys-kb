@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import pacote from "../../package.json";
+import { obterDadosBusca } from "../lib/cache-busca";
 import { EstruturaAplicacao } from "../components/estrutura-aplicacao";
 import { sessaoAtual } from "../lib/autenticacao-servidor";
 import "./globals.css";
@@ -42,6 +43,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     headers(),
   ]);
   const nonce = cabecalhos.get("x-nonce") ?? undefined;
+  const dadosBusca = usuario ? await obterDadosBusca(usuario.papel).catch(() => null) : null;
+  const contadores = Object.fromEntries((dadosBusca?.categorias ?? []).map(item => [item.slug, item.quantidade]));
   return (
     <html lang="pt-BR" className={`${fonteSans.variable} ${fonteMono.variable}`} suppressHydrationWarning>
       <head>
@@ -50,7 +53,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-screen antialiased">
         <a href="#conteudo" className="pular-conteudo">Pular para o conteúdo</a>
         {usuario ? (
-          <EstruturaAplicacao nome={usuario.nome} papel={usuario.papel} versao={pacote.version}>
+          <EstruturaAplicacao nome={usuario.nome} papel={usuario.papel} versao={pacote.version}
+            contadores={contadores} dataBase={dadosBusca?.atualizadoEm ?? ""}>
             {children}
           </EstruturaAplicacao>
         ) : children}

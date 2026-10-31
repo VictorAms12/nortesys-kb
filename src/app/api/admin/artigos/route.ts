@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { TAG_INDICE_BUSCA } from "../../../../lib/cache-busca";
 import matter from "gray-matter";
 import { z } from "zod";
 import { NOME_COOKIE, obterSessao } from "../../../../lib/sessao";
@@ -40,6 +42,7 @@ export async function POST(req:NextRequest) {
           SELECT id,versao,conteudo,'arquivado',$2 FROM alterado RETURNING artigo_id
         ) SELECT artigo_id AS id FROM versao`,[id,conta.id,atual.versao]);
       if (!atualizado.length) return voltar(req,"conflito",id);
+      revalidateTag(TAG_INDICE_BUSCA, { expire: 0 });
       await registrarEvento(conta.id,"artigo_arquivado",id);
       return NextResponse.redirect(new URL("/admin/artigos?aviso=arquivado",req.url),{status:303});
     }
@@ -61,6 +64,7 @@ export async function POST(req:NextRequest) {
         ) SELECT artigo_id AS id FROM versao`,[categoria,slug,titulo,campos.status,campos.conteudo,conta.id]);
       id=result[0]?.id;
       if (!id) return voltar(req,"indisponivel");
+      revalidateTag(TAG_INDICE_BUSCA, { expire: 0 });
       await registrarEvento(conta.id,"artigo_criado",id);
     } else {
       if (!id || !idArtigoValido(id)) return voltar(req,"dados");
@@ -75,6 +79,7 @@ export async function POST(req:NextRequest) {
           SELECT id,versao,conteudo,'editado',$7 FROM alterado RETURNING artigo_id
         ) SELECT artigo_id AS id FROM versao`,[id,categoria,slug,titulo,campos.status,campos.conteudo,conta.id,versao]);
       if (!result.length) return voltar(req,"conflito",id);
+      revalidateTag(TAG_INDICE_BUSCA, { expire: 0 });
       await registrarEvento(conta.id,"artigo_editado",id);
     }
     return voltar(req,"salvo",id);
