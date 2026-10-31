@@ -11,6 +11,8 @@ test("8: imagens privadas, migração idempotente e autorização individual",as
  for(const n of ["001_auth","002_painel","006_chat","007_chat_acoes","008_chat_imagens","009_fases_7h_7j_feedback"])
   await db.exec(readFileSync(`db/${n}.sql`,"utf8"));
  await db.exec(readFileSync("db/008_chat_imagens.sql","utf8"));
+ await db.exec(readFileSync("db/012_chat_legenda_opcional.sql","utf8"));
+ await db.exec(readFileSync("db/012_chat_legenda_opcional.sql","utf8"));
  const [autor,receptor,intruso]=[randomUUID(),randomUUID(),randomUUID()];
  for(const [i,id] of [autor,receptor,intruso].entries()){
   await db.query("INSERT INTO kb_usuarios(id,usuario,nome,papel,senha_salt,senha_hash) "+
@@ -23,17 +25,24 @@ test("8: imagens privadas, migração idempotente e autorização individual",as
   await db.query("INSERT INTO kb_chat_participantes(conversa_id,usuario_id) VALUES($1,$2)",[conversa,id]);
  const caminho=`kb-chat-imagens/${randomUUID()}.png`;
  const inserir=(usuario:string,arquivo=caminho)=>db.query<{id:number;texto:string}>(
-  SQL_INSERIR_IMAGEM_CHAT,[conversa,usuario,"📷 Imagem",null,arquivo,"image/png",350]);
+  SQL_INSERIR_IMAGEM_CHAT,[conversa,usuario,"",null,arquivo,"image/png",350]);
  assert.equal((await inserir(intruso)).rows.length,0,"Não participante não pode enviar imagem");
  const envio=await inserir(autor);
  assert.equal(envio.rows.length,1);
  const id=Number(envio.rows[0].id);
+ assert.equal(envio.rows[0].texto,"","Imagem sem legenda deve armazenar texto vazio");
+ await assert.rejects(
+  db.query("INSERT INTO kb_chat_mensagens(conversa_id,autor_id,texto) VALUES($1,$2,'')",[conversa,autor]),
+  /kb_chat_texto_valido/
+ );
  const ler=(usuario:string)=>db.query<{imagem_caminho:string}>(SQL_LER_IMAGEM_CHAT,[usuario,id]);
  assert.equal((await ler(autor)).rows[0].imagem_caminho,caminho);
  assert.equal((await ler(receptor)).rows[0].imagem_caminho,caminho);
  assert.equal((await ler(intruso)).rows.length,0,"Usuário de fora não lê imagem privada");
  const lista=await db.query<{tem_imagem:boolean}>(SQL_LISTAR_MENSAGENS,[receptor,conversa,null,""]);
  assert.equal(lista.rows[0].tem_imagem,true);
+ const buscaImagem=await db.query(SQL_LISTAR_MENSAGENS,[receptor,conversa,null,"Imagem"]);
+ assert.equal(buscaImagem.rows.length,1,"Imagem sem legenda permanece pesquisável pelo rótulo");
  await assert.rejects(inserir(autor,"kb-chat-imagens/../../segredo.png"),/kb_chat_imagem_valida/);
  await assert.rejects(inserir(autor,caminho),/kb_chat_imagem_caminho_unique/);
  await db.query(SQL_APAGAR_PARA_MIM,[receptor,id,conversa]);
