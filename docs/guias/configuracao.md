@@ -34,7 +34,9 @@ O runner percorre **todos os arquivos `db/NNN_*.sql` em ordem** (incluindo 010, 
 
 **Banco já existente:** na primeira execução, os arquivos antigos ainda não possuem entradas em `kb_migracoes`. Eles são reaplicados com suas proteções idempotentes, sem excluir registros. Confira as migrações e os triggers em desenvolvimento antes de autorizar o mesmo procedimento em produção.
 
-A migração 012 permite imagens de chat sem legenda e atualiza somente textos automáticos. A 013 cria cotas para avatar (12 por hora), sugestões (90 por minuto) e índices para a central de notificações. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
+A migração 012 permite imagens de chat sem legenda e atualiza somente textos automáticos. A 013 cria cotas para avatar (12 por hora), sugestões (90 por minuto) e índices para a central de notificações.
+
+A **migração 014** protege o último administrador ativo por trigger no PostgreSQL, inclusive em atualizações simultâneas ou operações feitas fora do painel. Aplique-a primeiro no Neon de desenvolvimento e valide a ativação, rebaixamento e desativação de contas com pelo menos dois administradores de teste. O controle de concorrência entre conexões reais precisa ser homologado no banco escolhido. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
 
 Conferência SQL:
 
