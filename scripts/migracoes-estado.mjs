@@ -18,6 +18,7 @@ const marcas = {
  "012": {restricoes:["kb_chat_texto_valido"],ausentes:{restricoes:["kb_chat_mensagens_texto_check"]}},
  "013": {tabelas:["kb_avatar_limites","kb_busca_sugestoes_limites"],indices:["kb_notificacoes_retencao_idx","kb_notificacoes_nao_lidas_idx"]},
  "014": {gatilhos:["kb_usuarios_proteger_ultimo_admin"],funcoes:["kb_proteger_ultimo_admin"]},
+ "015": {gatilhos:["kb_chat_imagem_exclusao_global"],funcoes:["kb_registrar_imagem_chat_excluida"]},
 };
 
 export const SQL_INVENTARIO = `SELECT

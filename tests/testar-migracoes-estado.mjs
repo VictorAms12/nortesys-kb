@@ -8,7 +8,7 @@ test("inventário identifica com segurança o banco vazio e os 14 arquivos aplic
  const banco=new PGlite();
  t.after(()=>banco.close());
  const manifesto=listarManifesto();
- assert.equal(manifesto.length,14);
+ assert.equal(manifesto.length,15);
  const inicial=(await banco.query(SQL_INVENTARIO)).rows[0];
  assert.ok(relatorioMigracoes(manifesto,inicial).every(r=>r.situacao==="pendente"));
  for(const mig of manifesto){
@@ -17,7 +17,7 @@ test("inventário identifica com segurança o banco vazio e os 14 arquivos aplic
  }
  const inventario=(await banco.query(SQL_INVENTARIO)).rows[0];
  const estado=relatorioMigracoes(manifesto,inventario);
- assert.deepEqual(estado.map(x=>x.situacao),Array(14).fill("sem_historico"));
+ assert.deepEqual(estado.map(x=>x.situacao),Array(15).fill("sem_historico"));
  assert.equal(checarAssinatura("014_ultimo_admin.sql",inventario).aplicada,true);
  const registrados=manifesto.map(({nome,checksum})=>({nome,checksum}));
  assert.ok(relatorioMigracoes(manifesto,inventario,registrados).every(x=>x.situacao==="registrada"));
