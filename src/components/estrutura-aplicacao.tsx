@@ -21,14 +21,13 @@ const principal:Destino[]=[
  {href:"/chat",texto:"Chat da equipe",icone:"mensagem"},
  {href:"/favoritos",texto:"Favoritos",icone:"favoritos"},
  {href:"/recentes",texto:"Recentes",icone:"recentes"},
+ {href:"/artigos",texto:"Todos os artigos",icone:"livro"},
 ];
-const destinosCategorias:Destino[]=categorias.filter(c=>c.slug!=="procedimentos-e-boas-praticas")
- .map(c=>({href:"/categorias/"+c.slug,texto:c.nome,icone:c.icone as NomeIcone}));
+const destinosCategorias:Destino[]=categorias
+ .map(c=>({href:"/categorias/"+c.slug,texto:c.slug==="procedimentos-e-boas-praticas"?"Procedimentos":c.nome,icone:c.icone as NomeIcone}));
 const ferramentas:Destino[]=[
  {href:"/diagnostico",texto:"Diagnóstico",icone:"diagnostico"},
  {href:"/ferramentas/registro",texto:"Registro técnico",icone:"registro"},
- {href:"/artigos",texto:"Todos os artigos",icone:"livro"},
- {href:"/categorias/procedimentos-e-boas-praticas",texto:"Procedimentos",icone:"procedimentos"},
 ];
 const admin:Destino[] = [
   {href:"/admin",texto:"Visão geral",icone:"painel"},
@@ -51,7 +50,7 @@ function atual(path:string, href:string){
   if(href==="/admin")return path==="/admin";
   return path===href || path.startsWith(href+"/");
 }
-export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Papel; children:ReactNode}) {
+export function EstruturaAplicacao({nome,papel,versao,children}:{nome:string; papel:Papel; versao:string; children:ReactNode}) {
   const pathname=usePathname();
   const recolhida=useSyncExternalStore(observar,leituraSidebar,estadoServidor);
   const [mobileAberta,setMobileAberta]=useState(false);
@@ -132,7 +131,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
         <div className="topbar-direita"><IndicadorChat/><CentralNotificacoes/><AlternarTema/><MenuConta nome={nome} papel={papel}/></div>
       </header>
       <div className="conteudo-app">{children}</div>
-      <footer className="rodape-app no-print"><div className="conteiner"><span>Nortesys KB · v0.8 Preview</span><span>{dataBase?"Base atualizada em "+dataBase.slice(0,10).split("-").reverse().join("/"):"Base de conhecimento interno"}</span></div></footer>
+      <footer className="rodape-app no-print"><div className="conteiner"><span>Nortesys KB · v{versao}</span><span>{dataBase?"Base atualizada em "+dataBase.slice(0,10).split("-").reverse().join("/"):"Base de conhecimento interno"}</span></div></footer>
     </div>
   </div>;
 }

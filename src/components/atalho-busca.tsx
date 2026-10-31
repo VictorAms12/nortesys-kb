@@ -1,10 +1,12 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
 import {IconeInterface} from "./icone-interface";
 
 type Sugestao={url:string;titulo:string;categoria:string;codigos:string[]};
 export function AtalhoBusca(){
+ const router=useRouter();
  const [consulta,setConsulta]=useState("");
  const [resultados,setResultados]=useState<Sugestao[]>([]);
  const [aberto,setAberto]=useState(false);
@@ -50,7 +52,7 @@ export function AtalhoBusca(){
   if(e.key==="ArrowDown"&&resultados.length){e.preventDefault();setIndice(i=>(i+1)%resultados.length);setAberto(true);}
   if(e.key==="ArrowUp"&&resultados.length){e.preventDefault();setIndice(i=>(i<=0?resultados.length-1:i-1));setAberto(true);}
   if(e.key==="Enter"&&aberto&&indice>=0&&resultados[indice]){
-   e.preventDefault();window.location.assign(resultados[indice].url);
+   e.preventDefault();setAberto(false);router.push(resultados[indice].url);
   }
  }
  const visivel=aberto&&consulta.trim().length>=2;
