@@ -50,7 +50,7 @@ export async function lerFormularioUrlEncodedLimitado(req: Request, maxBytes: nu
 export async function lerFormularioLimitado(req: Request, maxBytes: number, mensagens: Mensagens): Promise<FormData> {
   const bytes = await lerBytesLimitados(req, maxBytes, mensagens);
   try {
-    return await new Response(bytes, {
+    return await new Response(new Uint8Array(bytes), {
       headers: { "Content-Type": req.headers.get("content-type") ?? "" },
     }).formData();
   } catch { throw new ErroFormularioLimitado(400, mensagens.invalido); }
