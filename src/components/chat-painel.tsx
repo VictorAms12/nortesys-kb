@@ -107,6 +107,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     ultimaLeituraEnviada.current.set(id,ateId);
     void enviar("lido",{conversa:id,ateId}).then(()=>{
      window.dispatchEvent(new Event("kb-notificacoes-atualizadas"));
+      window.dispatchEvent(new Event("kb-chat-atualizado"));
      if(typeof BroadcastChannel!=="undefined"){
       const canal=new BroadcastChannel("kb-notificacoes-atualizadas");
       canal.postMessage({tipo:"lido"});canal.close();
@@ -171,6 +172,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       const dados=(typeof evento.data==="string"?JSON.parse(evento.data):evento.data) as Record<string,unknown>|undefined;
       if(!dados||typeof dados.conversaId!=="string")return;
       if(evento.name==="chat_mensagem"||evento.name==="chat_alteracao"){
+        window.dispatchEvent(new Event("kb-chat-atualizado"));
        if(dados.conversaId===selecionada.current)void carregar(dados.conversaId);
        else if(evento.name==="chat_mensagem"){setNotificacao("Nova mensagem em uma de suas conversas");}
        void atualizarEstado();
