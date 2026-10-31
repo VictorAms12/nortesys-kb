@@ -1,6 +1,7 @@
 "use client";
 import {useCallback,useEffect,useRef,useState,type FormEvent,type ClipboardEvent as ReactClipboardEvent} from "react";
 import Link from "next/link";
+import {IconeInterface} from "./icone-interface";
 import Image from "next/image";
 import {ImagemChatAmpliavel} from "./chat-imagem-ampliavel";
 import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
@@ -345,9 +346,9 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   finally{setLimpando(false);}
  }
  function mudarConversa(id:string){versaoCarregamento.current++;rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);removerImagem();setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
- return <div ref={painelRef} className="chat-painel grid min-w-0 gap-3 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)]" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
+ return <div ref={painelRef} className="chat-painel grid min-w-0" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
   {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
-  <aside className="chat-lista cartao grid min-w-0 content-start gap-4 overflow-y-auto overflow-x-hidden p-3 sm:p-4" aria-label="Conversas e colaboradores">
+  <aside className="chat-lista grid min-w-0 content-start gap-3 overflow-y-auto overflow-x-hidden" aria-label="Conversas e colaboradores">
    <div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><h2 className="text-base font-bold">Conversas</h2>
     <p className="mt-1 text-xs text-[var(--muted)]">{realtime?"● Tempo real conectado":"○ Atualizações periódicas"} · {totalNaoLidas} não lida(s)</p>
    </div><button type="button" className="chat-fechar-lista botao-secundario" onClick={()=>setContatosAbertos(false)} aria-label="Fechar conversas">Fechar</button></div>
@@ -370,13 +371,13 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    </div>}
    <div className="border-t border-[var(--border)] pt-4">
     <h3 className="mb-2 font-bold">Colaboradores</h3>
-    <div className="grid gap-1">{usuarios.map(u=><div key={u.id} className="flex min-w-0 items-center rounded-lg border border-transparent hover:border-[var(--border)] hover:bg-[var(--surface-alt)]">
+    <div className="grid gap-1">{usuarios.map(u=><div key={u.id} className="flex min-w-0 items-center rounded-sm border border-transparent hover:bg-[var(--surface-alt)]">
      <button type="button" onClick={()=>void abrirPrivada(u.id)}
       className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-2 text-left text-sm"
       title={"Conversar com "+u.nome}>
       <span aria-hidden="true">{selo(u.presenca)}</span>
       <span className="min-w-0 flex-1 truncate">{u.nome}</span>
-      <span className="text-[10px] text-[var(--muted)]">{statusLabel(u.presenca)}</span>
+      <span className="text-xs text-[var(--muted)]">{statusLabel(u.presenca)}</span>
      </button>
      <Link href={"/perfil/"+u.id} className="botao-icone !h-8 !w-8 shrink-0" title={"Perfil de "+u.nome} aria-label={"Ver perfil de "+u.nome}>
       <svg aria-hidden="true" viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-7 8-7s8 2 8 7"/></svg>
@@ -384,7 +385,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     </div>)}</div>
    </div>
   </aside>
-  <section className="chat-area-mensagens cartao flex min-h-0 min-w-0 max-w-full flex-col overflow-hidden p-3 sm:p-4" aria-label="Mensagens">
+  <section className="chat-area-mensagens flex min-h-0 min-w-0 max-w-full flex-col overflow-hidden" aria-label="Mensagens">
     <div className="chat-cabecalho-mensagens flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
       <div className="flex min-w-0 items-center gap-2">
        <button type="button" className="chat-botao-contatos botao-secundario" onClick={()=>setContatosAbertos(true)} aria-label="Abrir conversas" aria-expanded={contatosAbertos}>Conversas{totalNaoLidas>0?` (${totalNaoLidas})`:""}</button>
@@ -394,57 +395,46 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       <div className="chat-ferramentas-mensagens flex min-w-0 flex-wrap items-center gap-2">
       <form className="flex min-w-0 flex-wrap items-center gap-2" onSubmit={e=>{e.preventDefault();setMensagens([]);setMais(false);setPesquisa(busca.trim().slice(0,100));}}>
        <input className={estiloCampo+" max-w-[170px]"} type="search" value={busca} onChange={e=>setBusca(e.target.value)}
-        placeholder="Buscar mensagens" aria-label="Pesquisar mensagens" maxLength={100}/>
+        placeholder="Buscar no chat" aria-label="Pesquisar mensagens" maxLength={100}/>
        <button className="botao-secundario" type="submit">Buscar</button>
        {pesquisa&&<button className="botao-secundario" type="button" onClick={()=>{setBusca("");setMensagens([]);setMais(false);setPesquisa("");}}>Limpar</button>}
       </form>
-      <button type="button" className="botao-secundario" onClick={()=>void limparConversa()} disabled={limpando||!estado}
+      <button type="button" className="chat-limpar" onClick={()=>void limparConversa()} disabled={limpando||!estado}
         title="Ocultar o histórico anterior somente para sua conta">{limpando?"Limpando...":"Limpar conversa"}</button>
       </div>
     </div>
     {aviso&&<p className="mt-3 text-sm text-amber-700" role="alert">{aviso}</p>}
     {notificacao&&<button type="button" className="mt-3 rounded-lg border border-[var(--border)] p-2 text-left text-sm" onClick={()=>{setNotificacao("");void atualizarEstado();}}>{notificacao} · Ver conversas</button>}
-    <div ref={historicoRef} className="chat-historico min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-3 pl-2 pr-4 sm:pl-3 sm:pr-5" aria-label="Histórico de mensagens">
+    <div ref={historicoRef} className="chat-historico min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto" aria-label="Histórico de mensagens">
      {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>{const area=historicoRef.current;if(area)ajusteHistorico.current={altura:area.scrollHeight,topo:area.scrollTop};void carregar(conversa,pesquisa,mensagens[0]?.id??null);}}>Carregar mensagens anteriores</button>}
-     {mensagens.length===0?<p className="py-10 text-center text-sm text-[var(--muted)]">{pesquisa?"Nenhuma mensagem encontrada.":"Nenhuma mensagem ainda. Envie a primeira!"}</p>:
-      <ul className="grid min-w-0 gap-3">{mensagens.map(m=><li key={m.id} className={"flex min-w-0 "+(m.autorId===usuarioId?"justify-end":"justify-start")}>
-       <article className={"chat-balao group relative min-w-0 max-w-[93%] rounded-2xl px-3 py-2.5 sm:max-w-[82%] "+(m.autorId===usuarioId?"bg-[var(--surface-alt)]":"bg-[var(--background)]")}>
-        <div className="mb-1 flex min-w-0 items-start justify-between gap-2 text-xs text-[var(--muted)]">
-         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 pt-1">
-          <strong className="max-w-full truncate">{m.autorId===usuarioId?"Você":m.autor}</strong>
-          <time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
+     {mensagens.length===0?<p className="estado-chat-vazio">{pesquisa?"Nenhuma mensagem encontrada.":"Sem mensagens neste canal."}</p>:
+      <ul className="lista-mensagens">{mensagens.map(m=><li key={m.id} className="chat-linha-mensagem">
+       <div className="chat-avatar" aria-hidden="true">{m.autor.trim().slice(0,1).toUpperCase()}</div>
+       <article className="chat-corpo-mensagem">
+        <div className="chat-meta-mensagem">
+         <strong>{m.autorId===usuarioId?"Você":m.autor}</strong>
+         <time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
+         <div className="chat-barra-acoes" role="group" aria-label={"Ações da mensagem de "+m.autor}>
+          {!m.apagadaParaTodos&&<button type="button" onClick={()=>{setRespondendo(m);setPesquisa("");setBusca("");campoMensagemRef.current?.focus();}} disabled={operando!==null}>Responder</button>}
+          {!m.apagadaParaTodos&&<button type="button" onClick={()=>{void navigator.clipboard.writeText(m.texto).then(()=>setAviso("Mensagem copiada.")).catch(()=>setAviso("Não foi possível copiar."));}}>Copiar</button>}
+          <button type="button" onClick={()=>void apagarMensagem(m.id,false)} disabled={operando!==null}>Apagar</button>
+          {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="acao-perigo" onClick={()=>void apagarMensagem(m.id,true)} disabled={operando!==null}>Apagar para todos</button>}
          </div>
-         <details className="chat-mensagem-acoes relative z-20 shrink-0"
-          onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))e.currentTarget.open=false;}}>
-          <summary className="chat-mensagem-gatilho flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-md text-lg leading-none transition-colors hover:bg-[var(--surface)] focus-visible:bg-[var(--surface)] [&::-webkit-details-marker]:hidden"
-            aria-label={"Ações da mensagem de "+m.autor} title="Ações da mensagem">
-           <span aria-hidden="true">⋯</span>
-          </summary>
-          <div className={"absolute top-full z-30 mt-1 grid min-w-44 gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1.5 text-left text-sm text-[var(--text)] shadow-lg "+(m.autorId===usuarioId?"right-0":"left-0")}>
-           {!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
-             onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");setRespondendo(m);setPesquisa("");setBusca("");}}>Responder</button>}
-           <button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]" disabled={operando!==null}
-             onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");void apagarMensagem(m.id,false);}}>Apagar para mim</button>
-           {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--surface-alt)] focus-visible:bg-[var(--surface-alt)]"
-             disabled={operando!==null} onClick={e=>{e.currentTarget.closest("details")?.removeAttribute("open");void apagarMensagem(m.id,true);}}>Apagar para todos</button>}
-          </div>
-         </details>
         </div>
-        {m.respostaA&&<blockquote className="mb-2 min-w-0 max-w-full border-l-2 border-[var(--primary)] bg-[var(--surface)] p-2 text-xs">
-          <strong className="block text-[var(--muted)]">{m.respostaA.autor??"Mensagem anterior"}</strong>
-          <p className="line-clamp-2 break-words [overflow-wrap:anywhere]">{m.respostaA.texto}</p>
+        {m.respostaA&&<blockquote className="chat-resposta">
+         <strong>{m.respostaA.autor??"Mensagem anterior"}</strong>
+         <p className="line-clamp-2 break-words">{m.respostaA.texto}</p>
         </blockquote>}
         {m.temImagem&&!m.apagadaParaTodos&&<ImagemChatAmpliavel id={m.id} autor={m.autor}/>}
-        {(m.apagadaParaTodos||!m.temImagem||m.texto!=="📷 Imagem")&&
-         <p className={"max-w-full whitespace-pre-wrap break-words text-sm leading-6 [overflow-wrap:anywhere] "+(m.apagadaParaTodos?"italic text-[var(--muted)]":"")}>
-          {m.apagadaParaTodos?"Mensagem apagada":<ConteudoMensagem texto={m.texto}/>}
-         </p>}
+        {(m.apagadaParaTodos||!m.temImagem||m.texto!=="📷 Imagem")&&<p className={"chat-texto-mensagem "+(m.apagadaParaTodos?"chat-apagada":"")}>
+         {m.apagadaParaTodos?"Mensagem apagada":<ConteudoMensagem texto={m.texto}/>}
+        </p>}
        </article>
       </li>)}</ul>}
      <div aria-hidden="true"/>
     </div>
     <div className="chat-compositor shrink-0 border-t border-[var(--border)] pt-2">
-     {respondendo&&<div className="mb-3 flex min-w-0 items-center justify-between gap-2 rounded-lg border-l-4 border-[var(--primary)] bg-[var(--surface-alt)] p-3">
+     {respondendo&&<div className="chat-resposta-compositor mb-3 flex min-w-0 items-center justify-between gap-2 p-3">
        <div className="min-w-0"><strong className="block text-xs">Respondendo a {respondendo.autorId===usuarioId?"você":respondendo.autor}</strong>
          <p className="line-clamp-2 break-words text-xs [overflow-wrap:anywhere]">{respondendo.texto}</p>
        </div>
@@ -465,15 +455,15 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
        className="sr-only" aria-label="Selecionar imagem para enviar" tabIndex={-1}
        onChange={e=>{const arquivo=e.target.files?.[0];if(arquivo)escolherImagem(arquivo);}}/>
       <button type="button" className="botao-secundario shrink-0" title="Anexar imagem (PNG, JPEG ou WebP; até 2 MB)"
-       onClick={()=>inputImagemRef.current?.click()} disabled={!estado||enviando} aria-label="Anexar imagem">📎</button>
+       onClick={()=>inputImagemRef.current?.click()} disabled={!estado||enviando} aria-label="Anexar imagem"><IconeInterface nome="anexo"/></button>
       <textarea ref={campoMensagemRef} className={estiloCampo+" min-h-12 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto"} value={texto} onChange={e=>escrever(e.target.value)}
        onPaste={colarImagem}
        onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
-       rows={2} maxLength={2000} placeholder="Digite sua mensagem... (Enter para enviar)" aria-label="Nova mensagem"
+       rows={2} maxLength={2000} placeholder="Mensagem para a equipe" aria-label="Nova mensagem"
        readOnly={enviando} disabled={!estado}/>
       <button ref={botaoEnviarRef} className="botao-primario" type="submit" disabled={enviando||(!texto.trim()&&!imagemSelecionada)}>{enviando?"Enviando...":"Enviar"}</button>
      </form>
-     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Shift+Enter pula linha. Cole prints com Ctrl+V ou use o anexo. Imagens: PNG, JPEG ou WebP, até 2 MB. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
+     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Enter envia · Shift+Enter quebra linha · Imagens PNG, JPEG ou WebP, até 2 MB. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
     </div>
   </section>
  </div>;
