@@ -5,6 +5,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { createHash, randomBytes, scryptSync } from "node:crypto";
 import { basename, resolve } from "node:path";
 import { dividirInstrucoesSql } from "./migracoes-sql.mjs";
+import { SQL_INVENTARIO, listarManifesto, relatorioMigracoes, planejarReconciliacao } from "./migracoes-estado.mjs";
 
 const [acao, usuarioEntrada, ...resto] = process.argv.slice(2);
 const url = process.env.DATABASE_URL;
@@ -20,13 +21,66 @@ function gerarHash(senha) {
   const hash = scryptSync(senha, Buffer.from(salt,"hex"), 64, {N:1<<14,r:8,p:1,maxmem:64*1024*1024}).toString("hex");
   return {salt,hash};
 }
-async function migrar() {
-  // A tabela de controle é criada antes das migrações, inclusive em bancos vazios.
-  await q(`CREATE TABLE IF NOT EXISTS kb_migracoes (
+
+const SQL_CONTROLE = `CREATE TABLE IF NOT EXISTS kb_migracoes (
     nome VARCHAR(160) PRIMARY KEY,
     aplicada_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     checksum CHAR(64) NOT NULL
-  )`);
+  )`;
+
+/** A consulta de estado não altera o banco. O branch_id do Neon evita confundir Preview e produção. */
+async function estadoMigracoes() {
+  const [origem] = await q(`SELECT current_database() AS banco,
+    current_setting('neon.branch_id',true) AS branch_id,
+    to_regclass('public.kb_migracoes') IS NOT NULL AS possui_controle`);
+  const [inventario] = await q(SQL_INVENTARIO);
+  const manifesto = listarManifesto();
+  const registrados = origem.possui_controle
+    ? await q("SELECT nome,checksum FROM kb_migracoes ORDER BY nome") : [];
+  const conhecidos = new Set(manifesto.map(x => x.nome));
+  const estranhos = registrados.filter(x => !conhecidos.has(x.nome));
+  if (estranhos.length) throw new Error("Histórico contém migrações sem arquivo correspondente; operação bloqueada.");
+  return { origem, inventario, manifesto, relatorio: relatorioMigracoes(manifesto,inventario,registrados) };
+}
+function exibirMigracoes(estado) {
+  console.log(`Banco: ${estado.origem.banco} | Neon branch_id: ${estado.origem.branch_id??"indisponível"}`);
+  console.log(`Controle kb_migracoes: ${estado.origem.possui_controle?"presente":"ausente"}`);
+  for(const linha of estado.relatorio) {
+    const detalhes=linha.faltantes.length?` — conferir: ${linha.faltantes.join(", ")}`:"";
+    console.log(`${linha.nome}: ${linha.situacao}${detalhes}`);
+  }
+}
+async function reconciliar() {
+  const estado=await estadoMigracoes();
+  exibirMigracoes(estado);
+  const novos=planejarReconciliacao(estado.relatorio);
+  if(!novos.length) {console.log("Nenhuma migração comprovada está sem histórico.");return;}
+  // Exige autorização explícita E correspondência real do branch_id conectado no Neon.
+  const esperado=process.env.KB_RECONCILIAR_BRANCH_ID?.trim()??"";
+  if(process.env.KB_RECONCILIAR_CONFIRMAR!=="sim" ||
+     !/^br-[a-z0-9-]+$/.test(esperado) || !estado.origem.branch_id ||
+     estado.origem.branch_id!==esperado)
+    throw new Error("Reconciliação não executada: configure KB_RECONCILIAR_CONFIRMAR=sim e KB_RECONCILIAR_BRANCH_ID com o ID exato da branch de desenvolvimento retornado acima.");
+  const instrucoes=[
+    sql.query(SQL_CONTROLE),
+    ...novos.map(x=>sql.query("INSERT INTO kb_migracoes(nome,checksum) VALUES($1,$2) ON CONFLICT(nome) DO NOTHING",[x.nome,x.checksum])),
+  ];
+  await sql.transaction(instrucoes);
+  const depois=await estadoMigracoes();
+  for(const {nome} of novos){
+    if(!depois.relatorio.some(x=>x.nome===nome&&x.situacao==="registrada"))
+      throw new Error(`Reconciliação incompleta: verifique ${nome} no banco.`);
+  }
+  console.log(`Histórico conciliado: ${novos.length} migração(ões). Nenhum SQL dos arquivos foi reaplicado.`);
+}
+async function migrar() {
+  // Não executar SQL de migração sobre uma estrutura existente sem histórico confiável.
+  const estado=await estadoMigracoes();
+  const inseguras=estado.relatorio.filter(x=>!["registrada","pendente"].includes(x.situacao));
+  if(inseguras.length || (!estado.origem.possui_controle && estado.inventario.tabelas.some(t=>t.startsWith("kb_"))))
+    throw new Error("Estrutura existente sem histórico confiável. Execute db:status, confira o Neon de desenvolvimento e use db:reconciliar antes de db:migrar.");
+  // A tabela de controle é criada antes das migrações, inclusive em bancos vazios.
+  await q(SQL_CONTROLE);
 
   const pasta = resolve("db");
   const arquivos = readdirSync(pasta)
@@ -74,6 +128,8 @@ async function guardarPeloMenosUmAdmin(usuario, tipo) {
   return r[0];
 }
 async function executar() {
+  if (acao === "status") return exibirMigracoes(await estadoMigracoes());
+  if (acao === "reconciliar") return reconciliar();
   if (acao === "migrar") return migrar();
   if (acao === "verificar") return verificar();
   if (acao === "limpar") {
@@ -146,7 +202,7 @@ async function executar() {
     console.log(`Conta ${usuario}: operação ${acao} concluída. Sessões antigas inválidas.`); return;
   }
   console.log(`Comandos disponíveis:
-  npm run db:migrar | db:verificar | db:limpar
+  npm run db:status | db:reconciliar | db:migrar | db:verificar | db:limpar
   npm run usuario:adicionar -- admin "Administrador" administrador
   npm run usuario:listar
   npm run usuario:senha -- admin
@@ -159,6 +215,8 @@ async function executar() {
 try { await executar(); }
 catch (e) {
   if (e?.code === "23505") erro("Esse usuário já existe. Use usuario:senha para redefinir a senha.");
-  console.error("Operação não concluída. Confira DATABASE_URL, conectividade e a migração. Código:", e?.code ?? "indisponível");
+  if (["migrar","status","reconciliar"].includes(acao) && e instanceof Error && !e.code)
+    console.error("Migração interrompida:",e.message);
+  else console.error("Operação não concluída. Confira DATABASE_URL, conectividade e a migração. Código:", e?.code ?? "indisponível");
   process.exitCode = 1;
 }
