@@ -376,7 +376,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
          <time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
          <div className="chat-barra-acoes" role="group" aria-label={"Ações da mensagem de "+m.autor}>
           {!m.apagadaParaTodos&&<button type="button" onClick={()=>{setRespondendo(m);setPesquisa("");setBusca("");campoMensagemRef.current?.focus();}} disabled={operando!==null}>Responder</button>}
-          {!m.apagadaParaTodos&&<button type="button" onClick={()=>{void navigator.clipboard.writeText(m.texto).then(()=>setAviso("Mensagem copiada.")).catch(()=>setAviso("Não foi possível copiar."));}}>Copiar</button>}
+          {!m.apagadaParaTodos&&<button type="button" onClick={()=>{if(!navigator.clipboard?.writeText){setAviso("Área de transferência indisponível.");return;}void navigator.clipboard.writeText(m.texto).then(()=>setAviso("Mensagem copiada.")).catch(()=>setAviso("Não foi possível copiar."));}}>Copiar</button>}
           <button type="button" onClick={()=>void apagarMensagem(m.id,false)} disabled={operando!==null}>Apagar</button>
           {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="acao-perigo" onClick={()=>void apagarMensagem(m.id,true)} disabled={operando!==null}>Apagar para todos</button>}
          </div>
@@ -418,7 +418,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
        onClick={()=>inputImagemRef.current?.click()} disabled={!estado||enviando} aria-label="Anexar imagem"><IconeInterface nome="anexo"/></button>
       <textarea ref={campoMensagemRef} className={estiloCampo+" min-h-12 max-h-28 min-w-0 flex-1 resize-none overflow-y-auto"} value={texto} onChange={e=>escrever(e.target.value)}
        onPaste={colarImagem}
-       onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
+       onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void enviarTexto(e as unknown as FormEvent);}}}
        rows={2} maxLength={2000} placeholder="Mensagem para a equipe" aria-label="Nova mensagem"
        readOnly={enviando} disabled={!estado}/>
       <button ref={botaoEnviarRef} className="botao-primario" type="submit" disabled={enviando||(!texto.trim()&&!imagemSelecionada)}>{enviando?"Enviando...":"Enviar"}</button>
