@@ -131,3 +131,45 @@ assinatura, recebimento com a aba fechada e clique para abrir o chat.
    dados reais de teste.
 
 Não aplicar migrações 010/011 nem ativar novas variáveis na produção nesta fase.
+
+## Auditoria de estabilidade — 31/10/2026
+
+Melhorias realizadas sem novas migrações:
+
+- Chat: confirmação de leitura limitada pelo ID máximo efetivamente devolvido ao
+  navegador. Evita que mensagens recebidas após a consulta sejam marcadas como lidas.
+- Mensagens: proteção contra dois envios simultâneos e contra respostas de
+  carregamentos antigos substituírem mensagens novas.
+- Histórico: comparação semântica e deduplicação na paginação para evitar
+  renderizações e reposicionamentos de rolagem quando nada mudou.
+- Entregas externas: Ably e Web Push passam a ser solicitados com `after()`
+  depois da resposta do endpoint; o envio não fica bloqueado por tempo de
+  resposta desses serviços e não se converte em falha após gravar no banco.
+- Presença: o componente global não envia pings redundantes quando o
+  ChatPainel já está encarregado da presença na rota `/chat`.
+- Central: respostas HTTP fora de ordem são ignoradas; erros temporários
+  exibem aviso de sincronização e preservam o último estado útil.
+- Sessão expirada: a central, o chat e o perfil redirecionam ao login quando
+  recebem HTTP 401, sem continuar exibindo o histórico como se fosse atual.
+- Web Push: inscrição já existente é reutilizada quando tem chave
+  compatível; permissionamento de notificações ocorre diretamente no clique.
+- Logout: tenta remover e cancelar a assinatura do dispositivo atual antes
+  de encerrar a sessão, sem afetar inscrições de outros aparelhos.
+- Perfil: restringe uploads de foto simultâneos, apresenta fallback quando
+  a foto não pode ser exibida e permite repetir a consulta após falha temporária.
+- Avatar: upload limita duração de rede e exclusão de versão antiga usa
+  processamento após a resposta para evitar atrasar o usuário.
+
+Regressões automatizadas adicionais: leitura em corrida com novas mensagens,
+IDs de notificações, deduplicação de histórico, paginação, alterações de
+respostas, confirmação de limite e envio externo não bloqueante.
+
+### Limitações de validação
+
+As verificações automatizadas, o status `READY` e a inspeção do Neon
+não equivalem à homologação autenticada com múltiplos dispositivos.
+Também não foi possível consultar os logs de execução da Vercel nesta
+rodada: a API conectada retornou 403. A observabilidade precisa ser
+validada diretamente no painel ou ter suas permissões ajustadas.
+
+**Nenhuma alteração em main ou Neon Production foi autorizada ou aplicada.**
