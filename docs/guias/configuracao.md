@@ -26,13 +26,25 @@ O SDK resolve a autenticação do Blob. Para OIDC no desenvolvimento, utilize o 
 Configure **somente o Neon de desenvolvimento** em `.env.local` e confira o ambiente antes de prosseguir. Não execute migrações de Preview diretamente no banco de produção.
 
 ```bash
-npm run db:migrar
-npm run db:verificar
+npm run db:status
 ```
 
-O runner percorre **todos os arquivos `db/NNN_*.sql` em ordem** (incluindo 010, 011, 012 e 013), usa transação por arquivo e registra nome, data e SHA-256 em `kb_migracoes`. Migrações registradas são ignoradas, e qualquer checksum divergente interrompe o processo. SQL com funções PL/pgSQL, aspas ou comentários não é dividido incorretamente. Não execute dois runners simultaneamente.
+**Diagnóstico somente leitura:** o comando exibe o banco, o identificador da branch Neon e as migrações registradas, aplicadas sem histórico, pendentes ou incompletas. Compara assinaturas de tabelas, colunas, índices, restrições e gatilhos. **Não reaplique migrações manualmente executadas apenas porque `kb_migracoes` não existe.** O migrador agora interrompe o processo se detectar estrutura existente sem histórico confiável.
 
-**Banco já existente:** na primeira execução, os arquivos antigos ainda não possuem entradas em `kb_migracoes`. Eles são reaplicados com suas proteções idempotentes, sem excluir registros. Confira as migrações e os triggers em desenvolvimento antes de autorizar o mesmo procedimento em produção.
+Em um banco inteiramente novo, sem tabelas `kb_*`, execute `npm run db:migrar` e `npm run db:verificar`. Para bancos existentes cujas migrações foram feitas manualmente, confira o esquema e o relatório; depois autorize a conciliação **somente na branch de desenvolvimento**. Exemplo no PowerShell para a branch atual:
+
+```powershell
+$env:KB_RECONCILIAR_BRANCH_ID="br-calm-moon-b5scqqnp"
+$env:KB_RECONCILIAR_CONFIRMAR="sim"
+npm run db:reconciliar
+Remove-Item Env:KB_RECONCILIAR_BRANCH_ID
+Remove-Item Env:KB_RECONCILIAR_CONFIRMAR
+npm run db:status
+```
+
+Confirme o ID em Neon → projeto `nortesyskb` → Branches → `dev-fase-7c1`. Se recriar a branch, atualize o ID. O script exige que o ID informado corresponda ao `current_setting('neon.branch_id')` do banco realmente conectado. Ele registra checksums SHA-256 **apenas para migrações que passaram nas verificações estruturais**, sem reaplicar seus comandos; bloqueia assinaturas parciais, checksums divergentes e lacunas fora de ordem.
+
+**Atenção:** a assinatura identifica os objetos essenciais, mas não prova que o conteúdo de todas as funções ou os dados coincidem exatamente com o SQL versionado. Revise as migrações e quaisquer alterações manuais antes de conciliar. A conciliação escreve no banco e não deve ser executada na produção sem autorização separada. Não rode migradores simultaneamente. Depois de conciliar, `npm run db:migrar` aplica apenas novas etapas pendentes e registra seus checksums em transações por arquivo.
 
 A migração 012 permite imagens de chat sem legenda e atualiza somente textos automáticos. A 013 cria cotas para avatar (12 por hora), sugestões (90 por minuto) e índices para a central de notificações.
 
