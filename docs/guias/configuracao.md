@@ -48,7 +48,9 @@ Confirme o ID em Neon → projeto `nortesyskb` → Branches → `dev-fase-7c1`. 
 
 A migração 012 permite imagens de chat sem legenda e atualiza somente textos automáticos. A 013 cria cotas para avatar (12 por hora), sugestões (90 por minuto) e índices para a central de notificações.
 
-A **migração 014** protege o último administrador ativo por trigger no PostgreSQL, inclusive em atualizações simultâneas ou operações feitas fora do painel. Aplique-a primeiro no Neon de desenvolvimento e valide a ativação, rebaixamento e desativação de contas com pelo menos dois administradores de teste. O controle de concorrência entre conexões reais precisa ser homologado no banco escolhido. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
+A **migração 014** protege o último administrador ativo por trigger no PostgreSQL, inclusive em atualizações simultâneas ou operações feitas fora do painel.
+
+A **migração 015** recupera o gatilho da fila de imagens de chat excluídas para todos se ele estiver ausente, sem remover arquivos ou mensagens. No Neon de desenvolvimento onde a migração 009 estiver parcialmente instalada, aplique 015 primeiro e confirme o gatilho antes de reconciliar os checksums históricos. A reconciliação **não deve** certificar uma migração 009 incompleta. Aplique-a primeiro no Neon de desenvolvimento e valide a ativação, rebaixamento e desativação de contas com pelo menos dois administradores de teste. O controle de concorrência entre conexões reais precisa ser homologado no banco escolhido. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
 
 Conferência SQL:
 
@@ -61,7 +63,7 @@ SELECT COUNT(*) FROM kb_notificacoes;
 
 Configure `CRON_SECRET` (valor aleatório com pelo menos 24 caracteres) na Vercel. O agendamento de `vercel.json` chama `/api/cron/manutencao` uma vez por dia, às 07:00 UTC (04:00 em Araguaína). O endpoint requer o cabeçalho `Authorization: Bearer <CRON_SECRET>`; sem segredo não é liberado.
 
-A manutenção apaga sessões e tentativas expiradas, processa a fila de imagens de chat, remove notificações com mais de 30 dias e limpa cotas antigas. Ajuste a retenção com `NOTIFICACOES_RETENCAO_DIAS` (7–365; padrão 30).
+A manutenção apaga sessões e tentativas expiradas, processa a fila de imagens de chat, remove notificações com mais de 30 dias e limpa cotas antigas. As exclusões de sessões, notificações e cotas usam lotes de até 200 itens por consulta e até cinco rodadas por execução, para limitar tempo e locks no Neon. Se 010/013 ainda não estiverem aplicadas, essas partes da limpeza são ignoradas sem bloquear sessões ou imagens; repita a manutenção quando as tabelas estiverem disponíveis. Ajuste a retenção com `NOTIFICACOES_RETENCAO_DIAS` (7–365; padrão 30).
 
 Para notificações Web Push configure `WEB_PUSH_SUBJECT` com um endereço `mailto:` válido ou a URL HTTPS do domínio real da aplicação, além das chaves VAPID. Sem assunto válido o Push permanece desativado, mas o chat e as notificações internas continuam funcionando.
 
