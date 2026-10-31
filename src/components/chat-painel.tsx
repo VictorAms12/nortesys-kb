@@ -8,6 +8,10 @@ import {imagensDaTransferencia,validarArquivoImagemChat} from "../lib/chat-clipb
 type ErroResposta={erro?:string};
 const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
 async function jsonSeguro<T,>(res:Response):Promise<T>{
+ if(res.status===401){
+  window.location.replace("/entrar");
+  throw new Error("Sua sessão expirou. Entre novamente.");
+ }
  const dados=await res.json() as T&ErroResposta;
  if(!res.ok)throw new Error(dados.erro||"Requisição indisponível.");
  return dados;

@@ -10,6 +10,7 @@ export function CentralNotificacoes(){
  const [dados,setDados]=useState<Dados>({itens:[],naoLidas:0});
  const pathname=usePathname();
  const [aberto,setAberto]=useState(false);
+ const [falhaSincronizacao,setFalhaSincronizacao]=useState(false);
  const [aviso,setAviso]=useState<{texto:string;conversaId:string}|null>(null);
  const ancora=useRef<HTMLDivElement|null>(null);
  const sincronizacao=useRef<BroadcastChannel|null>(null);
@@ -22,9 +23,17 @@ export function CentralNotificacoes(){
   const versao=++consultaAtual.current;
   try{
    const r=await fetch("/api/notificacoes",{cache:"no-store",credentials:"same-origin"});
-   if(!r.ok)return;
+   if(r.status===401){
+    setDados({itens:[],naoLidas:0});
+    setAviso(null);
+    window.location.replace("/entrar");
+    return;
+   }
+   if(!r.ok){setFalhaSincronizacao(true);return;}
    const d=await r.json() as Dados;
-   if(d.indisponivel||versao!==consultaAtual.current)return;
+   if(versao!==consultaAtual.current)return;
+   if(d.indisponivel){setFalhaSincronizacao(true);return;}
+   setFalhaSincronizacao(false);
    const maior=d.itens.reduce((m,x)=>depois(x.id,m)?x.id:m,"0");
    const recentes=d.itens.filter(x=>!x.vistaEm&&ultimo.current!==null&&depois(x.id,ultimo.current));
    const nova=recentes.find(x=>x.tipo!=="geral"||preferencias.current.geral);
@@ -49,7 +58,7 @@ export function CentralNotificacoes(){
    }
    if(ultimo.current===null||depois(maior,ultimo.current))ultimo.current=maior;
    if(versao===consultaAtual.current)setDados(d);
-  }catch{/* Mantém o restante do sistema utilizável. */}
+  }catch{setFalhaSincronizacao(true);/* Mantém o último estado útil. */}
  },[]);
  useEffect(()=>{
   if(typeof BroadcastChannel!=="undefined"){
@@ -156,6 +165,7 @@ export function CentralNotificacoes(){
     <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] p-3">
      <strong>Notificações</strong><button type="button" className="text-xs underline" onClick={()=>void marcar(null)}>Marcar lidas</button>
     </div>
+    {falhaSincronizacao&&<p role="status" className="border-b border-[var(--border)] px-3 py-2 text-xs text-[var(--muted)]">Não foi possível sincronizar as notificações. Tentaremos novamente.</p>}
     <div className="max-h-80 overflow-y-auto">{dados.itens.length?dados.itens.map(n=>
       <Link key={n.id} href={"/chat?conversa="+encodeURIComponent(n.conversaId)}
        onClick={()=>{setAberto(false);if(!n.vistaEm)void marcar(n.id);}}

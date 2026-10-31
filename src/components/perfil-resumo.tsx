@@ -15,7 +15,7 @@ export function PerfilResumo(){
    .catch(()=>{if(ativo)setChavePush(null);});
   return()=>{ativo=false;};
  },[]);
- useEffect(()=>{void fetch("/api/perfil",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(setPerfil).catch(()=>setErro("Não foi possível consultar seu perfil."));},[]);
+ useEffect(()=>{void fetch("/api/perfil",{cache:"no-store"}).then(r=>{if(r.status===401){window.location.replace("/entrar");throw Error("Sessão expirada");}if(!r.ok)throw Error();return r.json();}).then(setPerfil).catch(()=>setErro("Não foi possível consultar seu perfil."));},[]);
  async function habilitarWebPush(){
   if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)){
    setErro("Este navegador não oferece Web Push.");return;
