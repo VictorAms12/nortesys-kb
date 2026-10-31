@@ -4,6 +4,7 @@ import {NOME_COOKIE,obterSessao} from "../../../../lib/sessao";
 import {verificarOrigemPost} from "../../../../lib/origem";
 import {termoEstatisticoSeguro} from "../../../../lib/estatisticas-busca";
 import {consultar} from "../../../../lib/banco";
+import {ErroFormularioLimitado,lerTextoLimitado} from "../../../../lib/formulario-limitado";
 import {migracao009Aplicada} from "../../../../lib/migracao-009";
 import {carregarTodosArtigos} from "../../../../lib/artigos-banco";
 import {criarIndiceBusca} from "../../../../lib/indice-busca";
@@ -15,10 +16,8 @@ export async function POST(req:NextRequest){
  const usuario=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
  if(!usuario)return fail(401);
  if(!req.headers.get("content-type")?.includes("application/json"))return fail(415);
- const declarado=req.headers.get("content-length");
- if(declarado!==null&&(!/^\d+$/.test(declarado)||Number(declarado)>300))return fail(413);
  try{
-  const raw=await req.text();if(raw.length>300)return fail(413);
+  const raw=await lerTextoLimitado(req,300,"Requisição muito grande.");
   const parsed:unknown=JSON.parse(raw);
   const termo=termoEstatisticoSeguro(parsed&&typeof parsed==="object"?(parsed as {termo?:unknown}).termo:null);
   if(!termo)return fail(400);
@@ -38,6 +37,7 @@ export async function POST(req:NextRequest){
   [usuario.id,termo]);
   return NextResponse.json({ok:true});
  }catch(e){
+  if(e instanceof ErroFormularioLimitado)return fail(e.status);
   if(e instanceof SyntaxError)return fail(400);
   console.error("[busca] Estatística indisponível",e instanceof Error?e.name:"erro");
   return fail(503);
