@@ -1,5 +1,5 @@
 import type {NextRequest} from "next/server";
-import {NextResponse} from "next/server";
+import {NextResponse,after} from "next/server";
 import {randomUUID} from "node:crypto";
 import {put,del} from "@vercel/blob";
 import {NOME_COOKIE,obterSessao} from "../../../../lib/sessao";
@@ -41,14 +41,17 @@ export async function POST(req:NextRequest){
   const img=await validarImagem(new Uint8Array(await file.arrayBuffer()),file.type);
   const anterior=await consultar<{avatar_caminho:string|null}>("SELECT avatar_caminho FROM kb_usuarios WHERE id=$1",[u.id]);
   const caminho="kb-perfis/"+randomUUID()+"."+img.extensao;
-  await put(caminho,Buffer.from(img.bytes),{access:"private",contentType:img.mime,addRandomSuffix:false,allowOverwrite:false});
+  await put(caminho,Buffer.from(img.bytes),{access:"private",contentType:img.mime,addRandomSuffix:false,allowOverwrite:false,abortSignal:AbortSignal.timeout(30000)});
   try{
    const linhas=await consultar<{id:string}>("UPDATE kb_usuarios SET avatar_caminho=$2,atualizado_em=NOW() WHERE id=$1 RETURNING id",[u.id,caminho]);
    if(!linhas.length)throw Error("Conta indisponível");
   }catch(e){await del(caminho).catch(()=>{});throw e;}
   const antigo=anterior[0]?.avatar_caminho;
   if(antigo&&antigo!==caminho&&/^kb-perfis\/[0-9a-f-]{36}\.(png|jpg|webp)$/.test(antigo))
-   await del(antigo).catch(()=>console.error("[perfil] Não foi possível limpar avatar anterior."));
+   after(async()=>{
+    await del(antigo,{abortSignal:AbortSignal.timeout(15000)})
+     .catch(()=>console.error("[perfil] Não foi possível limpar avatar anterior."));
+   });
   return NextResponse.json({ok:true},{headers:{"Cache-Control":"private, no-store"}});
  }catch(e){
   if(e instanceof ErroImagem)return NextResponse.json({erro:e.message},{status:e.status});
