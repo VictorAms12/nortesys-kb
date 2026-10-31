@@ -1,11 +1,12 @@
 import "server-only";
+import {after} from "next/server";
 import {consultar} from "./banco";
 import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type ConversaChat,type UsuarioChat} from "./chat-tipos";
 import {registrarAuditoriaSegura} from "./auditoria-eventos";
 import {publicarChat} from "./chat-ably";
 import {enviarPushChat} from "./push-web";
-import {SQL_MARCAR_NOTIFICACOES_CONVERSA} from "./notificacoes-sql";
-import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA,SQL_INSERIR_IMAGEM_CHAT} from "./chat-sql";
+import {SQL_MARCAR_NOTIFICACOES_CONVERSA,SQL_MARCAR_NOTIFICACOES_ATE} from "./notificacoes-sql";
+import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA,SQL_INSERIR_IMAGEM_CHAT,SQL_MARCAR_LIDA_VISIVEL} from "./chat-sql";
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
 type ConversaLinha={id:string;tipo:"geral"|"privada";nome:string;nao_lidas:number;
@@ -97,6 +98,17 @@ async function atualizarOutros(distribuicao:{tipo:"geral"|"privada";outro_id:str
  const ids=[usuario,distribuicao.outro_id].filter((valor):valor is string=>Boolean(valor));
  await Promise.all(ids.map(u=>publicarChat("kb-chat:usuario:"+u,evento,payload)));
 }
+/** Entregas externas ocorrem depois da resposta e não podem rejeitar o envio já salvo. */
+function agendarEntrega(destino:{tipo:"geral"|"privada";outro_id:string|null},usuario:string,conversa:string,id:number){
+ after(async()=>{
+  const tarefas=await Promise.allSettled([
+   atualizarOutros(destino,usuario,conversa,"mensagem",id),
+   enviarPushChat(usuario,conversa)
+  ]);
+  for(const tarefa of tarefas)if(tarefa.status==="rejected")
+   console.error("[chat] Falha na notificação externa.");
+ });
+}
 export async function enviarMensagem(usuario:string,conversa:string,texto:string,
  respondendoA:number|null=null):Promise<MensagemChat>{
  if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
@@ -110,8 +122,7 @@ export async function enviarMensagem(usuario:string,conversa:string,texto:string
  if(!rows.length)throw new ErroChat(400,"A mensagem respondida não está disponível para você.");
  const m=rows[0];
  await registrarAuditoriaSegura(usuario,respondendoA===null?"chat_mensagem_enviada":"chat_mensagem_respondida",conversa);
- await atualizarOutros(destino,usuario,conversa,"mensagem",Number(m.id));
- await enviarPushChat(usuario,conversa);
+ agendarEntrega(destino,usuario,conversa,Number(m.id));
  return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,
   autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,temImagem:false,
   respondendoAId:respondendoA,respostaA:null};
@@ -134,10 +145,8 @@ export async function registrarImagemChat(usuario:string,conversa:string,texto:s
  if(!rows.length)throw new ErroChat(400,"A mensagem respondida não está disponível para você.");
  const m=rows[0];
  await registrarAuditoriaSegura(usuario,"chat_mensagem_enviada",conversa);
- // A falha do realtime não desfaz uma mensagem já persistida.
- try{await atualizarOutros(destino,usuario,conversa,"mensagem",Number(m.id));}
- catch{console.error("[chat] Notificação de imagem indisponível.");}
- await enviarPushChat(usuario,conversa);
+ // Erro de notificação não desfaz a imagem persistida.
+ agendarEntrega(destino,usuario,conversa,Number(m.id));
  return {id:Number(m.id),conversaId:m.conversa_id,autorId:m.autor_id,
   autor:m.autor,texto:m.texto,criadoEm:m.criado_em,apagadaParaTodos:false,temImagem:true,
   respondendoAId:respondendoA,respostaA:null};
@@ -175,18 +184,13 @@ export async function definirSilencio(usuario:string,conversa:string,silenciada:
  if(!linhas.length)throw new ErroChat(404,"Conversa indisponível.");
  await publicarChat("kb-chat:usuario:"+usuario,"alteracao",{conversaId:conversa,id:0});
 }
-export async function marcarLida(usuario:string,conversa:string):Promise<void>{
- if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
- const rows=await consultar<{usuario_id:string}>(
-  "UPDATE kb_chat_participantes p SET ultima_lida_id=GREATEST(p.ultima_lida_id, "+
-  "COALESCE((SELECT MAX(m.id) FROM kb_chat_mensagens m WHERE m.conversa_id=$1),0)) "+
-  "WHERE p.usuario_id=$2 AND p.conversa_id=$1 RETURNING p.usuario_id",[conversa,usuario]);
- if(!rows.length)throw new ErroChat(404,"Conversa não encontrada.");
- // Uma conversa aberta marca também seus avisos como lidos, sem afetar outras conversas.
- await consultar(SQL_MARCAR_NOTIFICACOES_CONVERSA,[usuario,conversa]).catch(()=>{
+export async function marcarLida(usuario:string,conversa:string,ateId:number):Promise<void>{
+ if(!CHAT_UUID.test(conversa)||!idMensagemValido(ateId))throw new ErroChat(400,"Leitura inválida.");
+ const rows=await consultar<{existe:boolean;alterou:boolean}>(SQL_MARCAR_LIDA_VISIVEL,[conversa,usuario,ateId]);
+ if(!rows[0]?.existe)throw new ErroChat(404,"Conversa não encontrada.");
+ await consultar(SQL_MARCAR_NOTIFICACOES_ATE,[usuario,conversa,ateId]).catch(()=>{
   console.error("[chat] Falha ao sincronizar avisos lidos.");
  });
- // Leitura não é auditada por mensagem para evitar milhares de eventos repetitivos.
 }
 export async function atualizarPresenca(usuario:string,ativo:boolean):Promise<void>{
  await consultar("INSERT INTO kb_chat_presenca(usuario_id,visto_em,ativo_em) VALUES($1,NOW(),NOW()) "+

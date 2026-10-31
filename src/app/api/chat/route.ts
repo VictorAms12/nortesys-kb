@@ -68,8 +68,11 @@ export async function POST(req:NextRequest){
      return NextResponse.json({ok:true},{headers});
    }
    case "lido":{
-     if(typeof dados.conversa!=="string")return erro("Conversa inválida.",400);
-     await marcarLida(u.id,dados.conversa);return NextResponse.json({ok:true},{headers});
+     if(typeof dados.conversa!=="string"||typeof dados.ateId!=="number"||
+       !Number.isSafeInteger(dados.ateId)||dados.ateId<=0)
+       return erro("Leitura inválida.",400);
+     await marcarLida(u.id,dados.conversa,dados.ateId);
+     return NextResponse.json({ok:true},{headers});
    }
    case "presenca":{
      if(typeof dados.ativo!=="boolean")return erro("Estado inválido.",400);

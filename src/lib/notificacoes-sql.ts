@@ -22,3 +22,5 @@ export const SQL_MARCAR_NOTIFICACOES = "UPDATE kb_notificacoes SET vista_em=NOW(
 export const SQL_MARCAR_NOTIFICACOES_CONVERSA = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND conversa_id=$2 AND vista_em IS NULL";
 export const SQL_MARCAR_TODAS_NOTIFICACOES = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND vista_em IS NULL";
 export const NOTIFICACAO_ID = /^[1-9][0-9]{0,17}$/;
+
+export const SQL_MARCAR_NOTIFICACOES_ATE = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND conversa_id=$2 AND mensagem_id<=$3::bigint AND vista_em IS NULL";

@@ -11,3 +11,14 @@ export const SQL_TOTAL_NAO_LIDAS = "SELECT COUNT(*)::int AS total FROM kb_chat_m
 export const SQL_INSERIR_IMAGEM_CHAT = "INSERT INTO kb_chat_mensagens(conversa_id,autor_id,texto,respondendo_a_id,imagem_caminho,imagem_mime,imagem_tamanho)\n SELECT $1,$2,$3,origem.id,$5,$6,$7 FROM kb_chat_participantes p\n LEFT JOIN LATERAL (\n  SELECT m.id FROM kb_chat_mensagens m WHERE m.id=$4::bigint AND m.conversa_id=p.conversa_id\n   AND m.id>p.limpa_ate_id AND m.apagada_para_todos_em IS NULL\n   AND NOT EXISTS(SELECT 1 FROM kb_chat_mensagens_ocultas h WHERE h.usuario_id=$2 AND h.mensagem_id=m.id)\n ) origem ON TRUE\n WHERE p.conversa_id=$1 AND p.usuario_id=$2 AND ($4::bigint IS NULL OR origem.id IS NOT NULL)\n RETURNING id,conversa_id,autor_id,(SELECT nome FROM kb_usuarios WHERE id=$2) AS autor,\n texto,criado_em::text AS criado_em,respondendo_a_id";
 /** A rota de imagem só encontra conteúdo se o usuário ainda puder ler a mensagem. */
 export const SQL_LER_IMAGEM_CHAT = "SELECT m.imagem_caminho,m.imagem_mime,m.imagem_tamanho FROM kb_chat_mensagens m\n JOIN kb_chat_participantes p ON p.conversa_id=m.conversa_id AND p.usuario_id=$1\n LEFT JOIN kb_chat_mensagens_ocultas o ON o.mensagem_id=m.id AND o.usuario_id=$1\n WHERE m.id=$2 AND m.id>p.limpa_ate_id AND m.apagada_para_todos_em IS NULL\n AND o.mensagem_id IS NULL AND m.imagem_caminho IS NOT NULL LIMIT 1";
+
+/** Leitura avança somente até o ID entregue ao cliente. */
+export const SQL_MARCAR_LIDA_VISIVEL = `WITH teto AS (
+ SELECT LEAST($3::bigint, COALESCE(MAX(m.id),0)) AS id
+ FROM kb_chat_mensagens m WHERE m.conversa_id=$1
+), atualizada AS (
+ UPDATE kb_chat_participantes p SET ultima_lida_id=teto.id FROM teto
+ WHERE p.conversa_id=$1 AND p.usuario_id=$2 AND p.ultima_lida_id<teto.id
+ RETURNING p.usuario_id
+) SELECT EXISTS(SELECT 1 FROM kb_chat_participantes WHERE usuario_id=$2 AND conversa_id=$1) AS existe,
+ EXISTS(SELECT 1 FROM atualizada) AS alterou`;
