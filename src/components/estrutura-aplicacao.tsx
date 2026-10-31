@@ -132,7 +132,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
         <div className="topbar-direita"><IndicadorChat/><CentralNotificacoes/><AlternarTema/><MenuConta nome={nome} papel={papel}/></div>
       </header>
       <div className="conteudo-app">{children}</div>
-      <footer className="rodape-app no-print"><div className="conteiner"><span>Nortesys KB · v0.8 Preview</span><span>{dataBase?"Base atualizada em "+new Date(dataBase+"T12:00:00").toLocaleDateString("pt-BR"):"Base de conhecimento interno"}</span></div></footer>
+      <footer className="rodape-app no-print"><div className="conteiner"><span>Nortesys KB · v0.8 Preview</span><span>{dataBase?"Base atualizada em "+dataBase.slice(0,10).split("-").reverse().join("/"):"Base de conhecimento interno"}</span></div></footer>
     </div>
   </div>;
 }

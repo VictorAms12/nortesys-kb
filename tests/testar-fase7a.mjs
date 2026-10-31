@@ -12,7 +12,7 @@ assert.match(shell,/papel==="administrador"/);
 assert.match(shell,/salvarPreferencia\(CHAVE/);
 assert.match(shell,/e\.key==="Escape"/);
 assert.match(shell,/aria-expanded=\{mobileAberta\}/);
-assert.match(shell,/pathname==="/entrar"/);
+assert.ok(shell.includes('pathname==="/entrar"'));
 assert.doesNotMatch(shell,/texto:"Pesquisar"/);
 const css=ler("src/app/globals.css");
 assert.match(css,/--sidebar-width:232px/);
