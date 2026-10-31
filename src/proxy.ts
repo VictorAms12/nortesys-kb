@@ -18,7 +18,7 @@ function csp(nonce: string): string {
 
 export async function proxy(req: NextRequest) {
   const rota = req.nextUrl.pathname;
-  const publica = rota === "/entrar" || rota === "/api/autenticacao/entrar" || rota === "/robots.txt";
+  const publica = rota === "/entrar" || rota === "/api/autenticacao/entrar" || rota === "/api/cron/manutencao" || rota === "/robots.txt";
   let sessaoValida = false;
   try {
     if (req.cookies.has(NOME_COOKIE)) sessaoValida = await validarTokenSessao(req.cookies.get(NOME_COOKIE)?.value);
@@ -43,7 +43,9 @@ export async function proxy(req: NextRequest) {
     resposta = NextResponse.next({ request: { headers: cabecalhos } });
   }
   resposta.headers.set("Content-Security-Policy", politica);
-  resposta.headers.set("Cache-Control", "private, no-store, max-age=0");
+  // Avatar autenticado define seu próprio cache privado e ETag na rota de leitura.
+  if (!/^\/api\/perfil\/avatar\/[0-9a-f-]{36}$/.test(rota))
+    resposta.headers.set("Cache-Control", "private, no-store, max-age=0");
   resposta.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   return resposta;
 }
