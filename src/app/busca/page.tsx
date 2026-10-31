@@ -19,11 +19,11 @@ export default async function PaginaBusca() {
     <main id="conteudo" className="conteiner py-9 sm:py-12">
       <nav aria-label="Caminho de navegação" className="trilha"><Link href="/">Início</Link><span aria-hidden="true">/</span><span>Busca</span></nav>
       <div className="mb-8">
-        <p className="sobre-titulo">Encontre a orientação certa</p>
-        <h1 className="titulo-pagina mt-2">Pesquisar na base</h1>
-        <p className="mt-3 max-w-2xl leading-7 text-[var(--muted)]">Consulte soluções de problemas, tutoriais, guias técnicos, FAQ e códigos de erro.</p>
+        
+        <h1 className="titulo-pagina">Pesquisar na base</h1>
+        <p className="mt-3 max-w-2xl leading-7 text-[var(--muted)]">Busque procedimentos, rejeições fiscais, códigos de erro e configurações.</p>
       </div>
-      <Suspense fallback={<div className="cartao p-6" role="status">Preparando pesquisa…</div>}>
+      <Suspense fallback={<div className="estado-vazio" role="status">Preparando pesquisa…</div>}>
         <PainelBusca documentos={documentos} />
       </Suspense>
     </main>
