@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { ErroFormularioLimitado, lerFormularioUrlEncodedLimitado } from "../../../../lib/formulario-limitado";
 import { NOME_COOKIE, obterSessao } from "../../../../lib/sessao";
 import { verificarOrigemPost } from "../../../../lib/origem";
 import { consultar } from "../../../../lib/banco";
@@ -13,10 +14,9 @@ export async function POST(req:NextRequest) {
   if (!verificarOrigemPost(req.headers).valida) return new NextResponse("Origem inválida",{status:403});
   const conta=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
   if (!conta || conta.papel!=="administrador") return new NextResponse("Acesso negado",{status:403});
-  const tamanho=Number(req.headers.get("content-length")??0);
-  if (!req.headers.get("content-type")?.includes("application/x-www-form-urlencoded") || tamanho>10000) return new NextResponse("Dados inválidos",{status:400});
+  if (!req.headers.get("content-type")?.includes("application/x-www-form-urlencoded")) return new NextResponse("Dados inválidos",{status:400});
   try {
-    const f=await req.formData();
+    const f=await lerFormularioUrlEncodedLimitado(req,10000);
     const valor=(k:string)=>typeof f.get(k)==="string" ? String(f.get(k)).trim() : "";
     const acao=valor("acao");const usuario=valor("usuario").toLowerCase();const id=valor("id");
     if (acao==="criar") {
@@ -64,6 +64,7 @@ export async function POST(req:NextRequest) {
     }
     return voltar(req,"dados");
   } catch(error) {
+    if (error instanceof ErroFormularioLimitado) return new NextResponse("Dados inválidos",{status:400});
     if (error && typeof error === "object" && "code" in error && error.code==="23505") return voltar(req,"duplicado");
     if (error instanceof z.ZodError || error instanceof Error && error.message==="credencial_invalida") return voltar(req,"dados");
     console.error("Falha administrativa de usuário",error instanceof Error?error.name:"erro");

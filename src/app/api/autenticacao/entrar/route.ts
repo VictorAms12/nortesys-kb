@@ -5,6 +5,7 @@ import { chaveTentativas, registrarTentativa, limparTentativas } from "../../../
 import { autenticacaoConfigurada, criarTokenSessao, destinoSeguro, NOME_COOKIE, opcoesCookie } from "../../../../lib/sessao";
 import { conferirCredenciais } from "../../../../lib/usuarios";
 import { registrarAuditoriaSegura } from "../../../../lib/auditoria-eventos";
+import { ErroFormularioLimitado, lerFormularioUrlEncodedLimitado } from "../../../../lib/formulario-limitado";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,11 +23,14 @@ export async function POST(req: NextRequest) {
     { status: 403, headers: { "Cache-Control": "no-store" } });
   if (!autenticacaoConfigurada()) return voltar(req, "configuracao");
   const tipo = req.headers.get("content-type") ?? "";
-  const tamanho = Number(req.headers.get("content-length") ?? 0);
-  if (!tipo.includes("application/x-www-form-urlencoded") || !Number.isFinite(tamanho) || tamanho > 4096)
+  if (!tipo.includes("application/x-www-form-urlencoded"))
     return new NextResponse("Formulário inválido", { status: 400 });
   let formulario: FormData;
-  try { formulario = await req.formData(); } catch { return voltar(req, "credenciais"); }
+  try { formulario = await lerFormularioUrlEncodedLimitado(req, 4096); }
+  catch (e) {
+    if (e instanceof ErroFormularioLimitado) return new NextResponse("Formulário inválido", { status: 400 });
+    return voltar(req, "credenciais");
+  }
   const usuario = formulario.get("usuario");
   const senha = formulario.get("senha");
   const chave = chaveTentativas(usuario);
