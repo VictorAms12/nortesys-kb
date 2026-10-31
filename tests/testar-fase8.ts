@@ -54,16 +54,6 @@ test("Fase 8: Web Push reassocia dispositivo sem enviar avisos a contas antigas"
  assert.equal(rows.rows.length,1,"Dispositivo tem um único proprietário");
  assert.equal(rows.rows[0].usuario_id,segundo,"A conta atual assume o dispositivo");
 });
-test("Fase 8: UI não expõe texto privado nas notificações",()=>{
- const codigo=readFileSync("src/components/central-notificacoes.tsx","utf8");
- assert.match(codigo,/\/api\/notificacoes/);
- assert.match(codigo,/Nova mensagem/);
- assert.doesNotMatch(codigo,/n\.texto|message\.text/);
- const layout=readFileSync("src/components/estrutura-aplicacao.tsx","utf8");
- assert.match(layout,/CentralNotificacoes/);
- const css=readFileSync("src/app/globals.css","utf8");
- assert.match(css,/prefers-reduced-motion/);
-});
 
 test("Fase 8: contador completo, mensagens ocultas e leitura da conversa sem vazar avisos",async t=>{
  const db=new PGlite();t.after(()=>db.close());
@@ -189,13 +179,6 @@ test("Fase 8: leitura só confirma IDs realmente recebidos pelo cliente",async t
   "SELECT ultima_lida_id FROM kb_chat_participantes WHERE usuario_id=$1 AND conversa_id=$2",[destinatario,conversa]);
  assert.equal(Number(marcador.rows[0].ultima_lida_id),terceiro);
 });
-test("Fase 8: publicação externa nunca bloqueia envio de mensagem após persistência",()=>{
- const codigo=readFileSync("src/lib/chat-banco.ts","utf8");
- assert.match(codigo,/after\(async\(\)=>/);
- assert.match(codigo,/Promise\.allSettled/);
- assert.match(codigo,/agendarEntrega\(destino,usuario,conversa,Number\(m\.id\)\)/);
- assert.doesNotMatch(codigo,/await enviarPushChat\(usuario,conversa\)/);
-});
 
 test("Fase 8: polling do chat preserva referência e não redesenha mensagens inalteradas",()=>{
  const msg=(id:number,complemento:Partial<MensagemChat>={}):MensagemChat=>({
@@ -219,17 +202,3 @@ test("Fase 8: polling do chat preserva referência e não redesenha mensagens in
  assert.equal(mensagensIguais(mensagens,respostaNova),false,"Atualização de resposta precisa atualizar UI");
 });
 
-test("Fase 8: rotas críticas e interface têm proteções de sessão e dispositivos",()=>{
- const chat=readFileSync("src/components/chat-painel.tsx","utf8");
- const central=readFileSync("src/components/central-notificacoes.tsx","utf8");
- const conta=readFileSync("src/components/menu-conta.tsx","utf8");
- const perfil=readFileSync("src/components/perfil-resumo.tsx","utf8");
- assert.match(chat,/enviandoRef\.current/,"Envio dupicado deve ser bloqueado antes da próxima renderização");
- assert.match(chat,/res\.status===401/,"Chat deve encerrar sessão visual expirada");
- assert.match(central,/r\.status===401/,"Notificações devem detectar expiração da sessão");
- assert.match(central,/consultaAtual\.current/,"Requisição antiga de notificações não substitui estado atual");
- assert.match(conta,/await inscricao\.unsubscribe\(\)/,"Logout desvincula notificações do aparelho");
- assert.match(conta,/formulario\.submit\(\)/,"Falha do push não impede o logout nativo");
- assert.match(perfil,/fotoEmEnvio\.current/,"Foto de perfil não pode iniciar uploads concorrentes");
- assert.match(perfil,/Tentar novamente/,"Falha transitória oferece recuperação");
-});

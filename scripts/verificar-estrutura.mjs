@@ -9,11 +9,11 @@ const obrigatorios = [
   "src/app/entrar/page.tsx", "src/app/robots.ts",
   "src/app/api/autenticacao/entrar/route.ts", "src/app/api/autenticacao/sair/route.ts",
   "src/lib/sessao.ts", "src/lib/usuarios.ts", "src/lib/autenticacao-servidor.ts",
-  "scripts/db-usuarios.mjs", "tests/testar-usuarios.ts", "tests/testar-banco.mjs", "db/001_auth.sql", "db/002_painel.sql", "src/lib/banco.ts",
+  "scripts/db-usuarios.mjs", "tests/testar-usuarios.ts", "tests/testar-migracoes.mjs", "db/001_auth.sql", "db/002_painel.sql", "src/lib/banco.ts",
   "src/app/admin/page.tsx", "src/app/admin/usuarios/page.tsx", "src/app/admin/artigos/page.tsx",
   "src/app/api/admin/usuarios/route.ts", "src/app/api/admin/artigos/route.ts",
   "src/components/painel-busca.tsx", "src/components/estrutura-aplicacao.tsx", "src/components/icone-interface.tsx", "src/lib/indice-busca.ts", "src/lib/busca.ts",
-  "scripts/verificar-dados-sensiveis.mjs", "tests/testar-seguranca.ts", "tests/testar-fase7a.mjs",
+  "scripts/verificar-dados-sensiveis.mjs", "tests/testar-seguranca.ts", "tests/e2e/nortesys.spec.mjs",
   "docs/README.md", "docs/arquitetura.md", "docs/guias/configuracao.md", "docs/guias/deploy.md",
   "db/003_interacoes.sql", "db/004_imagens.sql", "tests/testar-imagens.ts", "tests/testar-revisao.ts",
 ];
