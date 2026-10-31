@@ -992,3 +992,36 @@ a{color:var(--link);text-underline-offset:2px;}
  a{color:black!important;}
  .bloco-codigo{background:white!important;color:black!important;}
 }
+
+/* Administração, biblioteca e diagnóstico: densidade consistente */
+:root{
+ --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;
+}
+.admin-resumo-grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));border-top:1px solid var(--border);border-left:1px solid var(--border);background:var(--surface);}
+.admin-resumo-item{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:72px;padding:12px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.admin-resumo-item span{font-size:12px;line-height:1.45;color:var(--muted);}
+.admin-resumo-item strong{font-size:19px;line-height:1.2;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums;}
+.admin-acessos-lista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--border);border-left:1px solid var(--border);}
+.admin-acesso{display:flex;align-items:flex-start;gap:11px;padding:13px 14px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);text-decoration:none;background:var(--surface);color:var(--text);}
+.admin-acesso:hover,.admin-acesso:focus-visible{background:var(--surface-alt);}
+.admin-acesso svg{margin-top:3px;flex:none;color:var(--muted);}
+.admin-acesso strong,.admin-acesso small{display:block;}
+.admin-acesso strong{font-size:13px;color:var(--text);}
+.admin-acesso small{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4;}
+.filtros-biblioteca{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;border-bottom:1px solid var(--border);padding:0 0 14px;}
+.filtros-biblioteca select{width:100%;}
+.lista-artigos{border-top:1px solid var(--border);}
+.diagnosticos-lista{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--border);border-left:1px solid var(--border);}
+.diagnostico-opcao{border:0;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:var(--surface);padding:16px;cursor:pointer;}
+.diagnostico-opcao:hover,.diagnostico-opcao:focus-visible{background:var(--surface-alt);}
+.diagnostico-opcao h2{font-size:14px;font-weight:600;}
+.diagnostico-opcao p{font-size:13px;line-height:1.5;}
+@media(max-width:800px){
+ .filtros-biblioteca{grid-template-columns:repeat(2,minmax(0,1fr));}
+ .admin-acessos-lista,.diagnosticos-lista{grid-template-columns:1fr;}
+}
+@media(max-width:480px){
+ .filtros-biblioteca{grid-template-columns:1fr;}
+ .admin-resumo-grade{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+:where(.text-\[10px\],.text-\[11px\]){font-size:12px!important;}
