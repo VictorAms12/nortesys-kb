@@ -75,3 +75,17 @@ export function relatorioMigracoes(manifesto,inventario,registros=[]) {
   return {nome,checksum,situacao,...assinatura};
  });
 }
+
+/** Reconciliar somente o prefixo contínuo comprovadamente aplicado, sem inferir etapas faltantes. */
+export function planejarReconciliacao(relatorio) {
+ const novos=[];
+ let houveLacuna=false;
+ for(const linha of relatorio){
+  if(["checksum_divergente","estrutura_incompleta","parcial"].includes(linha.situacao))
+   throw new Error(`Migração ${linha.nome} com estado inseguro (${linha.situacao}); confira a estrutura manualmente.`);
+  if(linha.situacao==="pendente"){houveLacuna=true;continue;}
+  if(houveLacuna)throw new Error(`Migração ${linha.nome} aparece instalada depois de uma etapa pendente; reconciliação bloqueada.`);
+  if(linha.situacao==="sem_historico")novos.push({nome:linha.nome,checksum:linha.checksum});
+ }
+ return novos;
+}
