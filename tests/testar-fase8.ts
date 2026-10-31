@@ -4,6 +4,8 @@ import {randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {PGlite} from "@electric-sql/pglite";
 import {maisRecente} from "../src/lib/notificacoes-client";
+import {atualizarHistorico,mensagensIguais} from "../src/lib/chat-estado-mensagens";
+import type {MensagemChat} from "../src/lib/chat-tipos";
 import {SQL_MARCAR_LIDA_VISIVEL,SQL_TOTAL_NAO_LIDAS} from "../src/lib/chat-sql";
 import {SQL_LISTAR_NOTIFICACOES,SQL_CONTAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES_CONVERSA,SQL_MARCAR_NOTIFICACOES_ATE,NOTIFICACAO_ID} from "../src/lib/notificacoes-sql";
 
@@ -193,4 +195,26 @@ test("Fase 8: publicação externa nunca bloqueia envio de mensagem após persis
  assert.match(codigo,/Promise\.allSettled/);
  assert.match(codigo,/agendarEntrega\(destino,usuario,conversa,Number\(m\.id\)\)/);
  assert.doesNotMatch(codigo,/await enviarPushChat\(usuario,conversa\)/);
+});
+
+test("Fase 8: polling do chat preserva referência e não redesenha mensagens inalteradas",()=>{
+ const msg=(id:number,complemento:Partial<MensagemChat>={}):MensagemChat=>({
+  id,conversaId:"00000000-0000-4000-8000-000000000001",autorId:"00000000-0000-4000-8000-000000000002",
+  autor:"Colaborador",texto:"Mensagem "+id,criadoEm:"2026-10-31T10:00:00.000Z",
+  apagadaParaTodos:false,temImagem:false,respondendoAId:null,respostaA:null,...complemento
+ });
+ const mensagens=[msg(5),msg(6)];
+ const recarregadas=[msg(5),msg(6)];
+ assert.equal(mensagensIguais(mensagens,recarregadas),true);
+ assert.strictEqual(atualizarHistorico(mensagens,recarregadas,null),mensagens,
+  "Mesmo conteúdo precisa preservar a referência para evitar renderização");
+ const alteradas=[msg(5,{apagadaParaTodos:true,texto:"[Mensagem apagada]"}),msg(6)];
+ assert.notStrictEqual(atualizarHistorico(mensagens,alteradas,null),mensagens);
+ const antigas=[msg(3),msg(4),msg(5)];
+ const paginadas=atualizarHistorico(mensagens,antigas,5);
+ assert.deepEqual(paginadas.map(x=>x.id),[3,4,5,6],"Paginação não pode duplicar ID");
+ assert.strictEqual(atualizarHistorico(paginadas,antigas,5),paginadas,
+  "Uma página já carregada não deve redesenhar todo o histórico");
+ const respostaNova=[msg(5,{respostaA:{id:2,autor:"Outro",texto:"Alterado"}}),msg(6)];
+ assert.equal(mensagensIguais(mensagens,respostaNova),false,"Atualização de resposta precisa atualizar UI");
 });
