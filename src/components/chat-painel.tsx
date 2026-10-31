@@ -61,6 +61,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [notificacao,setNotificacao]=useState("");
  const [digitando,setDigitando]=useState("");
  const [realtime,setRealtime]=useState(false);
+ const tempoRealAtivo=useRef(false);
+ const ultimaVerificacao=useRef(0);
  const [contatosAbertos,setContatosAbertos]=useState(false);
  const campoMensagemRef=useRef<HTMLTextAreaElement>(null);
  const botaoEnviarRef=useRef<HTMLButtonElement>(null);
@@ -147,22 +149,22 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   for(const nome of ["pointerdown","keydown","mousemove","touchstart"])window.addEventListener(nome,activity,{passive:true});
   document.addEventListener("visibilitychange",visivel);
   const batida=()=>{if(!document.hidden)void enviar("presenca",{ativo:Date.now()-atividade.current<300000}).catch(()=>{});};
-  activity();batida();const t=window.setInterval(batida,45000);
+  activity();batida();const t=window.setInterval(batida,90000);
   return ()=>{window.clearInterval(t);document.removeEventListener("visibilitychange",visivel);
    for(const nome of ["pointerdown","keydown","mousemove","touchstart"])window.removeEventListener(nome,activity);};
  },[atualizarEstado]);
  useEffect(()=>{
   let stream:EventSource|null=null;let encerrado=false;
   const conectar=async()=>{
-   stream?.close();stream=null;setRealtime(false);
+   stream?.close();stream=null;tempoRealAtivo.current=false;setRealtime(false);
    try{
     const r=await fetch("/api/chat/token",{cache:"no-store",credentials:"same-origin"});
     const token=await jsonSeguro<{token:string;channels:string[];expires:number}>(r);
     if(encerrado)return;
     const q=new URLSearchParams({channels:token.channels.join(","),v:"1.2",accessToken:token.token});
     stream=new EventSource("https://main.realtime.ably.net/sse?"+q);
-    stream.onopen=()=>{setRealtime(true);setAviso(atual=>atual.includes("tempo real")?"":atual);};
-    stream.onerror=()=>setRealtime(false);
+    stream.onopen=()=>{tempoRealAtivo.current=true;setRealtime(true);setAviso(atual=>atual.includes("tempo real")?"":atual);};
+    stream.onerror=()=>{tempoRealAtivo.current=false;setRealtime(false);};
     stream.onmessage=e=>{
      try{
       const evento=JSON.parse(e.data) as {name?:string;data?:unknown};
@@ -180,15 +182,21 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       }
      }catch{/* Eventos malformados são ignorados. */}
     };
-   }catch {setRealtime(false);}
+   }catch {tempoRealAtivo.current=false;setRealtime(false);}
   };
   void conectar();
   const renew=window.setInterval(()=>{if(!encerrado)void conectar();},20*60*1000);
-  return ()=>{encerrado=true;window.clearInterval(renew);stream?.close();
+  return ()=>{encerrado=true;tempoRealAtivo.current=false;window.clearInterval(renew);stream?.close();
     if(timeoutDigitando.current!==null)window.clearTimeout(timeoutDigitando.current);};
  },[atualizarEstado,carregar,usuarioId]);
  useEffect(()=>{
-  const t=window.setInterval(()=>{void atualizarEstado();if(!document.hidden)void carregar(selecionada.current,pesquisa);},20000);
+  const t=window.setInterval(()=>{
+    if(document.hidden)return;
+    if(tempoRealAtivo.current&&Date.now()-ultimaVerificacao.current<300_000)return;
+    ultimaVerificacao.current=Date.now();
+    void atualizarEstado();
+    void carregar(selecionada.current,pesquisa);
+   },90_000);
   return ()=>window.clearInterval(t);
  },[atualizarEstado,carregar,pesquisa]);
  const abertas=estado?.conversas??[];
