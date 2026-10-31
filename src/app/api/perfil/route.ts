@@ -3,6 +3,7 @@ import {NextResponse} from "next/server";
 import {NOME_COOKIE,obterSessao} from "../../../lib/sessao";
 import {consultar} from "../../../lib/banco";
 import {verificarOrigemPost} from "../../../lib/origem";
+import {ErroFormularioLimitado,lerTextoLimitado} from "../../../lib/formulario-limitado";
 export async function GET(req:NextRequest){
  const u=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
  if(!u)return NextResponse.json({erro:"Não autorizado"},{status:401});
@@ -16,7 +17,7 @@ export async function PATCH(req:NextRequest){
  const u=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
  if(!u)return NextResponse.json({erro:"Não autorizado"},{status:401});
  try{
-  const raw=await req.text();if(raw.length>1200)return NextResponse.json({erro:"Dados inválidos"},{status:413});
+  const raw=await lerTextoLimitado(req,1200,"Dados inválidos");
   const payload:unknown=JSON.parse(raw);
   if(!payload||typeof payload!=="object")return NextResponse.json({erro:"Dados inválidos"},{status:400});
   const {bio,preferencias}=payload as {bio?:unknown;preferencias?:unknown};
@@ -27,5 +28,8 @@ export async function PATCH(req:NextRequest){
   await consultar("UPDATE kb_usuarios SET bio=$2,preferencias_notificacoes=$3::jsonb,atualizado_em=NOW() WHERE id=$1",
    [u.id,bio.trim(),JSON.stringify({avisos:p.avisos,navegador:p.navegador,geral:p.geral})]);
   return NextResponse.json({ok:true},{headers:{"Cache-Control":"private, no-store"}});
- }catch{return NextResponse.json({erro:"Não foi possível salvar"},{status:503});}
+ }catch(e){
+  if(e instanceof ErroFormularioLimitado)return NextResponse.json({erro:"Dados inválidos"},{status:e.status});
+  return NextResponse.json({erro:"Não foi possível salvar"},{status:503});
+ }
 }
