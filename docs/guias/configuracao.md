@@ -49,7 +49,7 @@ Configure `CRON_SECRET` (valor aleatório com pelo menos 24 caracteres) na Verce
 
 A manutenção apaga sessões e tentativas expiradas, processa a fila de imagens de chat, remove notificações com mais de 30 dias e limpa cotas antigas. Ajuste a retenção com `NOTIFICACOES_RETENCAO_DIAS` (7–365; padrão 30).
 
-Para notificações Web Push configure `WEB_PUSH_SUBJECT` com `mailto:contato@empresa.com` ou `https://dominio-da-aplicacao.com`, além das chaves VAPID. Sem assunto válido o Push permanece desativado, mas o chat e as notificações internas continuam funcionando.
+Para notificações Web Push configure `WEB_PUSH_SUBJECT` com um endereço `mailto:` válido ou a URL HTTPS do domínio real da aplicação, além das chaves VAPID. Sem assunto válido o Push permanece desativado, mas o chat e as notificações internas continuam funcionando.
 
 ## Primeira conta e execução
 
