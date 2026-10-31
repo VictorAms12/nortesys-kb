@@ -4,30 +4,19 @@ import {test} from "node:test";
 const css=readFileSync("src/app/globals.css","utf8");
 const pagina=readFileSync("src/app/chat/page.tsx","utf8");
 const painel=readFileSync("src/components/chat-painel.tsx","utf8");
-test("Chat usa grid de linha contraída e compositor fora da rolagem",()=>{
- assert.match(css,/\.chat-painel\s*\{[^}]*grid-template-rows:minmax\(0,1fr\)/s);
- assert.match(css,/\.chat-painel\s*\{[^}]*height:calc\(100dvh - 104px\)/s);
- assert.match(painel,/painel\.style\.height/);
- assert.match(css,/\.chat-painel \.chat-area-mensagens\s*\{[^}]*height:100%/s);
- assert.match(css,/\.chat-painel \.chat-historico\s*\{[^}]*overflow-y:auto/s);
- assert.match(css,/\.chat-painel \.chat-compositor\s*\{[^}]*flex:0 0 auto/s);
- assert.doesNotMatch(css,/\.chat-painel[^\n]*height:100%/);
- assert.doesNotMatch(painel,/min-h-\[600px\]|maxHeight:"55vh"/);
- assert.match(painel,/chat-historico/);
- assert.match(painel,/chat-compositor/);
+test("Chat usa linhas de mensagens, histórico com scroll e compositor independente",()=>{
+ assert.match(css,/\.chat-painel\{display:grid;flex:1;min-height:0;height:auto!important;grid-template-columns:260px/s);
+ assert.match(css,/\.chat-painel \.chat-historico\{flex:1 1 0%;min-height:0;overflow-y:auto/);
+ assert.match(css,/\.chat-painel \.chat-compositor\{flex:0 0 auto/);
+ assert.match(painel,/chat-linha-mensagem/);
+ assert.match(painel,/chat-barra-acoes/);
+ assert.doesNotMatch(painel,/justify-end|chat-balao/);
  assert.match(pagina,/pagina-chat conteiner/);
- assert.doesNotMatch(pagina,/chat-intro|<nav/);
 });
-
-test("Enviar mensagem mantém o campo pronto para continuar digitando",()=>{
+test("Enviar mensagem mantém o foco e Ctrl+V",()=>{
  assert.match(painel,/ref=\{campoMensagemRef\}/);
  assert.match(painel,/readOnly=\{enviando\} disabled=\{!estado\}/);
- assert.doesNotMatch(painel,/disabled=\{enviando\|\|!estado\}/);
  assert.match(painel,/campoMensagemRef\.current\?\.focus\(\{preventScroll:true\}\)/);
+ assert.match(painel,/onPaste=\{colarImagem\}/);
  assert.match(painel,/ref=\{botaoEnviarRef\}/);
-});
-
-test("Balões mantêm espaçamento em relação à barra de rolagem",()=>{
- assert.match(painel,/chat-historico[^\"]*pl-2 pr-4 sm:pl-3 sm:pr-5/);
- assert.match(painel,/justify-end/);
 });
