@@ -12,8 +12,12 @@ async function jsonSeguro<T,>(res:Response):Promise<T>{
   window.location.replace("/entrar");
   throw new Error("Sua sessão expirou. Entre novamente.");
  }
- const dados=await res.json() as T&ErroResposta;
- if(!res.ok)throw new Error(dados.erro||"Requisição indisponível.");
+ let conteudo:unknown;
+ try{conteudo=await res.json();}
+ catch{throw new Error(res.ok?"Resposta inesperada do servidor.":"Serviço temporariamente indisponível.");}
+ const dados=conteudo as T&ErroResposta;
+ if(!res.ok)throw new Error(dados?.erro||"Serviço temporariamente indisponível.");
+ if(!dados||typeof dados!=="object")throw new Error("Resposta inesperada do servidor.");
  return dados;
 }
 async function enviar(acao:string,outros:Record<string,unknown>={}):Promise<Record<string,unknown>>{
@@ -49,6 +53,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [pesquisa,setPesquisa]=useState("");
  const [mais,setMais]=useState(false);
  const [enviando,setEnviando]=useState(false);
+ const enviandoRef=useRef(false);
  const [aviso,setAviso]=useState("");
  const [notificacao,setNotificacao]=useState("");
  const [digitando,setDigitando]=useState("");
@@ -243,7 +248,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir a conversa.");}
  }
  async function enviarTexto(e:FormEvent){
-  e.preventDefault();if(enviando||(!texto.trim()&&!imagemSelecionada))return;
+  e.preventDefault();if(enviandoRef.current||(!texto.trim()&&!imagemSelecionada))return;
+  enviandoRef.current=true;
   setEnviando(true);
   try{
    const respostaPara=respondendo;
@@ -269,7 +275,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    setRespondendo(null);setAviso("");void atualizarEstado();
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível enviar a mensagem.");}
   finally{
-   setEnviando(false);
+   enviandoRef.current=false;setEnviando(false);
    // Manter o campo pronto para a próxima mensagem, inclusive após clique em Enviar.
    // Evitar mover o foco se o usuário mudou de aba ou abriu outra área durante o envio.
    if(document.visibilityState==="visible"){
@@ -293,7 +299,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   setAviso(quantidade>1?"Somente uma imagem por mensagem. A primeira foi anexada.":"");
  }
  function colarImagem(e:ReactClipboardEvent<HTMLTextAreaElement>){
-  if(!estado||enviando)return;
+  if(!estado||enviandoRef.current)return;
   const imagens=imagensDaTransferencia(e.clipboardData);
   if(!imagens.length)return; // Ctrl+V de texto continua nativo.
   e.preventDefault(); // Não mistura HTML/texto da captura no campo.
