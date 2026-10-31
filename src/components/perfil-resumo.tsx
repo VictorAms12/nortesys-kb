@@ -6,25 +6,44 @@ export function PerfilResumo(){
  const [perfil,setPerfil]=useState<Perfil|null>(null);
  const [erro,setErro]=useState("");
  const [salvando,setSalvando]=useState(false);
+ const [chavePush,setChavePush]=useState<string|null>(null);
+ useEffect(()=>{
+  let ativo=true;
+  void fetch("/api/notificacoes/push",{cache:"no-store"})
+   .then(r=>r.ok?r.json():null)
+   .then((v:{publicKey?:string|null}|null)=>{if(ativo)setChavePush(v?.publicKey??null);})
+   .catch(()=>{if(ativo)setChavePush(null);});
+  return()=>{ativo=false;};
+ },[]);
  useEffect(()=>{void fetch("/api/perfil",{cache:"no-store"}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(setPerfil).catch(()=>setErro("Não foi possível consultar seu perfil."));},[]);
  async function habilitarWebPush(){
   if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window)){
    setErro("Este navegador não oferece Web Push.");return;
   }
+  if(!chavePush){setErro("Web Push não está configurado neste ambiente.");return;}
   try{
-   const chave=await fetch("/api/notificacoes/push",{cache:"no-store"}).then(r=>r.json()) as {publicKey?:string;configurado:boolean};
-   if(!chave.configurado||!chave.publicKey){setErro("Web Push ainda não configurado neste ambiente.");return;}
+   // A permissão ocorre diretamente no clique, exigência de navegadores móveis.
    const permissao=await Notification.requestPermission();
    if(permissao!=="granted"){setErro("Permissão não concedida.");return;}
    const reg=await navigator.serviceWorker.register("/kb-notification-worker.js",{scope:"/"});
-   const bytes=Uint8Array.from(atob(chave.publicKey.replace(/-/g,"+").replace(/_/g,"/")),c=>c.charCodeAt(0));
-   const subscricao=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:bytes});
-   const r=await fetch("/api/notificacoes/push",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({endpoint:subscricao.endpoint})});
-   if(!r.ok)throw Error();
+   const base64=chavePush.replace(/-/g,"+").replace(/_/g,"/");
+   const bytes=Uint8Array.from(atob(base64+"=".repeat((4-base64.length%4)%4)),c=>c.charCodeAt(0));
+   let inscricao=await reg.pushManager.getSubscription();
+   if(inscricao){
+    const antiga=inscricao.options.applicationServerKey;
+    const mesma=antiga&&new Uint8Array(antiga).length===bytes.length&&
+     [...new Uint8Array(antiga)].every((valor,indice)=>valor===bytes[indice]);
+    if(!mesma){await inscricao.unsubscribe();inscricao=null;}
+   }
+   if(!inscricao)inscricao=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:bytes});
+   const resposta=await fetch("/api/notificacoes/push",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({endpoint:inscricao.endpoint}),credentials:"same-origin"});
+   if(!resposta.ok)throw Error("Cadastro do dispositivo não aceito");
    setPerfil(d=>d?{...d,preferencias:{avisos:true,geral:true,...d.preferencias,navegador:true}}:d);
    setErro("Dispositivo registrado. Salve as preferências para ativar os avisos.");
-  }catch{setErro("Não foi possível ativar as notificações neste dispositivo.");}
+  }catch{
+   setErro("Não foi possível ativar Web Push. Confira as permissões e a conexão.");
+  }
  }
  async function desativarWebPush(){
   if(!("serviceWorker" in navigator)){setErro("Web Push não está disponível.");return;}
@@ -67,5 +86,5 @@ export function PerfilResumo(){
   setErro("Preferências salvas.");}catch{setErro("Não foi possível salvar.");}finally{setSalvando(false);}}
  if(erro&&!perfil)return <div className="cartao p-5 mt-6" role="alert">{erro}</div>;
  if(!perfil)return <div className="cartao p-5 mt-6" role="status">Carregando perfil...</div>;
- return <section className="cartao mt-6 max-w-2xl space-y-5 p-6"><div className="flex items-center gap-4"><div className="avatar-sidebar !h-16 !w-16 overflow-hidden text-2xl">{perfil.avatarCaminho?<Image src={"/api/perfil/avatar/"+perfil.id+"?v="+encodeURIComponent(perfil.avatarCaminho?.split("/").at(-1)??"0")} width={64} height={64} alt="Avatar" unoptimized className="h-full w-full object-cover"/>:perfil.nome[0]?.toUpperCase()}</div><div><h2 className="text-xl font-bold">{perfil.nome}</h2><p className="text-sm text-[var(--muted)]">@{perfil.usuario} · {perfil.papel}</p></div></div><label className="grid gap-2 text-sm">Foto (PNG, JPEG ou WebP, 2 MB)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const a=e.target.files?.[0];if(a)void enviarFoto(a);}}/></label><div className="border-t border-[var(--border)] pt-4"><h3 className="font-semibold">Apresentação</h3><textarea className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 text-sm" aria-label="Descrição profissional" rows={4} maxLength={240} value={perfil.bio??""} onChange={e=>setPerfil({...perfil,bio:e.target.value})}/></div><div className="border-t border-[var(--border)] pt-4"><h3 className="font-semibold">Notificações</h3><div className="mt-3 grid gap-3">{(["avisos","geral","navegador"] as const).map(k=><label key={k} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(perfil.preferencias?.[k])} onChange={e=>setPerfil({...perfil,preferencias:{avisos:true,geral:true,navegador:false,...perfil.preferencias,[k]:e.target.checked}})}/>{k==="avisos"?"Avisos no site":k==="geral"?"Mensagens do canal geral":"Notificações do navegador"}</label>)}<div className="flex flex-wrap gap-2"><button type="button" className="botao-secundario" onClick={()=>void habilitarWebPush()}>Ativar neste dispositivo</button><button type="button" className="botao-secundario" onClick={()=>void desativarWebPush()}>Desativar neste dispositivo</button></div></div></div><div className="flex flex-wrap items-center gap-3"><button type="button" className="botao-primario" disabled={salvando} onClick={()=>void salvar()}>{salvando?"Salvando...":"Salvar preferências"}</button>{erro&&<p role="status" className="text-sm text-[var(--muted)]">{erro}</p>}</div></section>;
+ return <section className="cartao mt-6 max-w-2xl space-y-5 p-6"><div className="flex items-center gap-4"><div className="avatar-sidebar !h-16 !w-16 overflow-hidden text-2xl">{perfil.avatarCaminho?<Image src={"/api/perfil/avatar/"+perfil.id+"?v="+encodeURIComponent(perfil.avatarCaminho?.split("/").at(-1)??"0")} width={64} height={64} alt="Avatar" unoptimized className="h-full w-full object-cover"/>:perfil.nome[0]?.toUpperCase()}</div><div><h2 className="text-xl font-bold">{perfil.nome}</h2><p className="text-sm text-[var(--muted)]">@{perfil.usuario} · {perfil.papel}</p></div></div><label className="grid gap-2 text-sm">Foto (PNG, JPEG ou WebP, 2 MB)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const a=e.target.files?.[0];if(a)void enviarFoto(a);}}/></label><div className="border-t border-[var(--border)] pt-4"><h3 className="font-semibold">Apresentação</h3><textarea className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 text-sm" aria-label="Descrição profissional" rows={4} maxLength={240} value={perfil.bio??""} onChange={e=>setPerfil({...perfil,bio:e.target.value})}/></div><div className="border-t border-[var(--border)] pt-4"><h3 className="font-semibold">Notificações</h3><div className="mt-3 grid gap-3">{(["avisos","geral","navegador"] as const).map(k=><label key={k} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(perfil.preferencias?.[k])} onChange={e=>setPerfil({...perfil,preferencias:{avisos:true,geral:true,navegador:false,...perfil.preferencias,[k]:e.target.checked}})}/>{k==="avisos"?"Avisos no site":k==="geral"?"Mensagens do canal geral":"Notificações do navegador"}</label>)}<div className="flex flex-wrap gap-2"><button type="button" className="botao-secundario" onClick={()=>void habilitarWebPush()} disabled={!chavePush} title={chavePush?undefined:"Web Push indisponível neste ambiente"}>Ativar neste dispositivo</button><button type="button" className="botao-secundario" onClick={()=>void desativarWebPush()}>Desativar neste dispositivo</button></div></div></div><div className="flex flex-wrap items-center gap-3"><button type="button" className="botao-primario" disabled={salvando} onClick={()=>void salvar()}>{salvando?"Salvando...":"Salvar preferências"}</button>{erro&&<p role="status" className="text-sm text-[var(--muted)]">{erro}</p>}</div></section>;
 }
