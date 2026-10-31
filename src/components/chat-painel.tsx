@@ -106,6 +106,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const ultimaDigitacao=useRef(0);
  const selecionada=useRef(conversa);
  const autores=useRef<UsuarioChat[]>([]);
+ const ultimaLeituraEnviada=useRef(new Map<string,number>());
+ const versaoCarregamento=useRef(0);
  useEffect(()=>{selecionada.current=conversa;},[conversa]);
  useEffect(()=>{autores.current=estado?.usuarios??[];},[estado]);
  const atualizarEstado=useCallback(async()=>{
@@ -116,23 +118,28 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível atualizar o chat.");}
  },[]);
  const carregar=useCallback(async(id:string,q="",antes:number|null=null)=>{
+  const versao=antes===null?++versaoCarregamento.current:versaoCarregamento.current;
   const params=new URLSearchParams({conversa:id});
   if(q)params.set("q",q);if(antes!==null)params.set("antes",String(antes));
   try{
    const req=await fetch("/api/chat/mensagens?"+params,{cache:"no-store",credentials:"same-origin"});
    const data=await jsonSeguro<{mensagens:MensagemChat[]}>(req);
-   if(selecionada.current!==id)return;
+   if(selecionada.current!==id||versao!==versaoCarregamento.current)return;
    const lista=data.mensagens;
    setMensagens(atual=>antes===null?lista:[...lista,...atual.filter(m=>!lista.some(a=>a.id===m.id))]);
    setMais(lista.length===60);
-   if(!q&&antes===null&&!document.hidden)void enviar("lido",{conversa:id}).then(()=>{
-    window.dispatchEvent(new Event("kb-notificacoes-atualizadas"));
-    if(typeof BroadcastChannel!=="undefined"){
-     const canal=new BroadcastChannel("kb-notificacoes-atualizadas");
-     canal.postMessage({tipo:"lido"});canal.close();
-    }
-    return atualizarEstado();
-   }).catch(()=>{});
+   const ateId=lista.length?lista[lista.length-1].id:0;
+   if(!q&&antes===null&&!document.hidden&&ateId>(ultimaLeituraEnviada.current.get(id)??0)){
+    ultimaLeituraEnviada.current.set(id,ateId);
+    void enviar("lido",{conversa:id,ateId}).then(()=>{
+     window.dispatchEvent(new Event("kb-notificacoes-atualizadas"));
+     if(typeof BroadcastChannel!=="undefined"){
+      const canal=new BroadcastChannel("kb-notificacoes-atualizadas");
+      canal.postMessage({tipo:"lido"});canal.close();
+     }
+     return atualizarEstado();
+    }).catch(()=>{if(ultimaLeituraEnviada.current.get(id)===ateId)ultimaLeituraEnviada.current.delete(id);});
+   }
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível abrir as mensagens.");}
  },[atualizarEstado]);
  useEffect(()=>{
@@ -254,7 +261,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
      id:respostaPara.id,autor:respostaPara.autor,texto:respostaPara.texto
    }:null;
    setMensagens(atual=>atual.some(m=>m.id===mensagem.id)?atual:[...atual,{...mensagem,respostaA}]);
-   setTexto("");removerImagem();
+   versaoCarregamento.current++;setTexto("");removerImagem();
    setRespondendo(null);setAviso("");void atualizarEstado();
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível enviar a mensagem.");}
   finally{
@@ -326,7 +333,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   }catch(e){setAviso(e instanceof Error?e.message:"Não foi possível limpar a conversa.");}
   finally{setLimpando(false);}
  }
- function mudarConversa(id:string){rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);removerImagem();setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
+ function mudarConversa(id:string){versaoCarregamento.current++;rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);removerImagem();setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
  return <div ref={painelRef} className="chat-painel grid min-w-0 gap-3 lg:grid-cols-[minmax(0,270px)_minmax(0,1fr)]" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
   {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
   <aside className="chat-lista cartao grid min-w-0 content-start gap-4 overflow-y-auto overflow-x-hidden p-3 sm:p-4" aria-label="Conversas e colaboradores">
