@@ -16,8 +16,18 @@ function chave():Chave|null{
    d:privada},format:"jwk"})};
  }catch{return null;}
 }
-export function webPushDisponivel(){return chave()!==null;}
-export function chavePublicaPush(){return chave()?.publica??null;}
+function assuntoVapid():string|null{
+ const assunto=process.env.WEB_PUSH_SUBJECT?.trim()??"";
+ if(/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(assunto))return assunto;
+ try{
+  const url=new URL(assunto);
+  if(url.protocol==="https:"&&url.hostname&&url.hostname.includes(".")&&!url.username&&!url.password&&!url.hash)
+   return url.origin;
+ }catch{/* Sem assunto válido, o envio de push fica indisponível. */}
+ return null;
+}
+export function webPushDisponivel(){return chave()!==null&&assuntoVapid()!==null;}
+export function chavePublicaPush(){return webPushDisponivel()?chave()?.publica??null:null;}
 export function endpointPushValido(valor:unknown):valor is string{
  if(typeof valor!=="string"||valor.length<50||valor.length>2000)return false;
  try{
@@ -30,16 +40,16 @@ export function endpointPushValido(valor:unknown):valor is string{
  }catch{return false;}
 }
 export function hashEndpoint(endpoint:string){return createHash("sha256").update(endpoint).digest("hex");}
-function tokenVapid(origin:string,cred:Chave){
+function tokenVapid(origin:string,cred:Chave,assunto:string){
  const header=Buffer.from(JSON.stringify({alg:"ES256",typ:"JWT"})).toString("base64url");
- const payload=Buffer.from(JSON.stringify({aud:origin,exp:Math.floor(Date.now()/1000)+1800,sub:"https://nortesys-kb.vercel.app"})).toString("base64url");
+ const payload=Buffer.from(JSON.stringify({aud:origin,exp:Math.floor(Date.now()/1000)+1800,sub:assunto})).toString("base64url");
  const body=header+"."+payload;
  const signature=sign("SHA256",Buffer.from(body),{key:cred.chave,dsaEncoding:"ieee-p1363"}).toString("base64url");
  return body+"."+signature;
 }
 /** Web Push sem payload: jamais transmite texto, autor ou ID privado ao intermediário. */
 export async function enviarPushChat(autor:string,conversa:string):Promise<void>{
- const cred=chave();if(!cred)return;
+ const cred=chave(),assunto=assuntoVapid();if(!cred||!assunto)return;
  try{
   const subs=await consultar<{endpoint:string}>(`SELECT s.endpoint FROM kb_push_subscricoes s
  JOIN kb_chat_participantes p ON p.usuario_id=s.usuario_id AND p.conversa_id=$2
@@ -50,7 +60,7 @@ export async function enviarPushChat(autor:string,conversa:string):Promise<void>
  ORDER BY s.criado_em DESC LIMIT 50`,[autor,conversa]);
   await Promise.allSettled(subs.filter(x=>endpointPushValido(x.endpoint)).map(async({endpoint})=>{
    const aud=new URL(endpoint).origin;
-   const jwt=tokenVapid(aud,cred);
+   const jwt=tokenVapid(aud,cred,assunto);
    const result=await fetch(endpoint,{method:"POST",redirect:"error",
     headers:{"Authorization":"vapid t="+jwt+", k="+cred.publica,"TTL":"90","Content-Length":"0"},
     signal:AbortSignal.timeout(2500)});
