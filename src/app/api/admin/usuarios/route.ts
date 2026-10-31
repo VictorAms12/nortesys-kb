@@ -64,6 +64,7 @@ export async function POST(req:NextRequest) {
     }
     return voltar(req,"dados");
   } catch(error) {
+    if (error && typeof error==="object" && "constraint" in error && error.constraint==="kb_ultimo_admin") return voltar(req,"ultimo_admin");
     if (error instanceof ErroFormularioLimitado) return new NextResponse("Dados inválidos",{status:400});
     if (error && typeof error === "object" && "code" in error && error.code==="23505") return voltar(req,"duplicado");
     if (error instanceof z.ZodError || error instanceof Error && error.message==="credencial_invalida") return voltar(req,"dados");
