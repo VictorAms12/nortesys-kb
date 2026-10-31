@@ -31,7 +31,7 @@ function horario(valor:string):string {
  const data=new Date(valor);return Number.isNaN(data.getTime())?"":data.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 }
 function statusLabel(p:UsuarioChat["presenca"]){return p==="online"?"Online":p==="ausente"?"Ausente":"Offline";}
-function selo(p:UsuarioChat["presenca"]){return p==="online"?"🟢":p==="ausente"?"🟡":"⚪";}
+function selo(p:UsuarioChat["presenca"]){return <span className={"ponto-presenca presenca-"+p} aria-hidden="true"/>;}
 function ConteudoMensagem({texto}:{texto:string}){
  const trechos=texto.split(/(https?:\/\/[^\s<>]+|\/artigos\/[a-z0-9-]+\/[a-z0-9-]+)/g);
  return <>{trechos.map((parte,i)=>{
@@ -61,7 +61,6 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  const [digitando,setDigitando]=useState("");
  const [realtime,setRealtime]=useState(false);
  const [contatosAbertos,setContatosAbertos]=useState(false);
- const painelRef=useRef<HTMLDivElement>(null);
  const campoMensagemRef=useRef<HTMLTextAreaElement>(null);
  const botaoEnviarRef=useRef<HTMLButtonElement>(null);
  const inputImagemRef=useRef<HTMLInputElement>(null);
@@ -73,45 +72,6 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   if(imagemPreviaRef.current)URL.revokeObjectURL(imagemPreviaRef.current);
  },[]);
  const ajusteHistorico=useRef<{altura:number;topo:number}|null>(null);
- // Tamanho explícito calculado pela posição REAL do chat na janela, incluindo
- // as barras variáveis do navegador, zoom e cabeçalhos que quebram linha.
- // Não depende da altura intrínseca das mensagens nem de flex:1 em ancestrais.
- useEffect(()=>{
-  const painel=painelRef.current;
-  if(!painel)return;
-  let quadro=0;
-  const ajustar=()=>{
-   window.cancelAnimationFrame(quadro);
-   quadro=window.requestAnimationFrame(()=>{
-    const vv=window.visualViewport;
-    const fundo=vv?vv.offsetTop+vv.height:window.innerHeight;
-    const topo=painel.getBoundingClientRect().top;
-    // Reserva uma margem visual consistente até a borda inferior.
-    // Mantém a área de digitação dentro do espaço calculado.
-    const margemInferior=window.innerWidth<=680?20:24;
-    const disponivel=Math.floor(fundo-topo-margemInferior);
-    // Em janelas muito baixas, permitir rolagem da página em vez de esconder
-    // o compositor. Em alturas normais, só o histórico recebe scroll.
-    if(Number.isFinite(disponivel)&&disponivel>0)
-      painel.style.height=`${Math.max(310,disponivel)}px`;
-   });
-  };
-  ajustar();
-  const observador=new ResizeObserver(ajustar);
-  const barra=document.querySelector(".topbar-app");
-  if(barra)observador.observe(barra);
-  window.addEventListener("resize",ajustar);
-  window.visualViewport?.addEventListener("resize",ajustar);
-  window.visualViewport?.addEventListener("scroll",ajustar);
-  return ()=>{
-   observador.disconnect();
-   window.cancelAnimationFrame(quadro);
-   window.removeEventListener("resize",ajustar);
-   window.visualViewport?.removeEventListener("resize",ajustar);
-   window.visualViewport?.removeEventListener("scroll",ajustar);
-  };
- },[]);
-
  const timeoutDigitando=useRef<number|null>(null);
  const atividade=useRef(0);
  const ultimaDigitacao=useRef(0);
@@ -346,7 +306,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   finally{setLimpando(false);}
  }
  function mudarConversa(id:string){versaoCarregamento.current++;rolarAoFim.current=true;setMensagens([]);setMais(false);setRespondendo(null);removerImagem();setConversa(id);setPesquisa("");setBusca("");setNotificacao("");setDigitando("");setContatosAbertos(false);}
- return <div ref={painelRef} className="chat-painel grid min-w-0" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
+ return <div className="chat-painel grid min-w-0" data-contatos-abertos={contatosAbertos?"sim":"nao"}>
   {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
   <aside className="chat-lista grid min-w-0 content-start gap-3 overflow-y-auto overflow-x-hidden" aria-label="Conversas e colaboradores">
    <div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><h2 className="text-base font-bold">Conversas</h2>
