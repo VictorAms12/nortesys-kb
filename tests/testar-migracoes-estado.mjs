@@ -36,8 +36,9 @@ test("assinatura incompleta ou trigger desabilitado impede reconciliação",asyn
  await banco.exec("ALTER TABLE kb_usuarios DISABLE TRIGGER kb_usuarios_proteger_ultimo_admin");
  const inv=(await banco.query(SQL_INVENTARIO)).rows[0];
  const estado=relatorioMigracoes(manifesto,inv);
- assert.equal(estado.at(-1).situacao,"parcial");
- assert.ok(estado.at(-1).faltantes.some(x=>x.includes("kb_usuarios_proteger_ultimo_admin")));
+ const migracao014=estado.find(x=>x.nome.startsWith("014_"));
+ assert.equal(migracao014.situacao,"parcial");
+ assert.ok(migracao014.faltantes.some(x=>x.includes("kb_usuarios_proteger_ultimo_admin")));
 });
 
 test("planejamento recusa lacunas, divergência e estruturas incompletas",async()=>{
