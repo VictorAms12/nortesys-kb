@@ -21,40 +21,35 @@ O SDK resolve a autenticação do Blob. Para OIDC no desenvolvimento, utilize o 
 
 `.env.vercel-development.local` é um arquivo auxiliar local; o nome, sozinho, não faz o Next.js carregá-lo. A aplicação local usa `.env.local` ou as variáveis do processo. Na Vercel, configure o ambiente no painel do projeto.
 
-## Banco inicial
+## Migrações do banco
 
-Escolha o banco de desenvolvimento e confira se é o mesmo apontado por `DATABASE_URL`.
+Configure **somente o Neon de desenvolvimento** em `.env.local` e confira o ambiente antes de prosseguir. Não execute migrações de Preview diretamente no banco de produção.
 
 ```bash
 npm run db:migrar
+npm run db:verificar
 ```
 
-Esse comando aplica somente:
+O runner percorre **todos os arquivos `db/NNN_*.sql` em ordem** (incluindo 010, 011, 012 e 013), usa transação por arquivo e registra nome, data e SHA-256 em `kb_migracoes`. Migrações registradas são ignoradas, e qualquer checksum divergente interrompe o processo. SQL com funções PL/pgSQL, aspas ou comentários não é dividido incorretamente. Não execute dois runners simultaneamente.
 
-1. [001_auth.sql](../../db/001_auth.sql): contas, sessões e tentativas de login.
-2. [002_painel.sql](../../db/002_painel.sql): artigos, versões e auditoria.
-3. [003_interacoes.sql](../../db/003_interacoes.sql): favoritos e leituras.
+**Banco já existente:** na primeira execução, os arquivos antigos ainda não possuem entradas em `kb_migracoes`. Eles são reaplicados com suas proteções idempotentes, sem excluir registros. Confira as migrações e os triggers em desenvolvimento antes de autorizar o mesmo procedimento em produção.
 
-Depois, execute **[004_imagens.sql](../../db/004_imagens.sql) inteiro** no SQL Editor do banco escolhido, incluindo `BEGIN` e `COMMIT`. Não passe esse arquivo pelo separador de instruções do CLI: ele contém uma função PL/pgSQL.
+A migração 012 permite imagens de chat sem legenda e atualiza somente textos automáticos. A 013 cria cotas para avatar (12 por hora), sugestões (90 por minuto) e índices para a central de notificações. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
 
-O aviso de que o trigger não existia durante `DROP TRIGGER IF EXISTS` é esperado na primeira execução. Confirme que o restante foi concluído e que a transação foi confirmada.
-
-Consulta de conferência, sem alterar dados:
+Conferência SQL:
 
 ```sql
-SELECT current_database() AS banco,
-       to_regclass('public.kb_imagens') AS imagens,
-       to_regclass('public.kb_imagem_limites') AS limites,
-       to_regprocedure('public.kb_associar_imagens_artigo()') AS funcao;
-
-SELECT tgname, tgenabled
-FROM pg_trigger
-WHERE tgrelid = to_regclass('public.kb_artigos')
-  AND tgname = 'kb_artigos_associar_imagens'
-  AND NOT tgisinternal;
+SELECT nome, aplicada_em, checksum FROM kb_migracoes ORDER BY nome;
+SELECT COUNT(*) FROM kb_notificacoes;
 ```
 
-As três referências da primeira consulta devem estar preenchidas. A segunda deve retornar o trigger habilitado (`O` no padrão). Essas consultas confirmam a presença dos objetos; o teste de upload e salvamento valida o fluxo completo. `npm run db:verificar` confere conectividade e contagens de usuários/artigos, mas não verifica toda a migração de imagens.
+## Manutenção e agendamento
+
+Configure `CRON_SECRET` (valor aleatório com pelo menos 24 caracteres) na Vercel. O agendamento de `vercel.json` chama `/api/cron/manutencao` uma vez por dia, às 07:00 UTC (04:00 em Araguaína). O endpoint requer o cabeçalho `Authorization: Bearer <CRON_SECRET>`; sem segredo não é liberado.
+
+A manutenção apaga sessões e tentativas expiradas, processa a fila de imagens de chat, remove notificações com mais de 30 dias e limpa cotas antigas. Ajuste a retenção com `NOTIFICACOES_RETENCAO_DIAS` (7–365; padrão 30).
+
+Para notificações Web Push configure `WEB_PUSH_SUBJECT` com `mailto:contato@empresa.com` ou `https://dominio-da-aplicacao.com`, além das chaves VAPID. Sem assunto válido o Push permanece desativado, mas o chat e as notificações internas continuam funcionando.
 
 ## Primeira conta e execução
 

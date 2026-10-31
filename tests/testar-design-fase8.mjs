@@ -28,7 +28,7 @@ test("Chat não alterna lado e mantém ações de teclado",()=>{
 test("Busca global mantém sessão e pesquisa autorizada",()=>{
  const route=ler("src/app/api/busca/sugestoes/route.ts");
  assert.match(route,/obterSessao/);
- assert.match(route,/carregarTodosArtigos\(sessao.papel\)/);
+ assert.match(route,/obterDadosBusca\(sessao.papel\)/);
  assert.match(route,/slice\(0,6\)/);
  const box=ler("src/components/atalho-busca.tsx");
  assert.match(box,/ArrowDown/);assert.match(box,/ArrowUp/);

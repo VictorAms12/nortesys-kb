@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /** Administração por CLI local: NUNCA adicione endpoints públicos de criação de conta. */
 import { neon } from "@neondatabase/serverless";
-import { readFileSync } from "node:fs";
-import { randomBytes, scryptSync } from "node:crypto";
-import { resolve } from "node:path";
+import { readFileSync, readdirSync } from "node:fs";
+import { createHash, randomBytes, scryptSync } from "node:crypto";
+import { basename, resolve } from "node:path";
+import { dividirInstrucoesSql } from "./migracoes-sql.mjs";
 
 const [acao, usuarioEntrada, ...resto] = process.argv.slice(2);
 const url = process.env.DATABASE_URL;
@@ -20,16 +21,43 @@ function gerarHash(senha) {
   return {salt,hash};
 }
 async function migrar() {
-  let total = 0;
-  for (const arquivo of ["db/001_auth.sql", "db/002_painel.sql", "db/003_interacoes.sql"]) {
-    const bruto = readFileSync(resolve(arquivo), "utf8");
-    const semComentarios = bruto.split("\n").filter(x=>!x.trim().startsWith("--")).join("\n");
-    const statements = semComentarios.split(/;\s*(?:\n|$)/).map(x=>x.trim()).filter(Boolean);
-    for (const statement of statements) await q(statement);
-    total += statements.length;
-    console.log(`Aplicado: ${arquivo} (${statements.length} instruções).`);
+  // A tabela de controle é criada antes das migrações, inclusive em bancos vazios.
+  await q(`CREATE TABLE IF NOT EXISTS kb_migracoes (
+    nome VARCHAR(160) PRIMARY KEY,
+    aplicada_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    checksum CHAR(64) NOT NULL
+  )`);
+
+  const pasta = resolve("db");
+  const arquivos = readdirSync(pasta)
+    .filter(nome => /^\d{3}_.+\.sql$/.test(nome))
+    .sort((a, b) => a.localeCompare(b, "en"));
+  let novas = 0;
+
+  for (const nome of arquivos) {
+    const caminho = resolve(pasta, nome);
+    const conteudo = readFileSync(caminho, "utf8");
+    const checksum = createHash("sha256").update(conteudo).digest("hex");
+    const existentes = await q("SELECT checksum FROM kb_migracoes WHERE nome=$1", [nome]);
+    if (existentes.length) {
+      if (existentes[0].checksum !== checksum)
+        throw new Error(`Checksum divergente em ${nome}. Não edite migrações já aplicadas.`);
+      console.log(`Ignorada: ${nome} (checksum conferido).`);
+      continue;
+    }
+    const instrucoes = dividirInstrucoesSql(conteudo);
+    if (!instrucoes.length) throw new Error(`Migração vazia: ${nome}`);
+
+    // Uma transação HTTP por arquivo: comandos e checksum são confirmados juntos.
+    // Sem comandos vindos do usuário: somente SQL do diretório versionado db/.
+    await sql.transaction([
+      ...instrucoes.map(comando => sql.query(comando)),
+      sql.query("INSERT INTO kb_migracoes(nome,checksum) VALUES($1,$2)", [nome, checksum]),
+    ]);
+    novas++;
+    console.log(`Aplicada: ${basename(caminho)} (${instrucoes.length} instruções).`);
   }
-  console.log(`Migração idempotente concluída: ${total} instruções. Registros anteriores preservados.`);
+  console.log(`Concluído: ${novas} nova(s), ${arquivos.length - novas} já registrada(s).`);
 }
 async function verificar() {
   const linhas = await q("SELECT count(*)::int AS total FROM kb_usuarios");
