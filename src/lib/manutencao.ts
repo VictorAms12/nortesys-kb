@@ -4,14 +4,35 @@ import {consultar} from "./banco";
 import {migracao009Aplicada} from "./migracao-009";
 
 type Fila={caminho:string};
+function diasRetencao():number {
+ const valor=Number(process.env.NOTIFICACOES_RETENCAO_DIAS??30);
+ return Number.isSafeInteger(valor)&&valor>=7&&valor<=365?valor:30;
+}
 /** Rotina manual, lote pequeno e reserva por 2 minutos para evitar exclusões concorrentes. */
-export async function executarManutencao():Promise<{limpas:number;falhas:number;temporarios:number}>{
+export async function executarManutencao():Promise<{limpas:number;falhas:number;temporarios:number;notificacoes:number;limites:number}>{
  if(!(await migracao009Aplicada()))throw Error("Migração 009 pendente.");
  const temporarios=await consultar<{total:number}>(`WITH sessao AS (
  DELETE FROM kb_sessoes WHERE expira_em<NOW() RETURNING token_hash
  ), tentativas AS (
  DELETE FROM kb_login_tentativas WHERE expira_em<NOW() RETURNING chave
  ) SELECT ((SELECT COUNT(*) FROM sessao)+(SELECT COUNT(*) FROM tentativas))::int AS total`);
+ const retencao=await consultar<{notificacoes:number;limites:number}>(`
+  WITH notificacoes AS (
+    DELETE FROM kb_notificacoes
+    WHERE criada_em < NOW() - make_interval(days => $1::int)
+    RETURNING id
+  ), limites_avatar AS (
+    DELETE FROM kb_avatar_limites
+    WHERE janela_em < NOW() - INTERVAL '1 day'
+    RETURNING usuario_id
+  ), limites_busca AS (
+    DELETE FROM kb_busca_sugestoes_limites
+    WHERE janela_em < NOW() - INTERVAL '1 day'
+    RETURNING usuario_id
+  )
+  SELECT (SELECT COUNT(*)::int FROM notificacoes) AS notificacoes,
+         ((SELECT COUNT(*) FROM limites_avatar)+(SELECT COUNT(*) FROM limites_busca))::int AS limites
+ `,[diasRetencao()]);
  const fila=await consultar<Fila>(`WITH candidatos AS (
   SELECT caminho FROM kb_chat_imagens_limpeza
    WHERE reservada_ate IS NULL OR reservada_ate<NOW()
@@ -36,7 +57,7 @@ export async function executarManutencao():Promise<{limpas:number;falhas:number;
    // A reserva vence e o registro continua disponível para nova tentativa.
   }
  }
- return {limpas,falhas,temporarios:temporarios[0]?.total??0};
+ return {limpas,falhas,temporarios:temporarios[0]?.total??0,notificacoes:retencao[0]?.notificacoes??0,limites:retencao[0]?.limites??0};
 }
 export async function situacaoManutencao(){
  const habilitada=await migracao009Aplicada();
