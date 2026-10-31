@@ -5,6 +5,7 @@ import Image from "next/image";
 import {ImagemChatAmpliavel} from "./chat-imagem-ampliavel";
 import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type UsuarioChat,type ReferenciaMensagem} from "../lib/chat-tipos";
 import {imagensDaTransferencia,validarArquivoImagemChat} from "../lib/chat-clipboard";
+import {atualizarHistorico} from "../lib/chat-estado-mensagens";
 type ErroResposta={erro?:string};
 const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
 async function jsonSeguro<T,>(res:Response):Promise<T>{
@@ -135,7 +136,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
    const data=await jsonSeguro<{mensagens:MensagemChat[]}>(req);
    if(selecionada.current!==id||versao!==versaoCarregamento.current)return;
    const lista=data.mensagens;
-   setMensagens(atual=>antes===null?lista:[...lista,...atual.filter(m=>!lista.some(a=>a.id===m.id))]);
+   setMensagens(atual=>atualizarHistorico(atual,lista,antes));
    setMais(lista.length===60);
    const ateId=lista.length?lista[lista.length-1].id:0;
    if(!q&&antes===null&&!document.hidden&&ateId>(ultimaLeituraEnviada.current.get(id)??0)){
