@@ -4,14 +4,13 @@
  * 2. Crie a pasta content/<slug>/.
  * 3. Use o mesmo slug no campo "categoria" dos artigos.
  *
- * A cor é um código hexadecimal, sem classes Tailwind dinâmicas.
+ * Ícones seguem o mesmo conjunto de traços da interface.
  */
 export type ConfiguracaoCategoria = {
   slug: string;
   nome: string;
   descricao: string;
   icone: string;
-  cor: `#${string}`;
 };
 
 export const categorias = [
@@ -19,50 +18,43 @@ export const categorias = [
     slug: "erp",
     nome: "ERP",
     descricao: "Acesso, rotinas, erros comuns, parametrização e atualização de versão.",
-    icone: "🖥️",
-    cor: "#0f766e",
+    icone: "erp",
   },
   {
     slug: "notas-fiscais",
     nome: "Notas Fiscais",
     descricao: "Emissão, rejeições SEFAZ, cancelamento, CC-e, inutilização e contingência.",
-    icone: "🧾",
-    cor: "#1d4ed8",
+    icone: "nota",
   },
   {
     slug: "fiscal-e-impostos",
     nome: "Fiscal e Impostos",
     descricao: "ICMS, PIS/COFINS, IPI, ISS, CFOP, CST/CSOSN, NCM e regimes.",
-    icone: "📊",
-    cor: "#7c3aed",
+    icone: "fiscal",
   },
   {
     slug: "cadastros",
     nome: "Cadastros",
     descricao: "Clientes, fornecedores, produtos, transportadoras e usuários.",
-    icone: "👥",
-    cor: "#b45309",
+    icone: "cadastros",
   },
   {
     slug: "programas-em-geral",
     nome: "Programas em geral",
     descricao: "Instalação, atualização, erros, configuração e licenças.",
-    icone: "🧰",
-    cor: "#be185d",
+    icone: "programas",
   },
   {
     slug: "infraestrutura-e-rede",
     nome: "Infraestrutura e Rede",
     descricao: "Impressoras, VPN, acesso remoto, Active Directory e backup.",
-    icone: "🌐",
-    cor: "#0369a1",
+    icone: "rede",
   },
   {
     slug: "procedimentos-e-boas-praticas",
     nome: "Procedimentos e Boas Práticas",
     descricao: "Padrão de atendimento, escalonamento e respostas ao cliente.",
-    icone: "📋",
-    cor: "#4d7c0f",
+    icone: "procedimentos",
   },
 ] as const satisfies readonly ConfiguracaoCategoria[];
 

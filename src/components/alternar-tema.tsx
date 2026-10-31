@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { lerPreferencia, salvarPreferencia } from "../lib/preferencias-navegador";
+import {IconeInterface} from "./icone-interface";
 
 type Tema = "sistema" | "claro" | "escuro";
 const CHAVE = "nortesys-kb-tema";
@@ -40,7 +41,7 @@ export function AlternarTema() {
       className="botao-secundario whitespace-nowrap"
       title="Alternar entre tema do sistema, claro e escuro"
       aria-label={`Tema atual: ${tema}. Alterar tema`}>
-      <span aria-hidden="true">{tema === "claro" ? "☀️" : tema === "escuro" ? "🌙" : "◐"}</span>
+      <IconeInterface nome={tema==="claro"?"sol":tema==="escuro"?"lua":"monitor"}/>
       <span className="hidden sm:inline">{tema === "sistema" ? "Sistema" : tema === "claro" ? "Claro" : "Escuro"}</span>
     </button>
   );
