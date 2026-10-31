@@ -8,7 +8,7 @@ import {CHAT_GERAL_ID,CHAT_UUID,type EstadoChat,type MensagemChat,type UsuarioCh
 import {imagensDaTransferencia,validarArquivoImagemChat} from "../lib/chat-clipboard";
 import {atualizarHistorico} from "../lib/chat-estado-mensagens";
 type ErroResposta={erro?:string};
-const estiloCampo="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
+const estiloCampo="w-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)]";
 async function jsonSeguro<T,>(res:Response):Promise<T>{
  if(res.status===401){
   window.location.replace("/entrar");
@@ -31,6 +31,7 @@ function horario(valor:string):string {
  const data=new Date(valor);return Number.isNaN(data.getTime())?"":data.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
 }
 function statusLabel(p:UsuarioChat["presenca"]){return p==="online"?"Online":p==="ausente"?"Ausente":"Offline";}
+function textoVisivel(m:MensagemChat){return m.texto||(m.temImagem?"Imagem":"");}
 function selo(p:UsuarioChat["presenca"]){return <span className={"ponto-presenca presenca-"+p} aria-hidden="true"/>;}
 function ConteudoMensagem({texto}:{texto:string}){
  const trechos=texto.split(/(https?:\/\/[^\s<>]+|\/artigos\/[a-z0-9-]+\/[a-z0-9-]+)/g);
@@ -310,11 +311,11 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
   <aside className="chat-lista grid min-w-0 content-start gap-3 overflow-y-auto overflow-x-hidden" aria-label="Conversas e colaboradores">
    <div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><h2 className="text-base font-bold">Conversas</h2>
-    <p className="mt-1 text-xs text-[var(--muted)]">{realtime?"● Tempo real conectado":"○ Atualizações periódicas"} · {totalNaoLidas} não lida(s)</p>
+    <p className="mt-1 text-xs text-[var(--muted)]"><span className={"ponto-presenca "+(realtime?"presenca-online":"presenca-ausente")} aria-hidden="true"/>{" "}{realtime?"Tempo real conectado":"Atualizações periódicas"} · {totalNaoLidas} {totalNaoLidas===1?"mensagem não lida":"mensagens não lidas"}</p>
    </div><button type="button" className="chat-fechar-lista botao-secundario" onClick={()=>setContatosAbertos(false)} aria-label="Fechar conversas">Fechar</button></div>
    {!estado?<p className="text-sm text-[var(--muted)]">Carregando conversas...</p>:
    <div className="grid min-w-0 gap-1" role="group" aria-label="Selecionar conversa">
-    {abertas.map(c=><div key={c.id} className={"flex min-w-0 w-full items-center gap-1 overflow-hidden rounded-lg border "+(c.id===conversa?"border-[var(--primary)]":"border-[var(--border)]")}>
+    {abertas.map(c=><div key={c.id} className={"flex min-w-0 w-full items-center gap-1 overflow-hidden rounded-[var(--radius)] border "+(c.id===conversa?"border-[var(--primary)]":"border-[var(--border)]")}>
       <button type="button" onClick={()=>mudarConversa(c.id)}
        className="flex min-w-0 flex-1 items-center gap-2 p-3 text-left text-sm">
        <span className="block min-w-0 flex-1 overflow-hidden"><strong className="block truncate">{c.nome}</strong>
@@ -363,8 +364,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
         title="Ocultar o histórico anterior somente para sua conta">{limpando?"Limpando...":"Limpar conversa"}</button>
       </div>
     </div>
-    {aviso&&<p className="mt-3 text-sm text-amber-700" role="alert">{aviso}</p>}
-    {notificacao&&<button type="button" className="mt-3 rounded-lg border border-[var(--border)] p-2 text-left text-sm" onClick={()=>{setNotificacao("");void atualizarEstado();}}>{notificacao} · Ver conversas</button>}
+    {aviso&&<p className="mt-3 text-sm text-[var(--warn-text)]" role="alert">{aviso}</p>}
+    {notificacao&&<button type="button" className="mt-3 rounded-[var(--radius)] border border-[var(--border)] p-2 text-left text-sm" onClick={()=>{setNotificacao("");void atualizarEstado();}}>{notificacao} · Ver conversas</button>}
     <div ref={historicoRef} className="chat-historico min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto" aria-label="Histórico de mensagens">
      {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>{const area=historicoRef.current;if(area)ajusteHistorico.current={altura:area.scrollHeight,topo:area.scrollTop};void carregar(conversa,pesquisa,mensagens[0]?.id??null);}}>Carregar mensagens anteriores</button>}
      {mensagens.length===0?<p className="estado-chat-vazio">{pesquisa?"Nenhuma mensagem encontrada.":"Sem mensagens neste canal."}</p>:
@@ -376,7 +377,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
          <time dateTime={m.criadoEm}>{horario(m.criadoEm)}</time>
          <div className="chat-barra-acoes" role="group" aria-label={"Ações da mensagem de "+m.autor}>
           {!m.apagadaParaTodos&&<button type="button" onClick={()=>{setRespondendo(m);setPesquisa("");setBusca("");campoMensagemRef.current?.focus();}} disabled={operando!==null}>Responder</button>}
-          {!m.apagadaParaTodos&&<button type="button" onClick={()=>{if(!navigator.clipboard?.writeText){setAviso("Área de transferência indisponível.");return;}void navigator.clipboard.writeText(m.texto).then(()=>setAviso("Mensagem copiada.")).catch(()=>setAviso("Não foi possível copiar."));}}>Copiar</button>}
+          {!m.apagadaParaTodos&&<button type="button" onClick={()=>{if(!navigator.clipboard?.writeText){setAviso("Área de transferência indisponível.");return;}void navigator.clipboard.writeText(textoVisivel(m)).then(()=>setAviso("Mensagem copiada.")).catch(()=>setAviso("Não foi possível copiar."));}}>Copiar</button>}
           <button type="button" onClick={()=>void apagarMensagem(m.id,false)} disabled={operando!==null}>Apagar</button>
           {m.autorId===usuarioId&&!m.apagadaParaTodos&&<button type="button" className="acao-perigo" onClick={()=>void apagarMensagem(m.id,true)} disabled={operando!==null}>Apagar para todos</button>}
          </div>
@@ -386,7 +387,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
          <p className="line-clamp-2 break-words">{m.respostaA.texto}</p>
         </blockquote>}
         {m.temImagem&&!m.apagadaParaTodos&&<ImagemChatAmpliavel id={m.id} autor={m.autor}/>}
-        {(m.apagadaParaTodos||!m.temImagem||m.texto!=="📷 Imagem")&&<p className={"chat-texto-mensagem "+(m.apagadaParaTodos?"chat-apagada":"")}>
+        {(m.apagadaParaTodos||m.texto.length>0)&&<p className={"chat-texto-mensagem "+(m.apagadaParaTodos?"chat-apagada":"")}>
          {m.apagadaParaTodos?"Mensagem apagada":<ConteudoMensagem texto={m.texto}/>}
         </p>}
        </article>
@@ -396,11 +397,11 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     <div className="chat-compositor shrink-0 border-t border-[var(--border)] pt-2">
      {respondendo&&<div className="chat-resposta-compositor mb-3 flex min-w-0 items-center justify-between gap-2 p-3">
        <div className="min-w-0"><strong className="block text-xs">Respondendo a {respondendo.autorId===usuarioId?"você":respondendo.autor}</strong>
-         <p className="line-clamp-2 break-words text-xs [overflow-wrap:anywhere]">{respondendo.texto}</p>
+         <p className="line-clamp-2 break-words text-xs [overflow-wrap:anywhere]">{textoVisivel(respondendo)}</p>
        </div>
        <button className="botao-secundario shrink-0" type="button" onClick={()=>setRespondendo(null)} aria-label="Cancelar resposta">Cancelar</button>
      </div>}
-     {imagemSelecionada&&<div className="mb-2 flex min-w-0 items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm" role="group" aria-label="Imagem anexada à mensagem">
+     {imagemSelecionada&&<div className="mb-2 flex min-w-0 items-center gap-3 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface-alt)] px-3 py-2 text-sm" role="group" aria-label="Imagem anexada à mensagem">
       {imagemPrevia&&<Image src={imagemPrevia} alt="Prévia da imagem que será enviada"
         width={96} height={72} unoptimized className="h-16 w-20 shrink-0 rounded-md border border-[var(--border)] bg-[var(--surface)] object-contain"/>}
       <div className="min-w-0 flex-1">

@@ -54,7 +54,7 @@ export async function POST(req:NextRequest){
   if(respondendoA!==null&&!Number.isSafeInteger(respondendoA))return erro("Resposta inválida.",400);
   const legenda=form.get("texto");
   if(legenda!==null&&typeof legenda!=="string")return erro("Legenda inválida.",400);
-  const texto=(typeof legenda==="string"?legenda:"").trim()||"📷 Imagem";
+  const texto=(typeof legenda==="string"?legenda:"").trim();
   if(texto.length>2000)return erro("Legenda muito grande.",400);
   // Autoriza a conversa e debita a mesma cota de 15 mensagens/30 s antes do upload.
   await reservarEnvioImagemChat(usuario.id,conversa);
