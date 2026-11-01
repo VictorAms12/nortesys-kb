@@ -7,7 +7,7 @@ import {maisRecente} from "../src/lib/notificacoes-client";
 import {atualizarHistorico,mensagensIguais} from "../src/lib/chat-estado-mensagens";
 import type {MensagemChat} from "../src/lib/chat-tipos";
 import {SQL_MARCAR_LIDA_VISIVEL,SQL_TOTAL_NAO_LIDAS} from "../src/lib/chat-sql";
-import {SQL_LISTAR_NOTIFICACOES,SQL_CONTAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES_CONVERSA,SQL_MARCAR_NOTIFICACOES_ATE,NOTIFICACAO_ID} from "../src/lib/notificacoes-sql";
+import {SQL_LISTAR_NOTIFICACOES,SQL_CONTAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES,SQL_MARCAR_NOTIFICACOES_CONVERSA,SQL_MARCAR_NOTIFICACOES_ATE,SQL_REMOVER_PUSH_EXPIRADO,NOTIFICACAO_ID} from "../src/lib/notificacoes-sql";
 
 test("Fase 8: migração idempotente, notificação privada e preferências por usuário",async t=>{
  const db=new PGlite();t.after(()=>db.close());
@@ -53,6 +53,15 @@ test("Fase 8: Web Push reassocia dispositivo sem enviar avisos a contas antigas"
  const rows=await db.query<{usuario_id:string}>("SELECT usuario_id FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash]);
  assert.equal(rows.rows.length,1,"Dispositivo tem um único proprietário");
  assert.equal(rows.rows[0].usuario_id,segundo,"A conta atual assume o dispositivo");
+ // Um envio iniciado na conta antiga pode receber 410 depois da reassociação.
+ const posReassociacao=await db.query<{usuario_id:string;criado_em:string;endpoint:string}>(
+  "SELECT usuario_id,criado_em::text AS criado_em,endpoint FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash]);
+ await db.query(SQL_REMOVER_PUSH_EXPIRADO,[hash,endpoint,primeiro,posReassociacao.rows[0].criado_em]);
+ assert.equal((await db.query("SELECT COUNT(*)::int AS total FROM kb_push_subscricoes WHERE usuario_id=$1",[segundo])).rows[0].total,1,
+  "Retorno 410 de outra conta não pode excluir a inscrição reassociada");
+ await db.query(SQL_REMOVER_PUSH_EXPIRADO,[hash,endpoint,segundo,posReassociacao.rows[0].criado_em]);
+ assert.equal((await db.query("SELECT COUNT(*)::int AS total FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash])).rows[0].total,0,
+  "Endpoint expirado ainda associado ao mesmo registro pode ser removido");
 });
 
 test("Fase 8: contador completo, mensagens ocultas e leitura da conversa sem vazar avisos",async t=>{

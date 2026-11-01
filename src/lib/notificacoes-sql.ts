@@ -31,3 +31,7 @@ export const SQL_MARCAR_NOTIFICACOES_ATE = `UPDATE kb_notificacoes n SET vista_e
   WHERE p.usuario_id=$1 AND p.conversa_id=$2
     AND n.mensagem_id<=LEAST($3::bigint,p.ultima_lida_id)
  )`;
+
+/** Exclui inscrição vencida apenas se ainda for a mesma inscrição testada no push. */
+export const SQL_REMOVER_PUSH_EXPIRADO = `DELETE FROM kb_push_subscricoes
+ WHERE endpoint_hash=$1 AND endpoint=$2 AND usuario_id=$3 AND criado_em=$4::timestamptz`;

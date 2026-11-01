@@ -1,6 +1,7 @@
 import "server-only";
 import {createECDH,createHash,createPrivateKey,sign} from "node:crypto";
 import {consultar} from "./banco";
+import {SQL_REMOVER_PUSH_EXPIRADO} from "./notificacoes-sql";
 type Chave={publica:string;privada:string;chave:ReturnType<typeof createPrivateKey>};
 function chave():Chave|null{
  const publica=process.env.WEB_PUSH_PUBLIC_KEY??"";
@@ -51,21 +52,21 @@ function tokenVapid(origin:string,cred:Chave,assunto:string){
 export async function enviarPushChat(autor:string,conversa:string):Promise<void>{
  const cred=chave(),assunto=assuntoVapid();if(!cred||!assunto)return;
  try{
-  const subs=await consultar<{endpoint:string}>(`SELECT s.endpoint FROM kb_push_subscricoes s
+  const subs=await consultar<{endpoint:string;usuario_id:string;criado_em:string}>(`SELECT s.endpoint,s.usuario_id,s.criado_em::text AS criado_em FROM kb_push_subscricoes s
  JOIN kb_chat_participantes p ON p.usuario_id=s.usuario_id AND p.conversa_id=$2
  JOIN kb_chat_conversas c ON c.id=$2
  JOIN kb_usuarios u ON u.id=s.usuario_id AND u.ativo=true
  WHERE s.usuario_id<>$1 AND p.silenciada=FALSE AND u.preferencias_notificacoes->>'navegador'='true'
  AND (c.tipo<>'geral' OR u.preferencias_notificacoes->>'geral'='true')
  ORDER BY s.criado_em DESC LIMIT 50`,[autor,conversa]);
-  await Promise.allSettled(subs.filter(x=>endpointPushValido(x.endpoint)).map(async({endpoint})=>{
+  await Promise.allSettled(subs.filter(x=>endpointPushValido(x.endpoint)).map(async({endpoint,usuario_id,criado_em})=>{
    const aud=new URL(endpoint).origin;
    const jwt=tokenVapid(aud,cred,assunto);
    const result=await fetch(endpoint,{method:"POST",redirect:"error",
     headers:{"Authorization":"vapid t="+jwt+", k="+cred.publica,"TTL":"90","Content-Length":"0"},
     signal:AbortSignal.timeout(2500)});
    if(result.status===404||result.status===410)
-    await consultar("DELETE FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hashEndpoint(endpoint)]);
+    await consultar(SQL_REMOVER_PUSH_EXPIRADO,[hashEndpoint(endpoint),endpoint,usuario_id,criado_em]);
   }));
  }catch{/* Notificação nunca bloqueia a mensagem persistida. */}
 }
