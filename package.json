@@ -63,7 +63,7 @@
     "remark-directive": "^3.0.1",
     "remark-gfm": "^4.0.1",
     "sharp": "^0.35.5",
-    "zod": "^4.1.0"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
@@ -77,5 +77,10 @@
     "tailwindcss": "^4.0.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "^4.6.6"
+    }
   }
 }

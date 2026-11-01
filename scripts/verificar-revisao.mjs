@@ -20,6 +20,7 @@ const tarefas = [
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-cabecalhos.ts"],
   ["tests/testar-sidebar-responsiva.mjs"],
   ["tests/testar-chat-responsivo.mjs"],
+  ["tests/testar-dependencias-seguras.mjs"],
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-busca-normalizacao.ts"],
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-busca-sugestoes.ts"],
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-busca-ouro.ts"],
