@@ -16,6 +16,8 @@ Mudanças de variáveis precisam estar presentes em um novo deployment. Ao fazer
 
 ## Banco e build
 
+**Sequência obrigatória:** (1) selecionar e conferir a branch Neon de destino; (2) executar `npm run db:status`; (3) aplicar migrações pendentes com `npm run db:migrar`; (4) confirmar `npm run db:verificar`, inclusive a tabela `kb_artigo_aliases` da 017; **somente depois** (5) publicar o código no Vercel. Se houver histórico divergente ou incompleto, interrompa e reconcilie antes de executar SQL.
+
 Antes de publicar funcionalidades que dependem do banco, aplique as migrações necessárias no destino correspondente. As instruções completas estão no [guia de configuração](configuracao.md).
 
 - Execute `npm run db:status` para conferir a branch Neon realmente conectada e o histórico de migrações.

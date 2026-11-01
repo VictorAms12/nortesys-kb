@@ -102,3 +102,26 @@ test("Fase 5: mesclagem determinística, retorno a alias antigo e filtros de ace
  assert.equal((await q<{artigo_url:string}>(db,"SELECT artigo_url FROM kb_leituras WHERE usuario_id=$1",[user]))[0].artigo_url,antiga);
  assert.equal((await q<{artigo_url:string}>(db,"SELECT artigo_url FROM kb_artigo_feedback WHERE usuario_id=$1",[user]))[0].artigo_url,antiga);
 });
+
+test("Migração 017: mudança conjunta de categoria e slug mantém vínculos e visibilidade",async t=>{
+ const db=new PGlite();t.after(()=>db.close());await preparar(db);
+ const pessoa=await usuario(db,"integridadecategoria");
+ const id=await artigo(db,"endereco-original");
+ const antigo=url("endereco-original"),atual="/artigos/fiscal/endereco-novo";
+ const anexo=randomUUID();
+ await db.query("INSERT INTO kb_favoritos(usuario_id,artigo_url) VALUES($1,$2)",[pessoa,antigo]);
+ await db.query("INSERT INTO kb_leituras(usuario_id,artigo_url) VALUES($1,$2)",[pessoa,antigo]);
+ await db.query("INSERT INTO kb_anexos(id,artigo_id,blob_caminho,nome,tamanho,estado) VALUES($1,$2,$3,'Anexo.pdf',100,'pronta')",
+  [anexo,id,"kb-anexos/"+anexo+".pdf"]);
+ await db.query("UPDATE kb_artigos SET categoria='fiscal',slug='endereco-novo' WHERE id=$1",[id]);
+ for(const tabela of ["kb_favoritos","kb_leituras"])
+  assert.equal((await q<{artigo_url:string}>(db,"SELECT artigo_url FROM "+tabela+" WHERE usuario_id=$1",[pessoa]))[0].artigo_url,atual);
+ assert.equal((await q<{id:string}>(db,"SELECT id FROM kb_anexos WHERE artigo_id=$1",[id]))[0].id,anexo);
+ assert.deepEqual(await q<{categoria:string;slug:string}>(db,SQL_RESOLVER_ALIAS_ARTIGO,[antigo,"leitor"]),
+  [{categoria:"fiscal",slug:"endereco-novo"}]);
+ await db.query("UPDATE kb_artigos SET status='rascunho' WHERE id=$1",[id]);
+ assert.equal((await q(db,SQL_RESOLVER_ALIAS_ARTIGO,[antigo,"leitor"])).length,0);
+ assert.equal((await q(db,SQL_RESOLVER_ALIAS_ARTIGO,[antigo,"editor"])).length,1);
+ await db.query("UPDATE kb_artigos SET arquivado=true WHERE id=$1",[id]);
+ assert.equal((await q(db,SQL_RESOLVER_ALIAS_ARTIGO,[antigo,"editor"])).length,0);
+});

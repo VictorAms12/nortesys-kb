@@ -92,3 +92,13 @@ export function planejarReconciliacao(relatorio) {
  }
  return novos;
 }
+
+/** Diagnóstico explícito da 017, sem escrever no banco. */
+export function diagnosticoMigracao017(relatorio){
+ const etapa=relatorio.find(x=>x.nome.startsWith("017_"));
+ if(!etapa)return "ATENÇÃO: migração 017 ausente do manifesto SQL.";
+ if(etapa.situacao==="registrada")return "Migração 017: OK (tabela de aliases e histórico verificados).";
+ if(etapa.situacao==="pendente")return "ATENÇÃO: migração 017 PENDENTE — aplique db:migrar antes de publicar o código dependente de aliases.";
+ if(etapa.situacao==="sem_historico")return "ATENÇÃO: migração 017 instalada, mas SEM HISTÓRICO — confira e reconcilie antes do deploy.";
+ return "ATENÇÃO: migração 017 com estado inseguro ("+etapa.situacao+"). Verifique o Neon antes de publicar.";
+}

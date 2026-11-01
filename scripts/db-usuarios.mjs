@@ -5,7 +5,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { createHash, randomBytes, scryptSync } from "node:crypto";
 import { basename, resolve } from "node:path";
 import { dividirInstrucoesSql } from "./migracoes-sql.mjs";
-import { SQL_INVENTARIO, listarManifesto, relatorioMigracoes, planejarReconciliacao } from "./migracoes-estado.mjs";
+import { SQL_INVENTARIO, listarManifesto, relatorioMigracoes, planejarReconciliacao, diagnosticoMigracao017 } from "./migracoes-estado.mjs";
 
 const [acao, usuarioEntrada, ...resto] = process.argv.slice(2);
 const url = process.env.DATABASE_URL;
@@ -49,6 +49,7 @@ function exibirMigracoes(estado) {
     const detalhes=linha.faltantes.length?` — conferir: ${linha.faltantes.join(", ")}`:"";
     console.log(`${linha.nome}: ${linha.situacao}${detalhes}`);
   }
+  console.log(diagnosticoMigracao017(estado.relatorio));
 }
 async function reconciliar() {
   const estado=await estadoMigracoes();
@@ -117,6 +118,9 @@ async function verificar() {
   const linhas = await q("SELECT count(*)::int AS total FROM kb_usuarios");
   const artigos=await q("SELECT COUNT(*)::int AS total FROM kb_artigos");
   console.log(`PostgreSQL disponível. Usuários: ${linhas[0].total}. Artigos no banco: ${artigos[0].total}.`);
+  const [alias]=await q("SELECT to_regclass('public.kb_artigo_aliases') IS NOT NULL AS disponivel");
+  if(!alias?.disponivel)console.warn("ATENÇÃO: migração 017 pendente; tabela kb_artigo_aliases ausente. URLs antigas não serão redirecionadas.");
+  else console.log("Migração 017: tabela kb_artigo_aliases presente.");
 }
 async function guardarPeloMenosUmAdmin(usuario, tipo) {
   const r = await q(`SELECT papel, ativo FROM kb_usuarios WHERE usuario = $1`, [usuario]);
