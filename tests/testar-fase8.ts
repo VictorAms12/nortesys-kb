@@ -178,6 +178,21 @@ test("Fase 8: leitura só confirma IDs realmente recebidos pelo cliente",async t
  const marcador=await db.query<{ultima_lida_id:number}>(
   "SELECT ultima_lida_id FROM kb_chat_participantes WHERE usuario_id=$1 AND conversa_id=$2",[destinatario,conversa]);
  assert.equal(Number(marcador.rows[0].ultima_lida_id),terceiro);
+ // Um cliente com ID futuro não deve confirmar notificações que o banco não marcou como lidas.
+ await db.query(SQL_MARCAR_NOTIFICACOES_ATE,[destinatario,conversa,Number.MAX_SAFE_INTEGER]);
+ assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destinatario])).rows[0].total,1,
+  "Aviso posterior ao marcador de leitura permanece não lido");
+
+ // Corrida entre o ACK de um cliente e uma nova mensagem recebida.
+ await confirmar(Number.MAX_SAFE_INTEGER);
+ const quinto=await enviar("Chegou durante a sincronização de avisos");
+ assert.ok(quinto>quarto);
+ await db.query(SQL_MARCAR_NOTIFICACOES_ATE,[destinatario,conversa,Number.MAX_SAFE_INTEGER]);
+ assert.equal((await db.query<{total:number}>(SQL_CONTAR_NOTIFICACOES,[destinatario])).rows[0].total,1,
+  "O ACK antigo não deve marcar uma mensagem chegada depois");
+ const leitura=await db.query<{ultima_lida_id:number}>(
+  "SELECT ultima_lida_id FROM kb_chat_participantes WHERE usuario_id=$1 AND conversa_id=$2",[destinatario,conversa]);
+ assert.equal(Number(leitura.rows[0].ultima_lida_id),quarto);
 });
 
 test("Fase 8: polling do chat preserva referência e não redesenha mensagens inalteradas",()=>{

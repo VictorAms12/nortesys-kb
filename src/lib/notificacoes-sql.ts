@@ -23,4 +23,11 @@ export const SQL_MARCAR_NOTIFICACOES_CONVERSA = "UPDATE kb_notificacoes SET vist
 export const SQL_MARCAR_TODAS_NOTIFICACOES = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND vista_em IS NULL";
 export const NOTIFICACAO_ID = /^[1-9][0-9]{0,17}$/;
 
-export const SQL_MARCAR_NOTIFICACOES_ATE = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND conversa_id=$2 AND mensagem_id<=$3::bigint AND vista_em IS NULL";
+/** Nunca confirmar um aviso além do último ID efetivamente reconhecido no chat. */
+export const SQL_MARCAR_NOTIFICACOES_ATE = `UPDATE kb_notificacoes n SET vista_em=NOW()
+ WHERE n.destinatario_id=$1 AND n.conversa_id=$2 AND n.vista_em IS NULL
+ AND EXISTS (
+  SELECT 1 FROM kb_chat_participantes p
+  WHERE p.usuario_id=$1 AND p.conversa_id=$2
+    AND n.mensagem_id<=LEAST($3::bigint,p.ultima_lida_id)
+ )`;
