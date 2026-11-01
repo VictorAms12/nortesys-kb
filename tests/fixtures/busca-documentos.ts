@@ -4,8 +4,8 @@ import {criarIndiceBusca} from "../../src/lib/indice-busca";
 /** Corpus sintético, sem ler Neon de produção. */
 function artigo(url:string,titulo:string,resumo:string,tags:string[],conteudoBusca:string,codigosErro:string[]=[],sistema="Nortesys"):DocumentoBusca {
  return {url,titulo,resumo,tags,conteudoBusca,codigosErro,sistema,nomeCategoria:"Suporte técnico",
-  categoria:url.split("/")[2],nivel:"N1",status:"revisado",tipo:"procedimento",
-  atualizadoEm:"2026-10-01",revisarAte:null} as DocumentoBusca;
+  categoria:url.split("/")[2],nivel:"N1",status:"revisado",tipo:"tutorial",
+  atualizadoEm:"2026-10-01",revisarAte:undefined} as DocumentoBusca;
 }
 export function documentosOuro():DocumentoBusca[]{
  return [
