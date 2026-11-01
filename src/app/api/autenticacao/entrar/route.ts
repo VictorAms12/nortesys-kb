@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { verificarOrigemPost } from "../../../../lib/origem";
-import { chaveTentativas, registrarTentativa, limparTentativas } from "../../../../lib/limite-login";
+import { ipSolicitante, verificarTentativas, registrarFalha, registrarLoginBemSucedido, atrasoProgressivo, LIMITE_GLOBAL } from "../../../../lib/limite-login";
 import { autenticacaoConfigurada, criarTokenSessao, destinoSeguro, NOME_COOKIE, opcoesCookie } from "../../../../lib/sessao";
 import { conferirCredenciais } from "../../../../lib/usuarios";
 import { registrarAuditoriaSegura } from "../../../../lib/auditoria-eventos";
@@ -33,13 +33,21 @@ export async function POST(req: NextRequest) {
   }
   const usuario = formulario.get("usuario");
   const senha = formulario.get("senha");
-  const chave = chaveTentativas(usuario);
+  const ip = ipSolicitante(req.headers);
+  if (!ip) return voltar(req, "indisponivel");
   try {
-    if (!(await registrarTentativa(chave))) return voltar(req, "bloqueado");
+    if ((await verificarTentativas(usuario, ip)).bloqueado) return voltar(req, "credenciais");
     const conta = await conferirCredenciais(usuario, senha);
-    if (!conta) {await registrarAuditoriaSegura(null,"login_falha","credenciais_invalidas",{limitarMinutos:1});return voltar(req,"credenciais");}
+    if (!conta) {
+      const tentativas = await registrarFalha(usuario, ip);
+      await registrarAuditoriaSegura(null,"login_falha","credenciais_invalidas",{limitarMinutos:1});
+      if (tentativas.global === LIMITE_GLOBAL)
+        await registrarAuditoriaSegura(null,"login_bloqueio","limite_global",{limitarMinutos:60});
+      await new Promise(resolve => setTimeout(resolve, atrasoProgressivo(tentativas.porIpUsuario)));
+      return voltar(req,"credenciais");
+    }
     const token = await criarTokenSessao(conta);
-    await limparTentativas(chave);
+    await registrarLoginBemSucedido(conta.usuario, ip, conta.id);
     const destino = destinoSeguro(formulario.get("retorno"));
     const resposta = NextResponse.redirect(new URL(destino, req.url), { status: 303 });
     resposta.cookies.set(NOME_COOKIE, token, opcoesCookie());
