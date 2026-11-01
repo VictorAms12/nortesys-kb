@@ -2,7 +2,6 @@ name: Verificacao Nortesys KB
 
 on:
   push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -12,7 +11,7 @@ permissions:
 
 concurrency:
   group: kb-verificacao-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   validar:
@@ -39,6 +38,24 @@ jobs:
         run: npm run typecheck
       - name: Descobrir os seis testes Playwright sem abrir navegador
         run: npm run testar:e2e:listar
-      - name: Auditoria npm (informativa, nao bloqueante)
+      - name: Vulnerabilidades HIGH/CRITICAL nas dependencias de producao (bloqueante)
+        run: npm audit --omit=dev --audit-level=high --no-fund
+      - name: Auditoria geral incluindo devDependencies (informativa)
         run: npm audit --audit-level=high --no-fund
         continue-on-error: true
+
+  segredos:
+    name: Gitleaks no historico Git
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Varredura de segredos em push e PR
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
+          GITLEAKS_ENABLE_SUMMARY: 'false'
