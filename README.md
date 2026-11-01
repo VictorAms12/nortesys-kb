@@ -149,3 +149,5 @@ O chat geral e as conversas privadas utilizam Neon para histórico/autorização
 ### Operações nas mensagens (7G.3)
 
 Responder, apagar para mim, apagar para todos (somente autor) e limpar histórico apenas da própria conta. Antes de implantar esta versão, confirmar que **`db/007_chat_acoes.sql`** já consta no histórico de migrações do Neon correspondente. Os eventos Ably mantêm seus canais e credenciais anteriores.
+
+Operação e continuidade: [backup, restauração e rotação de segredos](docs/guias/backup-restauracao.md).
