@@ -857,6 +857,12 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 }
 /* O botão X pertence só ao painel móvel. .botao-icone define display:grid acima. */
 @media(min-width:1001px){.sidebar-app .botao-icone.fechar-menu-mobile{display:none;}}
+/* Os controles da lista são exclusivos do drawer móvel.
+   .botao-secundario define display:inline-flex; esta regra precisa vir depois. */
+@media(min-width:1024px){
+ .chat-painel button.chat-botao-contatos,
+ .chat-painel button.chat-fechar-lista{display:none;}
+}
 .campo-pesquisa,.campo-filtro select,.login-field>input,.login-password-wrap input,
 .chat-compositor textarea,.mais-filtros summary,.mais-filtros-conteudo select{
  border-radius:var(--radius-control);font-family:var(--font-sans);
