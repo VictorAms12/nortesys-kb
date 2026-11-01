@@ -76,7 +76,7 @@
     "eslint-config-next": "^16.0.0",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.20.0",
-    "typescript": "^5.9.0"
+    "typescript": "^7.0.2"
   },
   "overrides": {
     "@vercel/cli-config": {
