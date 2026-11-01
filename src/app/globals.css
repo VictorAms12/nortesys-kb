@@ -855,6 +855,8 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
  min-width:38px;
  border-radius:var(--radius-control);
 }
+/* O botão X pertence só ao painel móvel. .botao-icone define display:grid acima. */
+@media(min-width:1001px){.sidebar-app .botao-icone.fechar-menu-mobile{display:none;}}
 .campo-pesquisa,.campo-filtro select,.login-field>input,.login-password-wrap input,
 .chat-compositor textarea,.mais-filtros summary,.mais-filtros-conteudo select{
  border-radius:var(--radius-control);font-family:var(--font-sans);
