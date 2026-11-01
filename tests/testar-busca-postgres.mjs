@@ -30,6 +30,6 @@ test("Fase 4: índice full-text PostgreSQL e filtro de visibilidade dos candidat
        @@ plainto_tsquery('portuguese',$2)`,[papel,termo])).rows.map(x=>x.slug).sort();
  assert.deepEqual(await pesquisar("leitor","rejeição"),["rejeicao-nfe"]);
  assert.deepEqual(await pesquisar("editor","rejeição"),["rascunho-fiscal","rejeicao-nfe"]);
- assert.deepEqual(await pesquisar("leitor","cabos"),[]);
+ assert.deepEqual(await pesquisar("leitor","roteador"),[]);
  assert.deepEqual(await pesquisar("leitor","ponto"),["rede-privada"]);
 });
