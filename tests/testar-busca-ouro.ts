@@ -37,6 +37,11 @@ test("Ouro: 40+ consultas, 90% top-3, zero falsos positivos e média <50 ms",()=
   medidas.push(performance.now()-t);
  }
  const media=medidas.reduce((a,b)=>a+b,0)/medidas.length,precisao=acertos/positivos;
+ for(const consulta of ["DANFE","imprimir","demora"]){
+  const caso=casos.find(x=>x.consulta===consulta);
+  assert.ok(caso&&caso.esperado.some(url=>executarBusca(novos,consulta).slice(0,3).some(x=>x.artigo.url===url)),
+   "Sinônimo não deve depender de estar repetido no artigo: "+consulta);
+ }
  const vocab=criarVocabulario(docs);
  const tamanho=Buffer.byteLength(JSON.stringify({indice:docs,vocabulario:vocab}))/1024;
  console.log("[busca-ouro] casos="+casos.length+" positivos="+positivos+

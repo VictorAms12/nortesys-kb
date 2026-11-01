@@ -280,6 +280,13 @@
     "observacao": "Positivo: tolerância e relevância"
   },
   {
+    "consulta": "demora",
+    "esperado": [
+      "/artigos/infra/lentidao"
+    ],
+    "observacao": "Sinônimo sem repetição literal no artigo"
+  },
+  {
     "consulta": "fornecedor",
     "esperado": [
       "/artigos/cadastros/fornecedor"
