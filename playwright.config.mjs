@@ -1,6 +1,6 @@
 import {defineConfig,devices} from "@playwright/test";
 
-// O runner é provisionado separadamente: nenhuma dependência é adicionada ao projeto.
+// Playwright é dependência de desenvolvimento. O navegador é instalado apenas para homologação.
 const url=process.env.E2E_BASE_URL||"http://127.0.0.1:3000";
 const endereco=new URL(url);
 const local=["localhost","127.0.0.1"].includes(endereco.hostname);

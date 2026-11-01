@@ -1,4 +1,4 @@
-# Testes funcionais no navegador (Fase C)
+# Testes funcionais no navegador (Fase 6)
 
 Os testes de fumaça verificam **comportamento real** sem pesquisar strings no CSS ou no código-fonte: login, busca com a tecla `/`, abertura de artigo, envio de mensagem, central de notificações e logout.
 
@@ -6,13 +6,14 @@ Os testes de fumaça verificam **comportamento real** sem pesquisar strings no C
 
 Utilize **somente Preview ou localhost conectado a um branch de desenvolvimento do Neon**. Crie um usuário de testes com acesso ao chat e publique nele um artigo de teste visível ao usuário. O teste do chat **grava uma mensagem real**, identificada por prefixo `Teste de fumaça KB`. A central não marca avisos como lidos, e o logout encerra apenas a sessão de teste. Não use credenciais de produção.
 
-Como solicitado, o repositório **não ganhou dependências npm novas**. Para executar os arquivos Playwright, disponibilize `@playwright/test` no ambiente de testes de forma externa ou temporária, sem alterar os manifests do projeto. Exemplo local, com instalação temporária que não modifica `package.json` nem `package-lock.json`:
+O `@playwright/test` está versionado como **única nova dependência de desenvolvimento** desta revisão, incluindo o lockfile. Instale as dependências e o Chromium no ambiente de testes:
 
 ```bash
 npm ci
-npm install --no-save --package-lock=false --ignore-scripts @playwright/test
 npx playwright install chromium
 ```
+
+O runner não grava credenciais no projeto e não utiliza o banco de produção.
 
 Defina no terminal, **sem gravar senha em arquivo versionado**:
 
@@ -32,7 +33,7 @@ Execute:
 npm run testar:e2e
 ```
 
-O runner não faz parte do CI padrão: **a execução requer navegador, conta autenticada e Neon de teste**, indisponíveis na verificação sem segredos. Sem as variáveis obrigatórias, os testes falham explicitamente em vez de serem marcados como aprovados por omissão.
+O CI faz `npm run testar:e2e:listar`, verificando se os **seis cenários** são descobertos, sem abrir o navegador nem usar credenciais. A execução de verdade depende de navegador, usuário e banco de desenvolvimento isolado; não é executada automaticamente no CI sem esses requisitos. Se as variáveis faltarem, a suíte falha explicitamente ao iniciar a execução, sem simular sucesso.
 
 Artefatos temporários ficam em `.local/playwright-results`, fora do versionamento, e capturas/traces estão desativados por padrão para reduzir o risco de registrar dados privados.
 

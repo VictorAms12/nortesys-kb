@@ -18,10 +18,10 @@ Mudanças de variáveis precisam estar presentes em um novo deployment. Ao fazer
 
 Antes de publicar funcionalidades que dependem do banco, aplique as migrações necessárias no destino correspondente. As instruções completas estão no [guia de configuração](configuracao.md).
 
-- Migrações 001–003: CLI `db:migrar` ou aplicação manual revisada.
-- Migração 004: aplicação manual do arquivo inteiro, incluindo a transação.
-- Migração 005: anexos PDF privados (Neon), aplicação manual antes da fase 7C.2.
-- Migração 006: chat e presença, aplicação manual antes da fase 7G (Preview e depois Production).
+- Execute `npm run db:status` para conferir a branch Neon realmente conectada e o histórico de migrações.
+- Em banco vazio, `npm run db:migrar` aplica os arquivos `001` até a migração mais recente, em ordem e transações por arquivo.
+- Em banco existente cujo esquema não tenha histórico, **não** reaplique SQL: siga o fluxo seguro de reconciliação descrito no guia de configuração.
+- Migrações recentes, incluindo **017 (URLs históricas e vínculos de artigos)**, precisam estar presentes antes de validar versões de código que dependam delas.
 - Chat: configurar `ABLY_API_KEY` por ambiente; não expor a chave ao navegador.
 - O build não aplica SQL e não cria contas.
 
