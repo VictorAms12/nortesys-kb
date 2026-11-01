@@ -1,15 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { carregarArtigos } from "../src/lib/artigos";
+import { artigoDeTeste, textoArtigoDeTeste } from "./fixtures/artigo-teste";
 import { combinarArtigos } from "../src/lib/artigos-visibilidade";
 import { lerPreferencia, salvarPreferencia } from "../src/lib/preferencias-navegador";
-import { readFileSync } from "node:fs";
 import matter from "gray-matter";
 
 test("banco oculta cópia local arquivada ou em rascunho; leitores não recebem rascunhos", () => {
-  const local = carregarArtigos()[0];
+  const local = artigoDeTeste();
   assert.ok(local);
-  const conteudo = readFileSync(local.caminho, "utf8");
+  const conteudo = textoArtigoDeTeste();
   const registro = { categoria: local.categoria, slug: local.slug, status: local.status, conteudo, arquivado: true };
   for (const papel of ["leitor", "editor", "administrador"] as const) {
     assert.equal(combinarArtigos([local], [registro], papel).length, 0);

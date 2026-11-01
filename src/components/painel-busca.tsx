@@ -102,7 +102,7 @@ export function PainelBusca({ documentos, vocabulario }: Props) {
       <div className="form-busca-linha">
        <input id="campo-consulta" list="sugestoes-conhecimento" type="search"
          className="campo-pesquisa" value={consulta} onChange={e=>alterarConsulta(e.target.value)}
-         placeholder="Ex.: cliente duplicado, rejeição 539, NF-e" maxLength={120} autoComplete="off"/>
+         placeholder="Ex.: rejeição 539, NF-e, configurar impressora" maxLength={120} autoComplete="off"/>
        <button className="botao-primario" type="submit">Buscar</button>
       </div>
       <datalist id="sugestoes-conhecimento">{sugestoes.map(t=><option key={t} value={t}/>)}</datalist>

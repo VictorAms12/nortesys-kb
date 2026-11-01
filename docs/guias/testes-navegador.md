@@ -23,7 +23,7 @@ Defina no terminal, **sem gravar senha em arquivo versionado**:
 | `E2E_USUARIO` | Usuário descartável criado no Neon de desenvolvimento |
 | `E2E_SENHA` | Senha do usuário descartável |
 | `E2E_ARTIGO_TERMO` | Palavra que retorne um artigo disponível em sugestões e na busca |
-| `E2E_ARTIGO_URL` | `/artigos/cadastros/cliente-duplicado` se esse artigo existir |
+| `E2E_ARTIGO_URL` | URL de um artigo publicado no Neon de desenvolvimento, definido pelo time |
 | `E2E_CONFIRM_DEVELOPMENT` | `sim` obrigatório para URL remota |
 | `E2E_START_SERVER` | `1` para iniciar o Next.js local automaticamente |
 
@@ -49,4 +49,4 @@ O fluxo sem segredos mantém testes unitários e de integração com PostgreSQL 
 
 ## Cuidados com falhas
 
-Quando um teste falhar, confira primeiro se o artigo de exemplo está publicado, se o usuário tem acesso ao chat, se a migração correspondente foi aplicada no Neon de desenvolvimento e se o Preview está ligado ao banco correto. Não relaxe os seletores nem aumente timeouts para ocultar falhas reais de funcionalidade.
+Quando um teste falhar, confira primeiro se há um artigo real de homologação publicado, se o usuário tem acesso ao chat, se a migração correspondente foi aplicada no Neon de desenvolvimento e se o Preview está ligado ao banco correto. Não relaxe os seletores nem aumente timeouts para ocultar falhas reais de funcionalidade.

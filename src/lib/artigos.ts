@@ -143,7 +143,7 @@ export function validarTextoArtigo(caminho: string, texto: string): Artigo {
   }
   if (!PADRAO_SLUG.test(slug) || !nomeArquivo.endsWith(".md")) {
     problemas.push(
-      `arquivo: use nome em kebab-case, sem acentos (ex.: cliente-duplicado.md)`,
+      `arquivo: use nome em kebab-case, sem acentos (ex.: configurar-impressora.md)`,
     );
   }
   if (problemas.length > 0) throw new ErroConteudo(caminho, problemas);

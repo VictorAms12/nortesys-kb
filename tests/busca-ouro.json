@@ -357,27 +357,6 @@
     "observacao": "Positivo: tolerância e relevância"
   },
   {
-    "consulta": "cliente duplicado",
-    "esperado": [
-      "/artigos/cadastros/cliente-duplicado"
-    ],
-    "observacao": "Positivo: tolerância e relevância"
-  },
-  {
-    "consulta": "CLI-DUP-001",
-    "esperado": [
-      "/artigos/cadastros/cliente-duplicado"
-    ],
-    "observacao": "Positivo: tolerância e relevância"
-  },
-  {
-    "consulta": "operador",
-    "esperado": [
-      "/artigos/cadastros/cliente-duplicado"
-    ],
-    "observacao": "Positivo: tolerância e relevância"
-  },
-  {
     "consulta": "elefante marinho",
     "esperado": [],
     "observacao": "Negativo: resultado deve permanecer vazio"
