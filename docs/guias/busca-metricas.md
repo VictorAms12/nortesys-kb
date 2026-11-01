@@ -17,3 +17,7 @@ Para impedir que o corpus seja trivial, foram retiradas menções explícitas de
 **64 consultas:** 54 positivas e 10 negativas. Baseline (`threshold=0.38`) teve **51/54 (94,4%)** acertos no top-3; busca nova (`threshold=0.30` mais normalização e sinônimos) teve **54/54 (100%)**, ganho de **5,6 pontos percentuais** no corpus controlado. **Zero falsos positivos** entre as dez consultas negativas. Tempo médio: **2,05 ms** por consulta. Índice e vocabulário serializados: **8,3 KB**.
 
 Os três ganhos foram isolados no conjunto artificial removendo menções literais de DANFE, imprimir e demora; não comprovam melhora em buscas reais do Neon. As 6 sessões E2E, navegação móvel autenticada e custo sob grande catálogo seguem pendentes de homologação.
+
+## Limpeza do artigo fictício inicial
+
+O arquivo `content/cadastros/cliente-duplicado.md` foi retirado do catálogo. Os testes que antes usavam esse artigo agora utilizam uma fixture de procedimento de impressora **somente em memória**, sem publicação no site e sem gravação no Neon. O corpus de busca deixou de incluir as três consultas relacionadas ao artigo removido, ficando com **61 consultas** (51 positivas e 10 negativas); os números de benchmark de 64 consultas acima são registros históricos e **não representam o corpus atual**. A CI mede novamente os indicadores.

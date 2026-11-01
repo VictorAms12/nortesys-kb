@@ -1,6 +1,4 @@
 import type {DocumentoBusca} from "../../src/lib/indice-busca";
-import {carregarArtigos} from "../../src/lib/artigos";
-import {criarIndiceBusca} from "../../src/lib/indice-busca";
 /** Corpus sintético, sem ler Neon de produção. */
 function artigo(url:string,titulo:string,resumo:string,tags:string[],conteudoBusca:string,codigosErro:string[]=[],sistema="Nortesys"):DocumentoBusca {
  return {url,titulo,resumo,tags,conteudoBusca,codigosErro,sistema,nomeCategoria:"Suporte técnico",
@@ -9,7 +7,6 @@ function artigo(url:string,titulo:string,resumo:string,tags:string[],conteudoBus
 }
 export function documentosOuro():DocumentoBusca[]{
  return [
-  ...criarIndiceBusca(carregarArtigos()),
   artigo("/artigos/infra/impressora-spooler","Configurar impressora e spooler",
     "Impressão de documentos e fila de impressão",["impressora","spooler","impressao"],
     "Como configurar impressora, instalar drivers, limpar fila de impressão e reiniciar spooler."),

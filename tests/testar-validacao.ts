@@ -1,39 +1,36 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { carregarArtigos, validarTextoArtigo } from "../src/lib/artigos";
+import { CAMINHO_ARTIGO_TESTE, textoArtigoDeTeste } from "./fixtures/artigo-teste";
 
-const caminho = "content/cadastros/cliente-duplicado.md";
-const textoValido = readFileSync(resolve(caminho), "utf8");
+const caminho = CAMINHO_ARTIGO_TESTE;
+const textoValido = textoArtigoDeTeste();
 
 function testeQueDeveFalhar(nome: string, texto: string, trechoEsperado: string) {
   try {
     validarTextoArtigo(caminho, texto);
-    throw new Error(`[FALHOU] ${nome}: a validação aceitou conteúdo inválido.`);
+    throw new Error("[FALHOU] " + nome + ": a validação aceitou conteúdo inválido.");
   } catch (erro) {
     const mensagem = erro instanceof Error ? erro.message : String(erro);
     if (!mensagem.includes(trechoEsperado)) {
-      throw new Error(`[FALHOU] ${nome}: mensagem inesperada: ${mensagem}`);
+      throw new Error("[FALHOU] " + nome + ": mensagem inesperada: " + mensagem);
     }
-    console.log(`[OK] ${nome}: rejeitou e indicou ${trechoEsperado}`);
+    console.log("[OK] " + nome + ": rejeitou e indicou " + trechoEsperado);
   }
 }
 
 try {
-  carregarArtigos();
-  console.log("[OK] Artigos válidos carregam normalmente.");
+  carregarArtigos(); // A pasta content/ pode não conter nenhum artigo Markdown.
+  validarTextoArtigo(caminho, textoValido);
+  console.log("[OK] Fixture sintética válida; carregamento funciona com catálogo vazio.");
 
   testeQueDeveFalhar(
     "Resumo muito longo",
-    textoValido.replace(
-      /resumo: "[^"]+"/,
-      `resumo: "${"X".repeat(170)}"`,
-    ),
+    textoValido.replace(/^resumo:.*$/m, 'resumo: "' + "X".repeat(170) + '"'),
     "frontmatter.resumo",
   );
 
   testeQueDeveFalhar(
     "Categoria inexistente",
-    textoValido.replace('categoria: "cadastros"', 'categoria: "categoria-inexistente"'),
+    textoValido.replace(/^categoria:.*$/m, "categoria: categoria-inexistente"),
     "frontmatter.categoria",
   );
 
@@ -45,11 +42,11 @@ try {
 
   testeQueDeveFalhar(
     "Revisão fiscal obrigatória",
-    textoValido.replace('categoria: "cadastros"', 'categoria: "notas-fiscais"'),
+    textoValido.replace(/^categoria:.*$/m, "categoria: notas-fiscais"),
     "frontmatter.revisarAte",
   );
 
-  console.log("✅ Testes de validação concluídos, sem modificar nenhum artigo.");
+  console.log("✅ Testes de validação concluídos, sem publicar artigo fictício.");
 } catch (erro) {
   console.error(erro instanceof Error ? erro.message : String(erro));
   process.exitCode = 1;
