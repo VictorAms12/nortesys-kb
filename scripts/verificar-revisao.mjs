@@ -13,6 +13,7 @@ const tarefas = [
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-busca-postgres.mjs"],
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-corpo-limitado.ts"],
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-admin-seguranca.ts"],
+  ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-integridade-artigos.ts"],
   ["node_modules/tsx/dist/cli.mjs", "--test", "tests/testar-manutencao-lotes.ts"],
   ["node_modules/tsx/dist/cli.mjs", "scripts/validar-artigos.ts"],
   ...["testar-validacao", "testar-busca", "testar-seguranca", "testar-usuarios", "testar-fase6",
