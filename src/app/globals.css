@@ -844,7 +844,7 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
  .cabecalho-pagina{margin-bottom:14px;}
  .titulo-pagina{font-size:23px;}
  .topbar-app{padding:0 10px 8px;}
- .topbar-direita .botao-secundario span:not(:first-child){display:none;}
+ 
  .rodape-app .conteiner{flex-wrap:wrap;}
  .pesquisa-inicio{padding:10px;}
  .pesquisa-inicio-form{gap:7px;}
@@ -1009,11 +1009,6 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 .busca-cabecalho input{min-height:38px;font-size:14px;line-height:1.5;}
 .atalho-teclado{font-size:12px;font-weight:500;}
 .topbar-direita{gap:6px;flex:none;}
-.topbar-direita .botao-secundario{
- width:40px;min-width:40px;height:40px;min-height:40px;
- padding:0;display:inline-flex;align-items:center;justify-content:center;
-}
-.topbar-direita .botao-secundario span{display:none;}
 .topbar-direita .botao-icone,.topbar-direita .menu-conta-gatilho{
  min-width:40px;width:40px;min-height:40px;height:40px;
 }
@@ -1112,7 +1107,7 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 }
 .login-marca strong{font-weight:700;}
 .login-marca span{font-size:13px;font-weight:600;color:var(--marca-forte);}
-.login-topo .botao-secundario{min-height:38px;}
+
 .login-card{
  width:min(100%,400px);max-width:none;margin:0 auto;
  padding:30px 28px;background:var(--surface-panel);
@@ -1348,6 +1343,20 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
   scroll-behavior:auto!important;
  }
 }
+
+
+/* Alternador de tema com ícone exclusivo: área clicável fixa em qualquer breakpoint. */
+.alternar-tema{
+ display:inline-flex;align-items:center;justify-content:center;
+ flex:0 0 40px;width:40px;min-width:40px;max-width:40px;
+ height:40px;min-height:40px;max-height:40px;
+ padding:0;border:1px solid var(--border);
+ border-radius:var(--radius-control);
+ background:var(--surface);color:var(--text);
+}
+.alternar-tema svg{display:block;flex:none;width:18px;height:18px;}
+.alternar-tema:hover{background:var(--surface-alt);border-color:var(--border-strong);}
+.alternar-tema:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
 
 @media print{
  body{background:white!important;color:black!important;}

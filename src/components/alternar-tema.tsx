@@ -17,10 +17,9 @@ export function AlternarTema(){
   salvarPreferencia(CHAVE,tema==="claro"?"escuro":"claro");
   window.dispatchEvent(new Event(EVENTO));
  }
- return <button type="button" onClick={alternar} className="botao-secundario whitespace-nowrap"
+ return <button type="button" onClick={alternar} className="botao-icone alternar-tema"
   title={tema==="claro"?"Ativar tema escuro":"Ativar tema claro"}
   aria-label={tema==="claro"?"Ativar tema escuro":"Ativar tema claro"}>
-  <IconeInterface nome={tema==="claro"?"sol":"lua"}/>
-  <span className="hidden sm:inline">{tema==="claro"?"Claro":"Escuro"}</span>
+  <IconeInterface nome={tema==="claro"?"sol":"lua"} width={18} height={18}/>
  </button>;
 }
