@@ -24,10 +24,12 @@ const tarefas = [
   ["node_modules/next/dist/bin/next", "typegen"],
   ["node_modules/typescript/bin/tsc", "--noEmit", "--incremental", "false"],
 ];
-for (const args of tarefas) {
+const somenteRegras = process.argv.includes("--regras");
+const execucoes = somenteRegras ? tarefas.slice(0, -3) : tarefas;
+for (const args of execucoes) {
   console.log(`Validando: ${args.join(" ")}`);
   const resultado = spawnSync(process.execPath, args, { env: ambiente, stdio: "inherit" });
   if (resultado.error) { console.error(resultado.error.message); process.exit(1); }
   if (resultado.status !== 0) process.exit(resultado.status ?? 1);
 }
-console.log("Revisão local concluída. Gere o build isolado com npm run build:revisao.");
+console.log(somenteRegras ? "Testes de regras e integrações concluídos." : "Revisão local concluída. Gere o build isolado com npm run build:revisao.");

@@ -1,0 +1,7 @@
+node_modules/
+.next/
+.local/
+build/
+coverage/
+docs/historico/
+package-lock.json

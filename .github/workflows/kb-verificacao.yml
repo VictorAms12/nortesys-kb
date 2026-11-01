@@ -1,21 +1,42 @@
 name: Verificacao Nortesys KB
+
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
+
+concurrency:
+  group: kb-verificacao-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validar:
+    name: Regras, lint, formatacao e tipos
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - name: Instalar dependencias
+      - name: Instalar dependencias reproduzivelmente
         run: npm ci
-      - name: Validar estrutura, testes, lint e TypeScript sem segredos
-        run: npm run verificar:revisao
+      - name: Verificar estrutura, documentos, seguranca e regras
+        run: npm run verificar:regras
+      - name: ESLint
+        run: npm run lint
+      - name: Formatacao basica
+        run: npm run format:check
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Descobrir os seis testes Playwright sem abrir navegador
+        run: npm run testar:e2e:listar
+      - name: Auditoria npm (informativa, nao bloqueante)
+        run: npm audit --audit-level=high --no-fund
+        continue-on-error: true

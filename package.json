@@ -44,7 +44,8 @@
     "typecheck": "next typegen && tsc --noEmit --incremental false",
     "format:check": "node scripts/verificar-formatacao.mjs",
     "format:prettier": "npx --yes prettier@3.6.2 --write src/lib/chat-sql.ts src/lib/chat-sql/*.ts scripts/verificar-formatacao.mjs .github/dependabot.yml .github/workflows/kb-verificacao.yml",
-    "testar:e2e:listar": "playwright test --list -c playwright.config.mjs"
+    "testar:e2e:listar": "playwright test --list -c playwright.config.mjs",
+    "verificar:regras": "node scripts/verificar-revisao.mjs --regras"
   },
   "engines": {
     "node": ">=20.9.0"
