@@ -28,6 +28,7 @@ test("Todas as migrações são reaplicáveis em um Postgres isolado",async t=>{
  assert.ok(arquivos.includes("014_ultimo_admin.sql"));
  assert.ok(arquivos.includes("015_recuperar_fila_imagens_chat.sql"));
  assert.ok(arquivos.includes("016_indices_busca_artigos.sql"));
+ assert.ok(arquivos.includes("017_integridade_urls_artigos.sql"));
  for(let rodada=0;rodada<2;rodada++){
   for(const arquivo of arquivos){
    const instrucoes=dividirInstrucoesSql(readFileSync("db/"+arquivo,"utf8"));

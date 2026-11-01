@@ -20,6 +20,7 @@ const marcas = {
  "014": {gatilhos:["kb_usuarios_proteger_ultimo_admin"],funcoes:["kb_proteger_ultimo_admin"]},
  "015": {gatilhos:["kb_chat_imagem_exclusao_global"],funcoes:["kb_registrar_imagem_chat_excluida"]},
  "016": {indices:["kb_artigos_texto_fts_idx"]},
+ "017": {tabelas:["kb_artigo_aliases"],indices:["kb_artigo_aliases_artigo_idx"],gatilhos:["kb_artigos_validar_url","kb_artigos_migrar_url"],funcoes:["kb_validar_url_artigo","kb_migrar_url_artigo"]},
 };
 
 export const SQL_INVENTARIO = `SELECT
