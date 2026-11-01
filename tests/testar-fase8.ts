@@ -57,10 +57,17 @@ test("Fase 8: Web Push reassocia dispositivo sem enviar avisos a contas antigas"
  const posReassociacao=await db.query<{usuario_id:string;criado_em:string;endpoint:string}>(
   "SELECT usuario_id,criado_em::text AS criado_em,endpoint FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash]);
  await db.query(SQL_REMOVER_PUSH_EXPIRADO,[hash,endpoint,primeiro,posReassociacao.rows[0].criado_em]);
- assert.equal((await db.query("SELECT COUNT(*)::int AS total FROM kb_push_subscricoes WHERE usuario_id=$1",[segundo])).rows[0].total,1,
+ assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_push_subscricoes WHERE usuario_id=$1",[segundo])).rows[0].total,1,
   "Retorno 410 de outra conta não pode excluir a inscrição reassociada");
+ // Mesmo sem trocar a conta, uma nova inscrição mais recente deve sobreviver ao ACK antigo.
+ await db.query("UPDATE kb_push_subscricoes SET criado_em=criado_em + INTERVAL '1 second' WHERE endpoint_hash=$1",[hash]);
  await db.query(SQL_REMOVER_PUSH_EXPIRADO,[hash,endpoint,segundo,posReassociacao.rows[0].criado_em]);
- assert.equal((await db.query("SELECT COUNT(*)::int AS total FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash])).rows[0].total,0,
+ assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash])).rows[0].total,1,
+  "Retorno atrasado não pode apagar um registro atualizado na mesma conta");
+ const renovada=await db.query<{criado_em:string}>(
+  "SELECT criado_em::text AS criado_em FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash]);
+ await db.query(SQL_REMOVER_PUSH_EXPIRADO,[hash,endpoint,segundo,renovada.rows[0].criado_em]);
+ assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_push_subscricoes WHERE endpoint_hash=$1",[hash])).rows[0].total,0,
   "Endpoint expirado ainda associado ao mesmo registro pode ser removido");
 });
 
