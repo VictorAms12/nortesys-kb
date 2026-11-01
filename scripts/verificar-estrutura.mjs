@@ -1,30 +1,41 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+/** Verifica invariantes e convenções, não nomes de componentes ou textos de JSX. */
+import {existsSync, readdirSync, readFileSync} from "node:fs";
+import {resolve} from "node:path";
 
-const obrigatorios = [
-  "package.json", "next.config.ts", "tsconfig.json", "postcss.config.mjs", ".env.example",
-  "src/proxy.ts", "src/app/layout.tsx", 
-  "src/app/page.tsx", "src/app/busca/page.tsx", "src/app/artigos/page.tsx", "src/app/categorias/page.tsx",
-  "src/app/artigos/[categoria]/[slug]/page.tsx",
-  "src/app/entrar/page.tsx", "src/app/robots.ts",
-  "src/app/api/autenticacao/entrar/route.ts", "src/app/api/autenticacao/sair/route.ts",
-  "src/lib/sessao.ts", "src/lib/usuarios.ts", "src/lib/autenticacao-servidor.ts",
-  "scripts/db-usuarios.mjs", "tests/testar-usuarios.ts", "tests/testar-banco.mjs", "db/001_auth.sql", "db/002_painel.sql", "src/lib/banco.ts",
-  "src/app/admin/page.tsx", "src/app/admin/usuarios/page.tsx", "src/app/admin/artigos/page.tsx",
-  "src/app/api/admin/usuarios/route.ts", "src/app/api/admin/artigos/route.ts",
-  "src/components/painel-busca.tsx", "src/components/estrutura-aplicacao.tsx", "src/components/icone-interface.tsx", "src/lib/indice-busca.ts", "src/lib/busca.ts",
-  "scripts/verificar-dados-sensiveis.mjs", "tests/testar-seguranca.ts", "tests/testar-fase7a.mjs",
-  "docs/README.md", "docs/arquitetura.md", "docs/guias/configuracao.md", "docs/guias/deploy.md",
-  "db/003_interacoes.sql", "db/004_imagens.sql", "tests/testar-imagens.ts", "tests/testar-revisao.ts",
+const base=[
+  "package.json","package-lock.json","tsconfig.json","next.config.ts",
+  "eslint.config.mjs","src/app","src/lib","src/components","src/types",
+  "config","content","db","scripts","tests","tests/e2e",
+  ".github/workflows/kb-verificacao.yml",".github/dependabot.yml",
+  "docs/README.md","docs/guias/configuracao.md","docs/guias/deploy.md",
 ];
-let erros = 0;
-for (const caminho of obrigatorios) {
-  if (!existsSync(resolve(caminho))) { console.error(`[FALTA] ${caminho}`); erros++; }
-  else console.log(`[OK] ${caminho}`);
+const erros=[];
+for(const item of base)if(!existsSync(resolve(item)))erros.push("Caminho essencial ausente: "+item);
+
+if(existsSync("package.json")&&existsSync("package-lock.json")){
+ const pacote=JSON.parse(readFileSync("package.json","utf8"));
+ const trava=JSON.parse(readFileSync("package-lock.json","utf8"));
+ for(const nome of ["next","react","react-dom","fuse.js","@neondatabase/serverless"])
+  if(!pacote.dependencies?.[nome])erros.push("Dependência de aplicação ausente: "+nome);
+ if(!pacote.devDependencies?.["@playwright/test"])
+  erros.push("Playwright deve constar somente em devDependencies.");
+ if(pacote.dependencies?.["@playwright/test"])
+  erros.push("Playwright não pode entrar no bundle de produção.");
+ if(trava.packages?.[""]?.devDependencies?.["@playwright/test"]!==pacote.devDependencies?.["@playwright/test"])
+  erros.push("Versão de Playwright difere entre package.json e package-lock.json.");
 }
-const json = JSON.parse(readFileSync(resolve("package.json"), "utf8"));
-for (const pacote of ["next", "react", "react-dom", "fuse.js", "@neondatabase/serverless"]) {
-  if (!json.dependencies?.[pacote]) { console.error(`[FALTA] dependência: ${pacote}`); erros++; }
+if(existsSync("db")){
+ const nomes=readdirSync("db").filter(n=>n.endsWith(".sql")).sort();
+ const ids=nomes.map(n=>Number(n.slice(0,3)));
+ for(let i=0;i<nomes.length;i++){
+  if(!/^\d{3}_[a-z0-9_]+\.sql$/.test(nomes[i]))
+   erros.push("Nome inválido de migração: "+nomes[i]);
+  if(ids[i]!==i+1)
+   erros.push("Migrações fora de sequência: "+nomes[i]);
+ }
+ if(!nomes.length)erros.push("Nenhuma migração encontrada.");
 }
-if (erros) { console.error(`Estrutura incompleta: ${erros} problema(s).`); process.exitCode = 1; }
-else console.log("Estrutura do projeto conferida. Execute verificar:revisao e build:revisao para validação completa.");
+if(erros.length){
+ for(const e of erros)console.error("[ESTRUTURA] "+e);
+ process.exitCode=1;
+}else console.log("Estrutura, dependências e sequência das migrações conferidas.");

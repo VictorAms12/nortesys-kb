@@ -21,40 +21,59 @@ O SDK resolve a autenticação do Blob. Para OIDC no desenvolvimento, utilize o 
 
 `.env.vercel-development.local` é um arquivo auxiliar local; o nome, sozinho, não faz o Next.js carregá-lo. A aplicação local usa `.env.local` ou as variáveis do processo. Na Vercel, configure o ambiente no painel do projeto.
 
-## Banco inicial
+## Migrações do banco
 
-Escolha o banco de desenvolvimento e confira se é o mesmo apontado por `DATABASE_URL`.
+Configure **somente o Neon de desenvolvimento** em `.env.local` e confira o ambiente antes de prosseguir. Não execute migrações de Preview diretamente no banco de produção.
 
 ```bash
-npm run db:migrar
+npm run db:status
 ```
 
-Esse comando aplica somente:
+**Diagnóstico somente leitura:** o comando exibe o banco, o identificador da branch Neon e as migrações registradas, aplicadas sem histórico, pendentes ou incompletas. Compara assinaturas de tabelas, colunas, índices, restrições e gatilhos. **Não reaplique migrações manualmente executadas apenas porque `kb_migracoes` não existe.** O migrador agora interrompe o processo se detectar estrutura existente sem histórico confiável.
 
-1. [001_auth.sql](../../db/001_auth.sql): contas, sessões e tentativas de login.
-2. [002_painel.sql](../../db/002_painel.sql): artigos, versões e auditoria.
-3. [003_interacoes.sql](../../db/003_interacoes.sql): favoritos e leituras.
+Em um banco inteiramente novo, sem tabelas `kb_*`, execute `npm run db:migrar` e `npm run db:verificar`. Para bancos existentes cujas migrações foram feitas manualmente, confira o esquema e o relatório; depois autorize a conciliação **somente na branch de desenvolvimento**. Exemplo no PowerShell para a branch atual:
 
-Depois, execute **[004_imagens.sql](../../db/004_imagens.sql) inteiro** no SQL Editor do banco escolhido, incluindo `BEGIN` e `COMMIT`. Não passe esse arquivo pelo separador de instruções do CLI: ele contém uma função PL/pgSQL.
+```powershell
+$env:KB_RECONCILIAR_BRANCH_ID="br-calm-moon-b5scqqnp"
+$env:KB_RECONCILIAR_CONFIRMAR="sim"
+npm run db:reconciliar
+Remove-Item Env:KB_RECONCILIAR_BRANCH_ID
+Remove-Item Env:KB_RECONCILIAR_CONFIRMAR
+npm run db:status
+```
 
-O aviso de que o trigger não existia durante `DROP TRIGGER IF EXISTS` é esperado na primeira execução. Confirme que o restante foi concluído e que a transação foi confirmada.
+Confirme o ID em Neon → projeto `nortesyskb` → Branches → `dev-fase-7c1`. Se recriar a branch, atualize o ID. O script exige que o ID informado corresponda ao `current_setting('neon.branch_id')` do banco realmente conectado. Ele registra checksums SHA-256 **apenas para migrações que passaram nas verificações estruturais**, sem reaplicar seus comandos; bloqueia assinaturas parciais, checksums divergentes e lacunas fora de ordem.
 
-Consulta de conferência, sem alterar dados:
+**Atenção:** a assinatura identifica os objetos essenciais, mas não prova que o conteúdo de todas as funções ou os dados coincidem exatamente com o SQL versionado. Revise as migrações e quaisquer alterações manuais antes de conciliar. A conciliação escreve no banco e não deve ser executada na produção sem autorização separada. Não rode migradores simultaneamente. Depois de conciliar, `npm run db:migrar` aplica apenas novas etapas pendentes e registra seus checksums em transações por arquivo.
+
+A migração 012 permite imagens de chat sem legenda e atualiza somente textos automáticos. A 013 cria cotas para avatar (12 por hora), sugestões (90 por minuto) e índices para a central de notificações.
+
+A **migração 014** protege o último administrador ativo por trigger no PostgreSQL, inclusive em alterações feitas fora do painel. Valide o comportamento com pelo menos dois administradores de teste antes da produção.
+
+A **migração 015** recupera o gatilho da fila de imagens de chat excluídas para todos, sem remover arquivos ou mensagens. Se a migração 009 estiver parcialmente instalada, recupere o gatilho e verifique seu funcionamento antes de reconciliar os checksums históricos.
+
+A **migração 016** prepara índices de pesquisa SQL: GIN para texto em português e, quando disponíveis, `pg_trgm`, `unaccent` e trigram de títulos. A busca atual continua usando Fuse.js, sem alteração na relevância.
+
+A **migração 017** preserva vínculos quando um editor altera categoria ou slug de um artigo persistido no Neon. Ela cria a tabela `kb_artigo_aliases` e dois gatilhos no PostgreSQL, que, na **mesma transação da atualização**, migram favoritos, leituras e feedback para a URL atual. Em registros duplicados, preserva a data mais antiga do favorito, a leitura mais recente e o feedback mais recente. Os anexos e as imagens continuam vinculados ao `artigo_id`, sem alterações nesses vínculos.
+
+URLs anteriores redirecionam para a URL atual **somente se o artigo não estiver arquivado e estiver visível ao papel autenticado**. A URL antiga permanece reservada contra criação de outro artigo; um artigo pode voltar a usar uma de suas próprias URLs antigas. Renomeações feitas **antes** da instalação da 017 não são recuperadas automaticamente: revise casos históricos manualmente, sem remapear dados de outro artigo. A resolução de aliases falha de forma compatível se 017 ainda não estiver instalada em produção.
+
+Aplique e valide novas migrações primeiro na branch Neon de desenvolvimento; não aplique na produção sem uma verificação separada. O comando `npm run db:status` permite conferir as assinaturas, e `npm run db:verificar` confere o histórico.
+
+Conferência SQL:
 
 ```sql
-SELECT current_database() AS banco,
-       to_regclass('public.kb_imagens') AS imagens,
-       to_regclass('public.kb_imagem_limites') AS limites,
-       to_regprocedure('public.kb_associar_imagens_artigo()') AS funcao;
-
-SELECT tgname, tgenabled
-FROM pg_trigger
-WHERE tgrelid = to_regclass('public.kb_artigos')
-  AND tgname = 'kb_artigos_associar_imagens'
-  AND NOT tgisinternal;
+SELECT nome, aplicada_em, checksum FROM kb_migracoes ORDER BY nome;
+SELECT COUNT(*) FROM kb_notificacoes;
 ```
 
-As três referências da primeira consulta devem estar preenchidas. A segunda deve retornar o trigger habilitado (`O` no padrão). Essas consultas confirmam a presença dos objetos; o teste de upload e salvamento valida o fluxo completo. `npm run db:verificar` confere conectividade e contagens de usuários/artigos, mas não verifica toda a migração de imagens.
+## Manutenção e agendamento
+
+Configure `CRON_SECRET` (valor aleatório com pelo menos 24 caracteres) na Vercel. O agendamento de `vercel.json` chama `/api/cron/manutencao` uma vez por dia, às 07:00 UTC (04:00 em Araguaína). O endpoint requer o cabeçalho `Authorization: Bearer <CRON_SECRET>`; sem segredo não é liberado.
+
+A manutenção apaga sessões e tentativas expiradas, processa a fila de imagens de chat, remove notificações com mais de 30 dias e limpa cotas antigas. As exclusões de sessões, notificações e cotas usam lotes de até 200 itens por consulta e até cinco rodadas por execução, para limitar tempo e locks no Neon. Se 010/013 ainda não estiverem aplicadas, essas partes da limpeza são ignoradas sem bloquear sessões ou imagens; repita a manutenção quando as tabelas estiverem disponíveis. Ajuste a retenção com `NOTIFICACOES_RETENCAO_DIAS` (7–365; padrão 30).
+
+Para notificações Web Push configure `WEB_PUSH_SUBJECT` com um endereço `mailto:` válido ou a URL HTTPS do domínio real da aplicação, além das chaves VAPID. Sem assunto válido o Push permanece desativado, mas o chat e as notificações internas continuam funcionando.
 
 ## Primeira conta e execução
 

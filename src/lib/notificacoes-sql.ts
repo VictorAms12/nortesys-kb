@@ -1,0 +1,37 @@
+/** Queries da central; importáveis pelos testes PGlite sem conexões externas. */
+const VISIVEIS = `FROM kb_notificacoes n
+ JOIN kb_usuarios u ON u.id=n.autor_id
+ JOIN kb_chat_conversas c ON c.id=n.conversa_id
+ JOIN kb_usuarios destinatario ON destinatario.id=n.destinatario_id
+ JOIN kb_chat_participantes p ON p.conversa_id=n.conversa_id AND p.usuario_id=n.destinatario_id
+ JOIN kb_chat_mensagens m ON m.id=n.mensagem_id AND m.conversa_id=n.conversa_id
+ WHERE n.destinatario_id=$1
+ AND (c.tipo<>'geral' OR COALESCE((destinatario.preferencias_notificacoes->>'geral')::boolean,true))
+ AND p.silenciada=FALSE
+ AND m.apagada_para_todos_em IS NULL
+ AND m.id>p.limpa_ate_id
+ AND NOT EXISTS(SELECT 1 FROM kb_chat_mensagens_ocultas h
+  WHERE h.usuario_id=n.destinatario_id AND h.mensagem_id=m.id)`;
+export const SQL_LISTAR_NOTIFICACOES = `SELECT n.id::text AS id,
+ n.conversa_id::text AS "conversaId",u.nome AS autor,
+ n.criada_em::text AS "criadaEm",n.vista_em::text AS "vistaEm",c.tipo
+ ${VISIVEIS} ORDER BY n.id DESC LIMIT 40`;
+export const SQL_CONTAR_NOTIFICACOES = `SELECT COUNT(*)::int AS total
+ ${VISIVEIS} AND n.vista_em IS NULL`;
+export const SQL_MARCAR_NOTIFICACOES = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND id=ANY($2::bigint[]) AND vista_em IS NULL";
+export const SQL_MARCAR_NOTIFICACOES_CONVERSA = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND conversa_id=$2 AND vista_em IS NULL";
+export const SQL_MARCAR_TODAS_NOTIFICACOES = "UPDATE kb_notificacoes SET vista_em=NOW() WHERE destinatario_id=$1 AND vista_em IS NULL";
+export const NOTIFICACAO_ID = /^[1-9][0-9]{0,17}$/;
+
+/** Nunca confirmar um aviso além do último ID efetivamente reconhecido no chat. */
+export const SQL_MARCAR_NOTIFICACOES_ATE = `UPDATE kb_notificacoes n SET vista_em=NOW()
+ WHERE n.destinatario_id=$1 AND n.conversa_id=$2 AND n.vista_em IS NULL
+ AND EXISTS (
+  SELECT 1 FROM kb_chat_participantes p
+  WHERE p.usuario_id=$1 AND p.conversa_id=$2
+    AND n.mensagem_id<=LEAST($3::bigint,p.ultima_lida_id)
+ )`;
+
+/** Exclui inscrição vencida apenas se ainda for a mesma inscrição testada no push. */
+export const SQL_REMOVER_PUSH_EXPIRADO = `DELETE FROM kb_push_subscricoes
+ WHERE endpoint_hash=$1 AND endpoint=$2 AND usuario_id=$3 AND criado_em=$4::timestamptz`;

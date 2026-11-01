@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { IconeInterface } from "./icone-interface";
 
 type Props = {
   pronta: boolean;
@@ -34,7 +33,7 @@ export function FormularioLogin({ pronta, retorno, credenciaisInvalidas }: Props
           spellCheck={false}
           maxLength={40}
           pattern="[a-z][a-z0-9._-]{2,39}"
-          placeholder="Digite seu usuário"
+          placeholder="Usuário"
           aria-invalid={credenciaisInvalidas || undefined}
           aria-describedby={credenciaisInvalidas ? "login-alerta" : "dica-usuario"}
           required
@@ -52,7 +51,7 @@ export function FormularioLogin({ pronta, retorno, credenciaisInvalidas }: Props
             name="senha"
             type={mostrarSenha ? "text" : "password"}
             autoComplete="current-password"
-            placeholder="Digite sua senha"
+            placeholder="Senha"
             maxLength={1024}
             aria-invalid={credenciaisInvalidas || undefined}
             aria-describedby={credenciaisInvalidas ? "login-alerta" : (capsLock ? "alerta-caps" : undefined)}
@@ -82,8 +81,7 @@ export function FormularioLogin({ pronta, retorno, credenciaisInvalidas }: Props
       </div>
 
       <button type="submit" className="login-submit" disabled={!pronta || enviando} aria-busy={enviando}>
-        <span>{enviando ? "Verificando acesso..." : "Entrar na base"}</span>
-        {enviando ? <span className="login-spinner" aria-hidden="true" /> : <IconeInterface nome="seta" width={19} height={19} />}
+        <span>{enviando ? "Verificando acesso..." : "Entrar"}</span>
       </button>
     </form>
   );

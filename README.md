@@ -47,7 +47,7 @@ O controle é feito também no servidor. Não há cadastro público de contas.
 | Pesquisa | Fuse.js |
 | Banco | PostgreSQL no Neon |
 | Arquivos enviados | Vercel Blob privado e processamento com Sharp |
-| Validação | ESLint, TypeScript, testes Node/tsx e PostgreSQL em memória com PGlite |
+| Validação | ESLint, TypeScript, testes Node/tsx, PGlite e Playwright |
 
 ## Começar localmente
 
@@ -61,18 +61,19 @@ npm ci
 
 Copie `.env.example` para `.env.local` e preencha `DATABASE_URL` com a conexão do banco de desenvolvimento. Para uploads, configure também um store Blob privado, conforme o [guia de configuração](docs/guias/configuracao.md).
 
-Prepare o banco e a primeira conta:
+Prepare o banco **de desenvolvimento** e a primeira conta:
 
 ```bash
+npm run db:status
 npm run db:migrar
-# Aplique db/004_imagens.sql inteiro no SQL Editor do banco escolhido.
+npm run db:verificar
 npm run usuario:adicionar -- admin "Administrador" administrador
 npm run dev
 ```
 
 Abra **http://localhost:3000**. A criação da conta imprime a senha inicial uma única vez.
 
-> `db:migrar` aplica somente as migrações **001–003**. A **004** contém uma função e um trigger e deve ser executada inteira, incluindo `BEGIN` e `COMMIT`. O build não aplica migrações.
+O migrador percorre todos os arquivos `db/NNN_*.sql` em ordem, registra SHA-256 e executa cada migração dentro de uma transação. **Em bancos existentes, não reaplique migrações manualmente executadas sem antes reconciliar o histórico.** O comando `db:status` diagnostica essas situações; a reconciliação de um banco legado exige confirmação do ID da branch Neon, conforme o [guia de configuração](docs/guias/configuracao.md). Nunca aponte o ambiente local para a produção por engano.
 
 Sem `DATABASE_URL`, a página de login indica acesso indisponível. Isso permite conferir a interface, mas não utilizar os fluxos autenticados.
 
@@ -90,7 +91,12 @@ Execute na raiz do repositório. No PowerShell, use `npm.cmd` se a política loc
 | `npm start` | Servir um build normal já gerado |
 | `npm run validar:artigos` | Validar os arquivos Markdown da biblioteca |
 | `npm run testar:imagens` | Testar imagens com banco em memória e armazenamento simulado |
-| `npm run db:verificar` | Consultar o banco definido em `.env.local` |
+| `npm run db:status` | Inspecionar migrações e branch Neon sem escrever no banco |
+| `npm run db:verificar` | Conferir histórico no banco definido em `.env.local` |
+| `npm run testar:e2e` | Executar seis testes Playwright em ambiente isolado; requer credenciais de teste |
+| `npm run format:check` | Checagem básica de formatação independente do lint |
+| `npm run lint` | Verificação ESLint |
+| `npm run typecheck` | Verificação TypeScript e geração de tipos |
 
 Os testes isolados não substituem a validação de login, edição e upload no Preview com os serviços reais. Os comandos `db:*` e `usuario:*` acessam o banco configurado; consulte os [detalhes de configuração](docs/guias/configuracao.md).
 
@@ -135,8 +141,8 @@ Credenciais, capturas de clientes e dados pessoais não devem entrar no reposit�
 
 O chat geral e as conversas privadas utilizam Neon para histórico/autorização, enquanto o Ably oferece notificação instantânea. A conexão SSE recebe tokens com acesso limitado ao canal geral e ao canal pessoal do usuário; envio e escrita no banco ocorrem apenas via APIs autenticadas do site. A presença online/ausente/offline é aproximada por atividade recente, sem controle invasivo.
 
-**Antes de validar:** aplicar `db/006_chat.sql` no banco de Preview e configurar `ABLY_API_KEY` no ambiente Preview. Não incluir essa chave em `NEXT_PUBLIC_`. Para testar use duas contas em navegadores diferentes e valide que não é possível ler uma conversa de terceiros. Não publicar em Production sem a migração correspondente.
+**Antes de validar:** conferir a migração 006 com `db:status` no banco de Preview e configurar `ABLY_API_KEY` no ambiente Preview. Não incluir essa chave em `NEXT_PUBLIC_`. Para testar use duas contas em navegadores diferentes e valide que não é possível ler uma conversa de terceiros. Não publicar em Production sem a migração correspondente.
 
 ### Operações nas mensagens (7G.3)
 
-Responder, apagar para mim, apagar para todos (somente autor) e limpar histórico apenas da própria conta. Antes de implantar esta versão, executar **`db/007_chat_acoes.sql`** no Neon do ambiente correto. Os eventos Ably mantêm seus canais e credenciais anteriores.
+Responder, apagar para mim, apagar para todos (somente autor) e limpar histórico apenas da própria conta. Antes de implantar esta versão, confirmar que **`db/007_chat_acoes.sql`** já consta no histórico de migrações do Neon correspondente. Os eventos Ably mantêm seus canais e credenciais anteriores.

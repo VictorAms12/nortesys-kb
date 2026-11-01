@@ -10,7 +10,7 @@ export default async function TodosArtigos(){
   const artigos=await carregarTodosArtigos(sessao.papel);
   return <main id="conteudo" className="conteiner py-9 sm:py-12">
     <nav className="trilha" aria-label="Caminho de navegação"><Link href="/">Início</Link><span>/</span><span>Artigos</span></nav>
-    <div className="cabecalho-pagina"><div><p className="sobre-titulo">Biblioteca técnica</p><h1 className="titulo-pagina mt-2">Todos os artigos</h1><p className="mt-3 texto-introducao">Consulte procedimentos publicados e, conforme seu perfil, conteúdos em revisão. Filtre por sistema, tag, nível ou status.</p></div><Link className="botao-secundario" href="/busca">Buscar por código de erro →</Link></div>
+    <div className="cabecalho-pagina"><div><h1 className="titulo-pagina">Todos os artigos</h1><p className="mt-3 texto-introducao">Consulte e filtre procedimentos técnicos da base.</p></div><Link className="botao-secundario" href="/busca">Buscar por código de erro</Link></div>
     <FiltrosCategoria artigos={artigos.map(resumoArtigo)} hoje={hojeISO()}/>
   </main>;
 }

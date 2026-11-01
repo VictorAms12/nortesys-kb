@@ -4,6 +4,7 @@ import {NOME_COOKIE,obterSessao} from "../../../../lib/sessao";
 import {verificarOrigemPost} from "../../../../lib/origem";
 import {executarManutencao} from "../../../../lib/manutencao";
 import {registrarAuditoriaSegura} from "../../../../lib/auditoria-eventos";
+import {lerTextoLimitado} from "../../../../lib/formulario-limitado";
 export const runtime="nodejs";export const dynamic="force-dynamic";
 function voltar(req:NextRequest,aviso:string){
  const url=new URL("/admin/manutencao",req.url);url.searchParams.set("aviso",aviso);
@@ -18,7 +19,7 @@ export async function POST(req:NextRequest){
  (declarado!==null&&(!/^\d+$/.test(declarado)||Number(declarado)>250)))
  return new NextResponse("Dados inválidos.",{status:400});
  try{
-  const body=await req.text();if(body.length>250)return new NextResponse("Dados inválidos.",{status:400});
+  const body=await lerTextoLimitado(req,250,"Dados inválidos.");
   const form=new URLSearchParams(body);
   if(form.get("acao")!=="executar")return new NextResponse("Ação inválida.",{status:400});
   const resultado=await executarManutencao();

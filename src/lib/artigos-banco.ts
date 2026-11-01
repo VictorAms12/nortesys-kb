@@ -1,5 +1,7 @@
 import "server-only";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
+import { TAG_INDICE_BUSCA } from "./tags-cache";
 import { consultar } from "./banco";
 import { carregarArtigos } from "./artigos";
 import { combinarArtigos } from "./artigos-visibilidade";
@@ -34,9 +36,14 @@ export async function listarVersoesArtigo(id: string): Promise<VersaoArtigo[]> {
     FROM kb_artigo_versoes v LEFT JOIN kb_usuarios u ON u.id=v.editor_id
     WHERE v.artigo_id=$1 ORDER BY v.versao DESC LIMIT 50`, [id]);
 }
-// Cache por requisição: nenhuma sessão ou publicação fica retida entre acessos.
-export const carregarTodosArtigos = cache(async (papel: Papel): Promise<Artigo[]> => {
+// Dados compartimentalizados por papel: rascunhos nunca entram no cache de leitores.
+// A edição invalida a mesma tag usada pela busca. O cache externo dura até 5 min
+// para alterações feitas diretamente no banco; o cache React evita duplicar
+// a consulta entre generateMetadata, layout e página dentro da mesma requisição.
+const carregarArtigosCache = unstable_cache(async (papel: Papel): Promise<Artigo[]> => {
   const locais = carregarArtigos();
   const registros = await listarRegistrosArtigos();
   return combinarArtigos(locais, registros, papel);
-});
+}, ["kb-artigos-por-papel-v1"], {tags:[TAG_INDICE_BUSCA], revalidate:300});
+
+export const carregarTodosArtigos = cache((papel: Papel) => carregarArtigosCache(papel));

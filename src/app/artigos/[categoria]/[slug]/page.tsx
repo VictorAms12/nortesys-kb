@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound,redirect } from "next/navigation";
+import { resolverAliasArtigo } from "../../../../lib/artigos-alias";
 import { exigirSessao } from "../../../../lib/autenticacao-servidor";
 import { encontrarCategoria } from "../../../../../config/categorias";
 import { AcoesArtigo } from "../../../../components/acoes-artigo";
@@ -14,6 +15,7 @@ import { favoritoAtivo } from "../../../../lib/interacoes";
 import { feedbackUsuario } from "../../../../lib/feedback-artigo";
 import { migracao009Aplicada } from "../../../../lib/migracao-009";
 import { FeedbackArtigo } from "../../../../components/feedback-artigo";
+import { SumarioArtigo } from "../../../../components/sumario-artigo";
 import { InteracoesArtigo } from "../../../../components/interacoes-artigo";
 import { listarAnexosPorChave } from "../../../../lib/anexos";
 import { sugerirArtigosRelacionados } from "../../../../lib/artigos-relacionados";
@@ -23,94 +25,86 @@ type Props = { params: Promise<{ categoria: string; slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const sessao = await exigirSessao();
   const { categoria, slug } = await params;
-  const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === categoria && a.slug === slug);
-  return { title: artigo ? `${artigo.titulo} | Nortesys KB` : "Artigo não encontrado", description: artigo?.resumo };
+  const artigos=await carregarTodosArtigos(sessao.papel);
+  const url=`/artigos/${categoria}/${slug}`;
+  let artigo=artigos.find(a=>a.url===url);
+  if(!artigo){
+   const destino=await resolverAliasArtigo(url,sessao.papel);
+   artigo=destino?artigos.find(a=>a.url===destino):undefined;
+  }
+  return {title:artigo?`${artigo.titulo} | Nortesys KB`:"Artigo não encontrado",description:artigo?.resumo};
 }
 
 export default async function PaginaArtigo({ params }: Props) {
   const sessao = await exigirSessao();
   const { categoria: slugCategoria, slug } = await params;
-  const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === slugCategoria && a.slug === slug);
-  if (!artigo) notFound();
+  const artigos=await carregarTodosArtigos(sessao.papel);
+  const url=`/artigos/${slugCategoria}/${slug}`;
+  const artigo=artigos.find(a=>a.url===url);
+  if(!artigo){
+   const destino=await resolverAliasArtigo(url,sessao.papel);
+   if(destino&&artigos.some(a=>a.url===destino))redirect(destino);
+   notFound();
+  }
   const categoria = encontrarCategoria(artigo.categoria);
-  const relacionados = sugerirArtigosRelacionados(artigo, await carregarTodosArtigos(sessao.papel));
+  const relacionados = sugerirArtigosRelacionados(artigo, artigos);
   const [favorito, anexos, feedbackDisponivel] = await Promise.all([favoritoAtivo(sessao.id,artigo.url), listarAnexosPorChave(artigo.categoria,artigo.slug), migracao009Aplicada()]);
   const feedback = feedbackDisponivel ? await feedbackUsuario(sessao.id,artigo.url) : null;
   const revisaoVencida = artigoPrecisaRevisao(artigo, hojeISO());
   const passos = artigo.tipo === "solucao" ? extrairPassos(artigo.secoes[3]?.conteudo ?? "") : artigo.tipo === "tutorial" ? extrairPassos(artigo.secoes[2]?.conteudo ?? "") : "";
-  return (
-    <main id="conteudo" className="conteiner py-8 sm:py-11">
-      <nav aria-label="Caminho de navegação" className="trilha no-print">
-        <Link href="/">Início</Link><span aria-hidden="true">/</span>
-        <Link href={`/categorias/${artigo.categoria}`}>{categoria?.nome ?? artigo.categoria}</Link><span aria-hidden="true">/</span>
-        <span aria-current="page" className="max-w-52 truncate">{artigo.titulo}</span>
-      </nav>
-      <div className="mb-8 max-w-4xl">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="etiqueta">{categoria?.icone} {categoria?.nome}</span>
-          <span className="etiqueta">{artigo.nivel}</span><span className="etiqueta">{TIPOS_CONTEUDO[artigo.tipo].nome}</span><EtiquetaStatus status={artigo.status} />
-        </div>
-        <h1 className="titulo-pagina max-w-4xl">{artigo.titulo}</h1>
-        <p className="mt-3 max-w-3xl text-lg leading-8 text-[var(--muted)]">{artigo.resumo}</p>
-        {Boolean(artigo.codigosErro?.length) && <div className="mt-5 flex flex-wrap items-center gap-2 text-sm"><strong>Códigos de erro:</strong>{artigo.codigosErro?.map(c=><code className="etiqueta" key={c}>{c}</code>)}</div>}
-        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[var(--muted)]">
-          <span>Atualizado <time dateTime={artigo.atualizadoEm}>{formatarData(artigo.atualizadoEm)}</time></span>
-          <span>Autor: {artigo.autor}</span><span>Sistema: {artigo.sistema}</span>
-        </div>
-        {artigo.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-2">{artigo.tags.map(t=><span key={t} className="etiqueta">#{t}</span>)}</div>}
-      </div>
-      {(revisaoVencida || artigo.status === "obsoleto" || artigo.status === "rascunho") &&
-        <div className="aviso-artigo mb-7" role="alert">
-          <strong>{artigo.status === "obsoleto" ? "Artigo obsoleto" : revisaoVencida ? "Prazo de revisão vencido" : "Conteúdo em rascunho"}</strong>
-          <p className="mt-1">{artigo.status === "obsoleto" ? "Este procedimento não deve ser aplicado sem validação técnica." : revisaoVencida ? `Revisão prevista até ${formatarData(artigo.revisarAte!)}. Confirme as orientações com a equipe responsável e a fonte oficial vigente.` : "Este artigo ainda não foi revisado pela equipe. Confirme o procedimento antes de aplicá-lo."}</p>
-        </div>
-      }
-      <div className="mb-4"><InteracoesArtigo url={artigo.url} favoritoInicial={favorito}/></div>
-      <AcoesArtigo passos={passos} />
-      <div className="grid items-start gap-10 xl:grid-cols-[minmax(0,1fr)_250px]">
-        <div className="min-w-0">
-          {artigo.secoes.map((secao, indice) => (
-            <section className="secao-artigo scroll-mt-28" id={`secao-${indice + 1}`} key={secao.titulo} aria-labelledby={`titulo-secao-${indice+1}`}>
-              <div className="mb-4 flex items-baseline gap-3">
-                <span className="num-secao" aria-hidden="true">{String(indice + 1).padStart(2,"0")}</span>
-                <h2 id={`titulo-secao-${indice+1}`} className="text-xl font-bold tracking-tight sm:text-2xl">{secao.titulo}</h2>
-              </div>
-              <ConteudoMarkdown markdown={secao.conteudo} />
-            </section>
-          ))}
-          {anexos.length>0 && <section className="mt-8 rounded-xl border border-[var(--border)] p-5" aria-labelledby="titulo-documentos">
-            <h2 id="titulo-documentos" className="mb-3 text-lg font-bold">Documentos anexos</h2>
-            <ul className="grid gap-2">{anexos.map(a=><li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] p-3">
-              <div className="min-w-0"><p className="break-all text-sm font-semibold">{a.nome}</p>
-                <p className="text-xs text-[var(--muted)]">PDF · {(a.tamanho/1024/1024).toFixed(2)} MB</p></div>
-              <div className="flex flex-wrap gap-2">
-                <a href={`/api/anexos/${a.id}?visualizar=1`} target="_blank" rel="noopener noreferrer" className="botao-secundario shrink-0" aria-label={`Visualizar ${a.nome} em nova aba`}>Visualizar</a>
-                <a href={`/api/anexos/${a.id}`} className="botao-secundario shrink-0">Baixar PDF</a>
-              </div>
-            </li>)}</ul>
-          </section>}
-          {relacionados.length>0 && <section className="mt-8 rounded-xl border border-[var(--border)] p-5" aria-labelledby="relacionados">
-            <h2 id="relacionados" className="mb-3 text-lg font-bold">Você também pode consultar</h2>
-            <ul className="grid gap-2">{relacionados.map(outro=><li key={outro.url}>
-              <Link className="block rounded-lg border border-[var(--border)] p-3 hover:border-[var(--primary)]" href={outro.url}>
-                <strong>{outro.titulo}</strong><span className="mt-1 block text-sm text-[var(--muted)]">{outro.resumo}</span>
-              </Link>
-            </li>)}</ul>
-          </section>}
-          {Boolean(artigo.fonteOficial?.length) && <section className="mt-8 rounded-xl border border-[var(--border)] p-5">
-            <h2 className="mb-2 text-lg font-bold">Fontes oficiais para conferência</h2>
-            <ul className="list-inside list-disc space-y-2 break-all text-sm">{artigo.fonteOficial?.map((url)=><li key={url}><a href={url} target="_blank" rel="noopener noreferrer">{url}</a></li>)}</ul>
-          </section>}
-          {feedbackDisponivel && <FeedbackArtigo url={artigo.url} inicial={feedback}/>}
-        </div>
-        <aside className="sumario-lateral no-print xl:sticky xl:top-24" aria-label="Sumário do artigo">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-[var(--muted)]">Neste artigo</h2>
-          <nav><ol className="space-y-1">{artigo.secoes.map((s, i)=><li key={s.titulo}>
-            <a className="link-sumario" href={`#secao-${i+1}`}><span className="mr-2 text-[var(--muted)]">{i+1}.</span>{s.titulo}</a>
-          </li>)}</ol></nav>
-          {artigo.revisarAte && <p className="mt-5 border-t border-[var(--border)] pt-4 text-xs text-[var(--muted)]">Revisar até {formatarData(artigo.revisarAte)}</p>}
-        </aside>
-      </div>
-    </main>
-  );
+  return <main id="conteudo" className="conteiner pagina-artigo py-8">
+   <nav aria-label="Caminho de navegação" className="trilha no-print">
+    <Link href="/">Início</Link><span aria-hidden="true">/</span>
+    <Link href={"/categorias/"+artigo.categoria}>{categoria?.nome??artigo.categoria}</Link>
+    <span aria-hidden="true">/</span><span aria-current="page" className="truncate max-w-72">{artigo.titulo}</span>
+   </nav>
+   <header className="cabecalho-artigo">
+    <h1 className="titulo-pagina">{artigo.titulo}</h1>
+    <p className="resumo-artigo">{artigo.resumo}</p>
+    <div className="metadados-linha metadados-artigo">
+     <EtiquetaStatus status={artigo.status}/>
+     <span className="indicador-nivel" data-nivel={artigo.nivel}>{artigo.nivel}</span><span aria-hidden="true">·</span>
+     <span>{TIPOS_CONTEUDO[artigo.tipo].nome}</span><span aria-hidden="true">·</span>
+     <span>{artigo.sistema}</span><span aria-hidden="true">·</span>
+     <time dateTime={artigo.atualizadoEm}>Atualizado {formatarData(artigo.atualizadoEm)}</time>
+     {artigo.revisarAte&&<><span aria-hidden="true">·</span><span>Revisar até {formatarData(artigo.revisarAte)}</span></>}
+    </div>
+    {Boolean(artigo.codigosErro?.length)&&<div className="codigos-artigo">
+      <span>Códigos de erro</span>{artigo.codigosErro?.map(c=><code key={c} className="codigo-erro">{c}</code>)}
+    </div>}
+    {artigo.tags.length>0&&<p className="tags-artigo">Tags: {artigo.tags.join(", ")}</p>}
+   </header>
+   {(revisaoVencida||artigo.status==="obsoleto"||artigo.status==="rascunho")&&
+    <div className="aviso-artigo" role="alert"><strong>{artigo.status==="obsoleto"?"Artigo obsoleto":revisaoVencida?"Revisão vencida":"Artigo em rascunho"}</strong>
+     <p>{artigo.status==="obsoleto"?"Não aplique este procedimento sem validação técnica.":
+       revisaoVencida?"Confirme as orientações e a documentação oficial antes de aplicar.":"O procedimento ainda não passou por revisão."}</p>
+    </div>}
+   <div className="barra-acoes-artigo no-print"><InteracoesArtigo url={artigo.url} favoritoInicial={favorito}/><AcoesArtigo passos={passos}/></div>
+   <div className="layout-artigo">
+    <article className="leitura-artigo">
+     {artigo.secoes.map((secao,i)=><section className="secao-artigo" id={"secao-"+(i+1)} key={secao.titulo}>
+      <h2 id={"titulo-secao-"+(i+1)}>{secao.titulo}</h2>
+      <ConteudoMarkdown markdown={secao.conteudo}/>
+     </section>)}
+     {anexos.length>0&&<section className="lista-complementar" aria-labelledby="titulo-documentos">
+      <h2 id="titulo-documentos">Documentos anexos</h2>
+      <ul>{anexos.map(a=><li key={a.id}>
+       <div><strong>{a.nome}</strong><small>PDF · {(a.tamanho/1024/1024).toFixed(2)} MB</small></div>
+       <div className="links-anexo"><a href={"/api/anexos/"+a.id+"?visualizar=1"} target="_blank" rel="noopener noreferrer">Visualizar</a>
+        <a href={"/api/anexos/"+a.id}>Baixar</a></div>
+      </li>)}</ul>
+     </section>}
+     {relacionados.length>0&&<section className="lista-complementar" aria-labelledby="titulo-relacionados">
+      <h2 id="titulo-relacionados">Artigos relacionados</h2>
+      <ul>{relacionados.map(a=><li key={a.url}><Link href={a.url}><strong>{a.titulo}</strong><small>{a.resumo}</small></Link></li>)}</ul>
+     </section>}
+     {Boolean(artigo.fonteOficial?.length)&&<section className="lista-complementar" aria-labelledby="titulo-fontes">
+      <h2 id="titulo-fontes">Fontes oficiais</h2>
+      <ul>{artigo.fonteOficial?.map(url=><li key={url}><a href={url} target="_blank" rel="noopener noreferrer" className="break-all">{url}</a></li>)}</ul>
+     </section>}
+     {feedbackDisponivel&&<FeedbackArtigo url={artigo.url} inicial={feedback}/>}
+    </article>
+    <SumarioArtigo secoes={artigo.secoes.map(s=>s.titulo)}/>
+   </div>
+  </main>;
 }

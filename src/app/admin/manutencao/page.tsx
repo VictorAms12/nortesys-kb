@@ -9,14 +9,13 @@ export default async function Manutencao({searchParams}:Props){
  await exigirPapel(["administrador"]);
  const [{aviso},status]=await Promise.all([searchParams,situacaoManutencao()]);
  return <section className="space-y-6">
-  <div><p className="sobre-titulo">Fase 7H</p><h2 className="titulo-secao">Manutenção e estabilidade</h2>
+  <div><h2 className="titulo-secao">Manutenção e estabilidade</h2>
    <p className="mt-2 text-sm text-[var(--muted)]">Rotinas manuais e seguras. Arquivos de mensagens ainda acessíveis não são excluídos.</p></div>
   {!status.habilitada&&<p className="aviso-artigo p-4 text-sm" role="status">Migração 009 pendente no Neon. As ferramentas de manutenção permanecerão desativadas até a instalação. O chat existente continua funcionando.</p>}
   {aviso&&<div role="status" className="cartao p-4 text-sm">{aviso==="concluida"?"Manutenção concluída.":aviso==="parcial"?"Manutenção parcial: alguns arquivos precisarão de nova tentativa.":"Não foi possível concluir a manutenção."}</div>}
-  <div className="grid gap-3 sm:grid-cols-3">
+  <div className="admin-resumo-grade">
    {[["Imagens na fila de exclusão",status.fila],["Disponíveis para nova tentativa",status.pendentes],["Sessões expiradas",status.sessoesExpiradas]].map(([nome,valor])=>
-    <div className="cartao p-5" key={nome}><strong className="block text-3xl tabular-nums">{valor}</strong>
-     <span className="text-sm text-[var(--muted)]">{nome}</span></div>)}
+    <div className="admin-resumo-item" key={nome}><span>{nome}</span><strong className="tabular-nums">{valor}</strong></div>)}
   </div>
   <div className="cartao space-y-3 p-5"><h3 className="text-lg font-bold">Executar manutenção</h3>
    <p className="text-sm leading-6 text-[var(--muted)]">Remove sessões e tentativas de login expiradas e processa até dez arquivos da fila de mensagens apagadas para todos. Falhas permanecem enfileiradas para repetição. Não remove histórico, feedback nem imagens visíveis.</p>

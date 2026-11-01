@@ -1,7 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { TAG_INDICE_BUSCA } from "../../../../lib/cache-busca";
 import matter from "gray-matter";
 import { z } from "zod";
+import { ErroFormularioLimitado, lerFormularioUrlEncodedLimitado } from "../../../../lib/formulario-limitado";
 import { NOME_COOKIE, obterSessao } from "../../../../lib/sessao";
 import { verificarOrigemPost } from "../../../../lib/origem";
 import { consultar } from "../../../../lib/banco";
@@ -20,11 +23,10 @@ export async function POST(req:NextRequest) {
   if (!verificarOrigemPost(req.headers).valida) return new NextResponse("Origem inválida",{status:403});
   const conta=await obterSessao(req.cookies.get(NOME_COOKIE)?.value);
   if (!conta || !["administrador","editor"].includes(conta.papel)) return new NextResponse("Acesso negado",{status:403});
-  const tamanho=Number(req.headers.get("content-length")??0);
-  if (!req.headers.get("content-type")?.includes("application/x-www-form-urlencoded") || tamanho>300000) return new NextResponse("Formulário inválido",{status:400});
+  if (!req.headers.get("content-type")?.includes("application/x-www-form-urlencoded")) return new NextResponse("Formulário inválido",{status:400});
   let id:string|undefined;
   try {
-    const form=await req.formData();
+    const form=await lerFormularioUrlEncodedLimitado(req,300000);
     const acao=form.get("acao");
     id=typeof form.get("id")==="string"?String(form.get("id")):undefined;
     if (acao==="arquivar") {
@@ -40,6 +42,7 @@ export async function POST(req:NextRequest) {
           SELECT id,versao,conteudo,'arquivado',$2 FROM alterado RETURNING artigo_id
         ) SELECT artigo_id AS id FROM versao`,[id,conta.id,atual.versao]);
       if (!atualizado.length) return voltar(req,"conflito",id);
+      revalidateTag(TAG_INDICE_BUSCA, { expire: 0 });
       await registrarEvento(conta.id,"artigo_arquivado",id);
       return NextResponse.redirect(new URL("/admin/artigos?aviso=arquivado",req.url),{status:303});
     }
@@ -61,6 +64,7 @@ export async function POST(req:NextRequest) {
         ) SELECT artigo_id AS id FROM versao`,[categoria,slug,titulo,campos.status,campos.conteudo,conta.id]);
       id=result[0]?.id;
       if (!id) return voltar(req,"indisponivel");
+      revalidateTag(TAG_INDICE_BUSCA, { expire: 0 });
       await registrarEvento(conta.id,"artigo_criado",id);
     } else {
       if (!id || !idArtigoValido(id)) return voltar(req,"dados");
@@ -75,10 +79,12 @@ export async function POST(req:NextRequest) {
           SELECT id,versao,conteudo,'editado',$7 FROM alterado RETURNING artigo_id
         ) SELECT artigo_id AS id FROM versao`,[id,categoria,slug,titulo,campos.status,campos.conteudo,conta.id,versao]);
       if (!result.length) return voltar(req,"conflito",id);
+      revalidateTag(TAG_INDICE_BUSCA, { expire: 0 });
       await registrarEvento(conta.id,"artigo_editado",id);
     }
     return voltar(req,"salvo",id);
   } catch(error) {
+    if (error instanceof ErroFormularioLimitado) return new NextResponse("Formulário inválido",{status:400});
     if (error && typeof error==="object" && "constraint" in error && error.constraint==="kb_imagens_referencia") return voltar(req,"imagens",id);
     if (error && typeof error==="object" && "code" in error && error.code==="23505") return voltar(req,"duplicado",id);
     if (error instanceof z.ZodError || error instanceof Error && error.name==="ErroConteudo") return voltar(req,"validacao",id);

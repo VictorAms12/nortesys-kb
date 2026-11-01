@@ -3,8 +3,9 @@ import {NextResponse} from "next/server";
 import {NOME_COOKIE,obterSessao} from "../../../lib/sessao";
 import {verificarOrigemPost} from "../../../lib/origem";
 import {ablyConfigurado} from "../../../lib/chat-ably";
-import {estadoChat,abrirConversaPrivada,enviarMensagem,marcarLida,atualizarPresenca,avisarDigitando,apagarMensagemParaMim,apagarMensagemParaTodos,limparConversaParaMim,ErroChat} from "../../../lib/chat-banco";
+import {estadoChat,abrirConversaPrivada,enviarMensagem,marcarLida,atualizarPresenca,avisarDigitando,apagarMensagemParaMim,apagarMensagemParaTodos,limparConversaParaMim,definirSilencio,ErroChat} from "../../../lib/chat-banco";
 import {CHAT_UUID} from "../../../lib/chat-tipos";
+import {ErroFormularioLimitado,lerTextoLimitado} from "../../../lib/formulario-limitado";
 export const runtime="nodejs";export const dynamic="force-dynamic";
 const headers={"Cache-Control":"private, no-store"};
 function erro(mensagem:string,status:number){return NextResponse.json({erro:mensagem},{status,headers});}
@@ -21,12 +22,9 @@ export async function POST(req:NextRequest){
  if(!verificarOrigemPost(req.headers).valida)return erro("Origem inválida.",403);
  const u=await autenticado(req);if(!u)return erro("Sessão expirada.",401);
  if(!req.headers.get("content-type")?.includes("application/json"))return erro("Envie JSON.",415);
- const tamanho=Number(req.headers.get("content-length")??0);
- if(!Number.isFinite(tamanho)||tamanho>6000)return erro("Conteúdo muito grande.",413);
  let b:unknown;try{
-  const s=await req.text();if(s.length>6000)return erro("Conteúdo muito grande.",413);
-  b=JSON.parse(s);
- }catch{return erro("JSON inválido.",400);}
+  b=JSON.parse(await lerTextoLimitado(req,6000,"Conteúdo muito grande."));
+ }catch(e){if(e instanceof ErroFormularioLimitado)return erro(e.message,e.status);return erro("JSON inválido.",400);}
  if(!b||typeof b!=="object")return erro("Dados inválidos.",400);
  const dados=b as Record<string,unknown>;
  try{
@@ -61,9 +59,18 @@ export async function POST(req:NextRequest){
      await limparConversaParaMim(u.id,dados.conversa);
      return NextResponse.json({ok:true},{headers});
    }
+   case "silenciar":{
+     if(typeof dados.conversa!=="string"||typeof dados.silenciada!=="boolean")
+       return erro("Dados inválidos.",400);
+     await definirSilencio(u.id,dados.conversa,dados.silenciada);
+     return NextResponse.json({ok:true},{headers});
+   }
    case "lido":{
-     if(typeof dados.conversa!=="string")return erro("Conversa inválida.",400);
-     await marcarLida(u.id,dados.conversa);return NextResponse.json({ok:true},{headers});
+     if(typeof dados.conversa!=="string"||typeof dados.ateId!=="number"||
+       !Number.isSafeInteger(dados.ateId)||dados.ateId<=0)
+       return erro("Leitura inválida.",400);
+     await marcarLida(u.id,dados.conversa,dados.ateId);
+     return NextResponse.json({ok:true},{headers});
    }
    case "presenca":{
      if(typeof dados.ativo!=="boolean")return erro("Estado inválido.",400);

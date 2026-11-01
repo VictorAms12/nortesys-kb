@@ -2,16 +2,49 @@ import "server-only";
 import {del} from "@vercel/blob";
 import {consultar} from "./banco";
 import {migracao009Aplicada} from "./migracao-009";
+import {LOTE_MANUTENCAO,RODADAS_RETENCAO,SQL_LIMPAR_TEMPORARIOS,SQL_LIMPAR_NOTIFICACOES,
+ SQL_LIMPAR_COTAS_AVATAR,SQL_LIMPAR_COTAS_BUSCA} from "./manutencao-sql";
 
 type Fila={caminho:string};
+function diasRetencao():number {
+ const valor=Number(process.env.NOTIFICACOES_RETENCAO_DIAS??30);
+ return Number.isSafeInteger(valor)&&valor>=7&&valor<=365?valor:30;
+}
 /** Rotina manual, lote pequeno e reserva por 2 minutos para evitar exclusões concorrentes. */
-export async function executarManutencao():Promise<{limpas:number;falhas:number;temporarios:number}>{
+export async function executarManutencao():Promise<{limpas:number;falhas:number;temporarios:number;notificacoes:number;limites:number}>{
  if(!(await migracao009Aplicada()))throw Error("Migração 009 pendente.");
- const temporarios=await consultar<{total:number}>(`WITH sessao AS (
- DELETE FROM kb_sessoes WHERE expira_em<NOW() RETURNING token_hash
- ), tentativas AS (
- DELETE FROM kb_login_tentativas WHERE expira_em<NOW() RETURNING chave
- ) SELECT ((SELECT COUNT(*) FROM sessao)+(SELECT COUNT(*) FROM tentativas))::int AS total`);
+ /** Limite máximo por execução: 5 × 200 por tipo, sem varreduras DELETE ilimitadas. */
+ async function limparEmLotes(query:string,parametros:unknown[]):Promise<number>{
+  let total=0;
+  for(let rodada=0;rodada<RODADAS_RETENCAO;rodada++){
+   const linhas=await consultar<{total:number}>(query,parametros);
+   const quantidade=linhas[0]?.total??0;
+   total+=quantidade;
+   if(quantidade<LOTE_MANUTENCAO)break;
+  }
+  return total;
+ }
+ // A consulta soma duas filas (sessões e tentativas), que podem remover 200 itens cada.
+ let temporarios=0;
+ for(let rodada=0;rodada<RODADAS_RETENCAO;rodada++){
+  const linhas=await consultar<{total:number}>(SQL_LIMPAR_TEMPORARIOS,[LOTE_MANUTENCAO]);
+  const quantidade=linhas[0]?.total??0;
+  temporarios+=quantidade;
+  if(quantidade<LOTE_MANUTENCAO)break;
+ }
+ // Compatibilidade: um ambiente que ainda não recebeu 010/013 continua
+ // apto a limpar sessões e imagens, sem tentar consultar tabelas ausentes.
+ const [recursos]=await consultar<{notificacoes:boolean;avatar:boolean;busca:boolean}>(`
+  SELECT to_regclass('public.kb_notificacoes') IS NOT NULL AS notificacoes,
+         to_regclass('public.kb_avatar_limites') IS NOT NULL AS avatar,
+         to_regclass('public.kb_busca_sugestoes_limites') IS NOT NULL AS busca`);
+ const notificacoes=recursos?.notificacoes
+  ?await limparEmLotes(SQL_LIMPAR_NOTIFICACOES,[diasRetencao(),LOTE_MANUTENCAO]):0;
+ const [limitesAvatar,limitesBusca]=await Promise.all([
+  recursos?.avatar?limparEmLotes(SQL_LIMPAR_COTAS_AVATAR,[LOTE_MANUTENCAO]):Promise.resolve(0),
+  recursos?.busca?limparEmLotes(SQL_LIMPAR_COTAS_BUSCA,[LOTE_MANUTENCAO]):Promise.resolve(0)
+ ]);
+ const limites=limitesAvatar+limitesBusca;
  const fila=await consultar<Fila>(`WITH candidatos AS (
   SELECT caminho FROM kb_chat_imagens_limpeza
    WHERE reservada_ate IS NULL OR reservada_ate<NOW()
@@ -36,7 +69,7 @@ export async function executarManutencao():Promise<{limpas:number;falhas:number;
    // A reserva vence e o registro continua disponível para nova tentativa.
   }
  }
- return {limpas,falhas,temporarios:temporarios[0]?.total??0};
+ return {limpas,falhas,temporarios,notificacoes,limites};
 }
 export async function situacaoManutencao(){
  const habilitada=await migracao009Aplicada();

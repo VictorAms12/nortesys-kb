@@ -23,7 +23,7 @@ export function FiltrosCategoria({ artigos, hoje }: Props) {
   const filtrosAtivos = Boolean(tag || sistema || nivel || status || tipo);
   return (
     <section aria-label="Artigos e filtros">
-      <div className="cartao mb-5 grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="filtros-biblioteca">
         <label className="campo-filtro">Tag
           <select value={tag} onChange={(e)=>setTag(e.target.value)}><option value="">Todas as tags</option>{tags.map((t)=><option value={t} key={t}>{t}</option>)}</select>
         </label>
@@ -44,11 +44,11 @@ export function FiltrosCategoria({ artigos, hoje }: Props) {
         </label>
       </div>
       <div className="mb-4 flex items-center justify-between gap-4">
-        <p className="text-sm text-[var(--muted)]" role="status" aria-live="polite">{filtrados.length} de {artigos.length} artigo(s)</p>
+        <p className="text-sm text-[var(--muted)]" role="status" aria-live="polite">{filtrados.length} de {artigos.length} {artigos.length===1?"artigo":"artigos"}</p>
         {filtrosAtivos && <button className="botao-secundario" type="button" onClick={()=>{setTag("");setSistema("");setNivel("");setStatus("");setTipo("");setOrdem("recentes");}}>Limpar filtros</button>}
       </div>
-      {filtrados.length ? <div key={JSON.stringify([tag,sistema,nivel,status,tipo,ordem])} className="lista-animada grid gap-4 lg:grid-cols-2">{filtrados.map(a=><CartaoArtigo key={a.url} artigo={a} hoje={hoje}/>)}</div> :
-        <div className="cartao p-8 text-center"><p className="text-lg font-semibold">Nenhum artigo com esses filtros.</p><p className="mt-2 text-sm text-[var(--muted)]">Tente remover um filtro ou escolha outra categoria.</p></div>}
+      {filtrados.length ? <div key={JSON.stringify([tag,sistema,nivel,status,tipo,ordem])} className="lista-artigos">{filtrados.map(a=><CartaoArtigo key={a.url} artigo={a} hoje={hoje}/>)}</div> :
+        <div className="estado-vazio"><p className="text-lg font-semibold">Nenhum artigo com esses filtros.</p><p className="mt-2 text-sm text-[var(--muted)]">Tente remover um filtro ou escolha outra categoria.</p></div>}
     </section>
   );
 }

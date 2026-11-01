@@ -17,9 +17,29 @@ export default async function Dashboard() {
     {label:"Rascunhos",valor:artigos[0]?.rascunhos??0,icone:"arquivo" as const},
     ...(usuario.papel==="administrador"?[{label:"Usuários ativos",valor:usuarios[0]?.total??0,icone:"usuarios" as const}]:[]),
   ];
-  return <div className="space-y-8">
-    <section aria-label="Indicadores administrativos" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{indicadores.map(ind=><div key={ind.label} className="cartao indicador-admin"><span className="icone-indicador"><IconeInterface nome={ind.icone}/></span><strong>{ind.valor}</strong><span className="text-sm text-[var(--muted)]">{ind.label}</span></div>)}</section>
-    <section className="cartao p-6"><div className="cabecalho-secao"><div><p className="sobre-titulo">Acesso rápido</p><h2 className="titulo-secao">Gerenciar a base</h2></div></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href="/admin/artigos" className="atalho-admin"><IconeInterface nome="artigos"/><span><strong>Artigos e versões</strong><small>Criar, revisar, publicar e arquivar conteúdos</small></span><IconeInterface nome="seta"/></Link>{usuario.papel==="administrador"&&<><Link href="/admin/usuarios" className="atalho-admin"><IconeInterface nome="usuarios"/><span><strong>Usuários</strong><small>Contas, acesso e permissões</small></span><IconeInterface nome="seta"/></Link><Link href="/admin/auditoria" className="atalho-admin"><IconeInterface nome="auditoria"/><span><strong>Auditoria</strong><small>Consultar ações administrativas recentes</small></span><IconeInterface nome="seta"/></Link><Link href="/admin/indicadores" className="atalho-admin"><IconeInterface nome="painel"/><span><strong>Indicadores e feedback</strong><small>Consultas, avaliações e lacunas de pesquisa</small></span><IconeInterface nome="seta"/></Link><Link href="/admin/manutencao" className="atalho-admin"><IconeInterface nome="auditoria"/><span><strong>Manutenção</strong><small>Fila de imagens e limpeza segura de dados expirados</small></span><IconeInterface nome="seta"/></Link></>}</div></section>
-    <p className="text-sm leading-7 text-[var(--muted)]">Indicadores do banco Neon. Os artigos históricos em Markdown continuam na biblioteca e não entram na contagem de artigos do banco.</p>
+  return <div className="space-y-7">
+   <section aria-label="Indicadores administrativos" className="admin-resumo-grade">
+    {indicadores.map(ind=><div className="admin-resumo-item" key={ind.label}>
+     <span>{ind.label}</span><strong className="tabular-nums">{ind.valor}</strong>
+    </div>)}
+   </section>
+   <section className="painel-lista" aria-labelledby="gerenciar-base">
+    <div className="cabecalho-lista"><h2 id="gerenciar-base">Gerenciar a base</h2></div>
+    <div className="admin-acessos-lista">
+     <Link href="/admin/artigos" className="admin-acesso"><IconeInterface nome="artigos"/>
+      <span><strong>Artigos e versões</strong><small>Criar, revisar, publicar e arquivar</small></span></Link>
+     {usuario.papel==="administrador"&&<>
+      <Link href="/admin/usuarios" className="admin-acesso"><IconeInterface nome="usuarios"/>
+       <span><strong>Usuários</strong><small>Contas, acesso e permissões</small></span></Link>
+      <Link href="/admin/auditoria" className="admin-acesso"><IconeInterface nome="auditoria"/>
+       <span><strong>Auditoria</strong><small>Ações administrativas recentes</small></span></Link>
+      <Link href="/admin/indicadores" className="admin-acesso"><IconeInterface nome="indicadores"/>
+       <span><strong>Indicadores e feedback</strong><small>Consultas, avaliações e lacunas</small></span></Link>
+      <Link href="/admin/manutencao" className="admin-acesso"><IconeInterface nome="manutencao"/>
+       <span><strong>Manutenção</strong><small>Limpeza segura e fila de imagens</small></span></Link>
+     </>}
+    </div>
+   </section>
+   <p className="text-xs text-[var(--muted)]">Indicadores do Neon; artigos históricos em Markdown não entram na contagem do banco.</p>
   </div>;
 }

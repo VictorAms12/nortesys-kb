@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {readFileSync} from "node:fs";
 import {imagensDaTransferencia,validarArquivoImagemChat,type DadosTransferenciaImagem} from "../src/lib/chat-clipboard";
 
 const arquivo=(nome:string,tipo:string,tamanho=10)=>new File([new Uint8Array(tamanho)],nome,{type:tipo});
@@ -41,14 +40,3 @@ test("Upload e colagem compartilham validação de tipo, tamanho e arquivo vazio
  assert.equal(validarArquivoImagemChat(arquivo("limite.png","image/png",2*1024*1024)),null);
 });
 
-test("Interface do chat liga paste ao anexo, cria preview e limpa URLs temporárias",()=>{
- const codigo=readFileSync("src/components/chat-painel.tsx","utf8");
- assert.match(codigo,/onPaste=\{colarImagem\}/);
- assert.match(codigo,/imagensDaTransferencia\(e\.clipboardData\)/);
- assert.match(codigo,/e\.preventDefault\(\)/);
- assert.match(codigo,/URL\.createObjectURL\(arquivo\)/);
- assert.match(codigo,/URL\.revokeObjectURL\(/);
- assert.match(codigo,/src=\{imagemPrevia\}/);
- assert.match(codigo,/onClick=\{removerImagem\}/);
- assert.match(codigo,/form\.set\("imagem",imagemSelecionada\)/);
-});

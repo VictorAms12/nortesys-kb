@@ -37,14 +37,13 @@ export default async function Indicadores(){
  const k=resumo[0]??{leitores:0,avaliacoes:0,resolvidos:0,lacunas:0,atividade:0};
  const percentual=k.avaliacoes?Math.round(100*k.resolvidos/k.avaliacoes):null;
  return <div className="space-y-6">
-  <div><p className="sobre-titulo">Fase 7J</p><h2 className="titulo-secao">Indicadores da base de conhecimento</h2>
+  <div><h2 className="titulo-secao">Indicadores da base de conhecimento</h2>
    <p className="mt-2 text-sm text-[var(--muted)]">Indicadores agregados, sem expor quais colaboradores responderam ou pesquisaram. Acessos e pesquisas: últimos 30 dias; avaliações: histórico acumulado.</p></div>
-  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  <div className="admin-resumo-grade">
    {[["Leitores com acesso recente",k.leitores],["Artigos criados/editados (30 dias)",k.atividade],
      ["Feedbacks registrados",k.avaliacoes],["Respostas positivas",percentual===null?"—":percentual+"%"],
      ["Pesquisas sem resultado (30 dias)",k.lacunas],["Artigos vencidos/obsoletos",vencidosTodos.length]].map(([rotulo,valor])=>
-     <div className="cartao p-5" key={rotulo}><strong className="block text-2xl tabular-nums">{valor}</strong>
-     <span className="text-sm text-[var(--muted)]">{rotulo}</span></div>)}
+     <div className="admin-resumo-item" key={rotulo}><span>{rotulo}</span><strong className="tabular-nums">{valor}</strong></div>)}
   </div>
   <div className="grid gap-5 xl:grid-cols-2">
    <section className="cartao p-5"><h3 className="text-lg font-bold">Artigos com mais leitores distintos</h3>

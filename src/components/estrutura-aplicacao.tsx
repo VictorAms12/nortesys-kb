@@ -6,31 +6,36 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { AlternarTema } from "./alternar-tema";
 import { AtalhoBusca } from "./atalho-busca";
 import { IndicadorChat } from "./indicador-chat";
+import { CentralNotificacoes } from "./central-notificacoes";
+import { MenuConta } from "./menu-conta";
 import { IconeInterface, type NomeIcone } from "./icone-interface";
 import { lerPreferencia, salvarPreferencia } from "../lib/preferencias-navegador";
+import {categorias} from "../../config/categorias";
 
 type Papel = "administrador" | "editor" | "leitor";
 type Destino = {href:string; texto:string; icone:NomeIcone; prefixo?:boolean; titulo?:string};
 const CHAVE = "nortesys-kb-sidebar-recolhida";
 const EVENTO = "nortesys-kb-sidebar-alterada";
-const gerais:Destino[] = [
-  {href:"/", texto:"Início", icone:"inicio"},
-  {href:"/busca", texto:"Pesquisar", icone:"busca"},
-  {href:"/diagnostico", texto:"Diagnóstico", icone:"ajustes"},
-  {href:"/chat", texto:"Chat da equipe", icone:"usuarios"},
-  {href:"/artigos", texto:"Artigos", icone:"livro"},
-  {href:"/categorias", texto:"Categorias", icone:"categorias"},
-  {href:"/favoritos", texto:"Favoritos", icone:"favoritos"},
-  {href:"/recentes", texto:"Recentes", icone:"recentes"},
-  {href:"/ferramentas/registro", texto:"Registro técnico", icone:"arquivo"},
+const principal:Destino[]=[
+ {href:"/",texto:"Início",icone:"inicio"},
+ {href:"/chat",texto:"Chat da equipe",icone:"mensagem"},
+ {href:"/favoritos",texto:"Favoritos",icone:"favoritos"},
+ {href:"/recentes",texto:"Recentes",icone:"recentes"},
+ {href:"/artigos",texto:"Todos os artigos",icone:"livro"},
+];
+const destinosCategorias:Destino[]=categorias
+ .map(c=>({href:"/categorias/"+c.slug,texto:c.slug==="procedimentos-e-boas-praticas"?"Procedimentos":c.nome,icone:c.icone as NomeIcone}));
+const ferramentas:Destino[]=[
+ {href:"/diagnostico",texto:"Diagnóstico",icone:"diagnostico"},
+ {href:"/ferramentas/registro",texto:"Registro técnico",icone:"registro"},
 ];
 const admin:Destino[] = [
   {href:"/admin",texto:"Visão geral",icone:"painel"},
   {href:"/admin/artigos",texto:"Gerenciar artigos",icone:"artigos"},
   {href:"/admin/usuarios",texto:"Usuários",icone:"usuarios"},
   {href:"/admin/auditoria",texto:"Auditoria",icone:"auditoria"},
-  {href:"/admin/indicadores",texto:"Indicadores",icone:"painel"},
-  {href:"/admin/manutencao",texto:"Manutenção",icone:"ajustes"},
+  {href:"/admin/indicadores",texto:"Indicadores",icone:"indicadores"},
+  {href:"/admin/manutencao",texto:"Manutenção",icone:"manutencao"},
 ];
 function observar(callback:()=>void) {
   window.addEventListener("storage",callback); window.addEventListener(EVENTO,callback);
@@ -45,14 +50,7 @@ function atual(path:string, href:string){
   if(href==="/admin")return path==="/admin";
   return path===href || path.startsWith(href+"/");
 }
-function tituloPagina(path:string):string {
-  if(path==="/")return "Início";
-  if(path.startsWith("/admin/artigos/"))return "Editor de artigos";
-  if(path.startsWith("/artigos/"))return "Leitura de artigo";
-  if(path.startsWith("/categorias/"))return "Artigos por categoria";
-  return [...gerais,...admin].find(i=>i.href===path)?.texto || "Base de conhecimento";
-}
-export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Papel; children:ReactNode}) {
+export function EstruturaAplicacao({nome,papel,versao,contadores,dataBase,children}:{nome:string; papel:Papel; versao:string; contadores:Record<string,number>; dataBase:string; children:ReactNode}) {
   const pathname=usePathname();
   const recolhida=useSyncExternalStore(observar,leituraSidebar,estadoServidor);
   const [mobileAberta,setMobileAberta]=useState(false);
@@ -91,6 +89,7 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
     return <Link key={d.href} href={d.href} title={recolhida?d.texto:undefined} aria-current={ativo?"page":undefined} onClick={()=>setMobileAberta(false)} className={`item-navegacao ${ativo?"item-navegacao-ativo":""}`}>
       <IconeInterface nome={d.icone} className="icone-navegacao"/>
       <span className="texto-navegacao">{d.texto}</span>
+      {d.href.startsWith("/categorias/")&&contadores[d.href.slice(12)]!==undefined&&<span className="contador-navegacao" aria-label={contadores[d.href.slice(12)]+" artigos"}>{contadores[d.href.slice(12)]}</span>}
     </Link>;
   }
   if(pathname==="/entrar")return <>{children}</>;
@@ -98,26 +97,32 @@ export function EstruturaAplicacao({nome,papel,children}:{nome:string; papel:Pap
     {mobileAberta&&<button aria-label="Fechar menu de navegação" className="fundo-menu-mobile no-print" onClick={()=>setMobileAberta(false)} type="button"/>}
     <aside ref={menu} className="sidebar-app no-print" id="navegacao-lateral" aria-label="Menu lateral">
       <div className="marca-sidebar">
-        <Link href="/" className="simbolo-marca" onClick={()=>setMobileAberta(false)} aria-label="Ir para o início">N</Link>
-        <Link href="/" className="texto-marca" onClick={()=>setMobileAberta(false)}><strong>Nortesys KB</strong><small>Base de conhecimento</small></Link>
+        <Link href="/" className="marca-nome" onClick={()=>setMobileAberta(false)} aria-label="Início do Nortesys KB"><strong>Nortesys KB</strong></Link>
         <button type="button" className="botao-icone fechar-menu-mobile" onClick={()=>setMobileAberta(false)} aria-label="Fechar menu"><IconeInterface nome="fechar"/></button>
       </div>
       <div className="rolagem-sidebar">
-        <nav aria-label="Conhecimento" className="grupo-navegacao"><p className="titulo-navegacao">CONHECIMENTO</p>{gerais.map(linkItem)}</nav>
-        {papel!=="leitor"&&<nav aria-label="Administração" className="grupo-navegacao"><p className="titulo-navegacao">ADMINISTRAÇÃO</p>{admin.filter(d=>papel==="administrador"|| !["/admin/usuarios","/admin/auditoria","/admin/indicadores","/admin/manutencao"].includes(d.href)).map(linkItem)}</nav>}
+        <nav aria-label="Principal" className="grupo-navegacao"><p className="titulo-navegacao">Principal</p>{principal.map(linkItem)}<div className="separador-principal" aria-hidden="true"/>{ferramentas.map(linkItem)}</nav>
+        <nav aria-label="Categorias" className="grupo-navegacao"><div className="titulo-navegacao titulo-navegacao-link"><span>Categorias</span><Link href="/categorias" onClick={()=>setMobileAberta(false)} title="Todas as categorias">Ver todas</Link></div>{destinosCategorias.map(linkItem)}</nav>
+        
+        {papel!=="leitor"&&<nav aria-label="Administração" className="grupo-navegacao"><p className="titulo-navegacao">Administração</p>{admin.filter(d=>papel==="administrador"|| !["/admin/usuarios","/admin/auditoria","/admin/indicadores","/admin/manutencao"].includes(d.href)).map(linkItem)}</nav>}
       </div>
       <div className="rodape-sidebar">
-        <div className="perfil-sidebar" title={`${nome} · ${papel}`}><div className="avatar-sidebar">{nome.trim().slice(0,1).toUpperCase()}</div><div className="texto-perfil"><strong>{nome}</strong><small>{papel}</small></div></div>
+        <Link href="/perfil" className="perfil-sidebar no-underline text-[var(--text)]" title={`Abrir perfil de ${nome}`}><div className="avatar-sidebar">{nome.trim().slice(0,1).toUpperCase()}</div><div className="texto-perfil"><strong>{nome}</strong><small>{papel}</small></div></Link>
         <button type="button" className="botao-icone recolher-sidebar" aria-label={recolhida?"Expandir menu lateral":"Recolher menu lateral"} title={recolhida?"Expandir menu":"Recolher menu"} onClick={alternar}><IconeInterface nome={recolhida?"expandir":"recolher"}/></button>
+      </div>
+      <div className="sidebar-meta no-print" aria-label="Informações da versão">
+        <span>Versão {versao}</span>
+        <span>{dataBase?"Atualizada em "+dataBase.slice(0,10).split("-").reverse().join("/"):"Base interna de suporte"}</span>
       </div>
     </aside>
     <div className="area-app" inert={mobileAberta}>
       <header className="topbar-app no-print">
-        <div className="topbar-esquerda"><button type="button" className="botao-icone abrir-menu-mobile" aria-label="Abrir menu" aria-controls="navegacao-lateral" aria-expanded={mobileAberta} onClick={()=>setMobileAberta(true)}><IconeInterface nome="menu"/></button><span className="caminho-topbar">Nortesys KB <span aria-hidden="true">/</span> <strong>{tituloPagina(pathname)}</strong></span></div>
-        <div className="topbar-direita"><AtalhoBusca/><IndicadorChat/><AlternarTema/><form action="/api/autenticacao/sair" method="post"><button type="submit" className="botao-icone" title="Encerrar sessão" aria-label="Sair da conta"><IconeInterface nome="sair"/></button></form></div>
+        <div className="topbar-esquerda"><button type="button" className="botao-icone abrir-menu-mobile" aria-label="Abrir menu" aria-controls="navegacao-lateral" aria-expanded={mobileAberta} onClick={()=>setMobileAberta(true)}><IconeInterface nome="menu"/></button></div>
+        <AtalhoBusca/>
+        <div className="topbar-direita"><IndicadorChat/><CentralNotificacoes/><AlternarTema/><MenuConta nome={nome} papel={papel}/></div>
       </header>
       <div className="conteudo-app">{children}</div>
-      <footer className="rodape-app no-print"><div className="conteiner">Nortesys KB · Ambiente interno · Acesso restrito</div></footer>
+      <footer className="rodape-app no-print"><div className="conteiner"><span>Nortesys KB · v{versao}</span><span>{dataBase?"Base atualizada em "+dataBase.slice(0,10).split("-").reverse().join("/"):"Base de conhecimento interno"}</span></div></footer>
     </div>
   </div>;
 }
