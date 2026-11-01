@@ -120,3 +120,11 @@ A checagem de tipos regenera `next-env.d.ts` e os tipos de rotas com `next typeg
 ## Chat (Fases 7G.1 e 7G.2)
 
 Em banco de Preview, execute `db/006_chat.sql` inteiro no SQL Editor após 001 e 002, incluindo transação. Configure `ABLY_API_KEY` restrita a `kb-chat:*` com publish e subscribe. As mensagens ficam no Neon; o Ably é usado para eventos sem texto privado. Confira [a checklist do chat](../historico/FASE-7G-CHAT-AUDITORIA.md).
+
+## Limite de tamanho do cache de artigos
+
+O cache do Next.js separa o catálogo completo por papel (`leitor`, `editor`, `administrador`) com a tag `kb-indice-busca`. Cada recálculo registra **somente o tamanho em KB do JSON**, no formato `[kb-cache-artigos] papel=... tamanho_kb=... limite_kb=1465 acima_limite=...`. Nenhum título, corpo ou dado de usuário aparece nesse registro.
+
+O limite preventivo é **1.500.000 bytes (aproximadamente 1,5 MB)**, abaixo do teto aproximado de 2 MB por item em alguns ambientes Vercel. Com o catálogo atual abaixo do limite, mantém-se o cache completo por papel para não introduzir consultas desnecessárias; se os logs mostrarem `acima_limite=sim`, será necessário separar catálogo leve e conteúdo por URL antes de crescer mais (a divisão não é ativada automaticamente). Aferir os valores em Preview e produção após uma requisição que cause cache miss.
+
+**Edições feitas pelo painel** invalidam a tag imediatamente nas ações criar, salvar e arquivar. **Alterações realizadas diretamente no Neon** não disparam essa invalidação; podem levar **até cinco minutos** para aparecer pelo prazo `revalidate:300`. A cache nunca mistura rascunhos de editores com o catálogo de leitores.
