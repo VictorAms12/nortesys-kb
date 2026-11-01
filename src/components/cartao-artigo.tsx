@@ -8,7 +8,7 @@ export function CartaoArtigo({ artigo, hoje }: { artigo: ResumoArtigo; hoje: str
  return <article className="linha-artigo">
   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
    <h3 className="min-w-0 text-base font-semibold"><Link href={artigo.url} className="link-cartao">{artigo.titulo}</Link></h3>
-   <time dateTime={artigo.atualizadoEm} className="text-xs text-[var(--muted)]">{formatarData(artigo.atualizadoEm)}</time>
+   <time dateTime={artigo.atualizadoEm} className="text-[13px] text-[var(--muted)]">{formatarData(artigo.atualizadoEm)}</time>
   </div>
   <p className="mt-1 line-clamp-2 text-[15px] text-[var(--muted)]">{artigo.resumo}</p>
   <div className="metadados-linha mt-1.5">

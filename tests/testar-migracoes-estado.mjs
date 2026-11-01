@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import {test} from "node:test";
 import {PGlite} from "@electric-sql/pglite";
 import {dividirInstrucoesSql} from "../scripts/migracoes-sql.mjs";
-import {SQL_INVENTARIO,listarManifesto,checarAssinatura,relatorioMigracoes} from "../scripts/migracoes-estado.mjs";
+import {SQL_INVENTARIO,listarManifesto,checarAssinatura,relatorioMigracoes,diagnosticoMigracao017} from "../scripts/migracoes-estado.mjs";
 
 test("inventário distingue banco vazio e migrações aplicadas manualmente",async t=>{
  const banco=new PGlite();
@@ -47,4 +47,12 @@ test("planejamento recusa lacunas, divergência e estruturas incompletas",async(
  assert.equal(planejarReconciliacao([presente("001_auth.sql"),presente("002_painel.sql")]).length,2);
  assert.throws(()=>planejarReconciliacao([presente("001_auth.sql"),{nome:"002_painel.sql",situacao:"pendente"},presente("003_interacoes.sql")]),/depois de uma etapa pendente/);
  assert.throws(()=>planejarReconciliacao([{nome:"001_auth.sql",situacao:"checksum_divergente"}]),/inseguro/);
+});
+
+test("db:status informa se a migração 017 está pendente",()=>{
+ const nome="017_integridade_urls_artigos.sql";
+ assert.match(diagnosticoMigracao017([{nome,situacao:"pendente"}]),/PENDENTE/);
+ assert.match(diagnosticoMigracao017([{nome,situacao:"sem_historico"}]),/SEM HISTÓRICO/);
+ assert.match(diagnosticoMigracao017([{nome,situacao:"registrada"}]),/OK/);
+ assert.match(diagnosticoMigracao017([{nome,situacao:"parcial"}]),/estado inseguro/);
 });

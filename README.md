@@ -124,6 +124,9 @@ docs/
 
 ## Publicação e manutenção
 
+**Ordem obrigatória para publicar código que dependa do Neon:** confira a branch e execute `npm run db:status`; aplique as migrações pendentes com `npm run db:migrar`; valide com `npm run db:verificar` e **só depois publique** na Vercel. A migração **017** cria os aliases de URLs antigas; ela deve estar instalada no banco de destino antes da publicação. Em bancos sem histórico confiável, reconcilie antes de migrar.
+
+
 Use uma branch de trabalho para alterações, valide no Preview e integre na `main` após os checks. O destino de publicação depende da configuração do projeto na Vercel.
 
 **Production, Preview e Development precisam das configurações correspondentes.** Uma variável limitada a uma branch de Preview não configura automaticamente a produção. O [guia de deploy](docs/guias/deploy.md) reúne migrações, variáveis e verificação após publicar.

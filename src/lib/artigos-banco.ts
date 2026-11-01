@@ -5,6 +5,7 @@ import { TAG_INDICE_BUSCA } from "./tags-cache";
 import { consultar } from "./banco";
 import { carregarArtigos } from "./artigos";
 import { combinarArtigos } from "./artigos-visibilidade";
+import { registrarTamanhoCacheArtigos } from "./cache-artigos-metrica";
 import type { Artigo } from "../types/artigo";
 import type { Papel } from "./usuarios";
 
@@ -43,7 +44,11 @@ export async function listarVersoesArtigo(id: string): Promise<VersaoArtigo[]> {
 const carregarArtigosCache = unstable_cache(async (papel: Papel): Promise<Artigo[]> => {
   const locais = carregarArtigos();
   const registros = await listarRegistrosArtigos();
-  return combinarArtigos(locais, registros, papel);
+  const artigos=combinarArtigos(locais, registros, papel);
+  // Registra apenas o tamanho do JSON, segregado por papel; não expõe os artigos.
+  // O particionamento fica condicionado à medição ultrapassar 1,5 MB.
+  registrarTamanhoCacheArtigos(papel,artigos);
+  return artigos;
 }, ["kb-artigos-por-papel-v1"], {tags:[TAG_INDICE_BUSCA], revalidate:300});
 
 export const carregarTodosArtigos = cache((papel: Papel) => carregarArtigosCache(papel));

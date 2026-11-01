@@ -37,13 +37,13 @@ export default async function Home() {
    <section className="painel-lista painel-lista-recentes" aria-labelledby="titulo-recentes">
     <div className="cabecalho-lista"><h2 id="titulo-recentes">Artigos recentes</h2><Link href="/recentes">Ver todos</Link></div>
     {recentes.length?<div className="lista-artigos lista-artigos-recentes">{recentes.map(a=><CartaoArtigo key={a.url} artigo={resumoArtigo(a)} hoje={hoje}/>)}</div>:
-    <p className="estado-vazio">Nenhum artigo disponível na base.</p>}
+    <p className="estado-vazio" role="status">Nenhum artigo disponível na base.</p>}
    </section>
    <div className="pilha-paineis">
     <section className="painel-lista painel-lista-apoio" aria-labelledby="titulo-revisoes">
      <div className="cabecalho-lista"><h2 id="titulo-revisoes">Precisam de revisão</h2><span className="contagem-discreta">{revisao.length}</span></div>
      {revisao.length?<div className="lista-artigos">{revisao.slice(0,4).map(a=><CartaoArtigo key={a.url} artigo={resumoArtigo(a)} hoje={hoje}/>)}</div>:
-     <p className="estado-vazio">Nenhum artigo com revisão pendente.</p>}
+     <p className="estado-vazio" role="status">Nenhum artigo com revisão pendente.</p>}
     </section>
     <section className="painel-lista painel-lista-apoio" aria-labelledby="titulo-categorias">
      <div className="cabecalho-lista"><h2 id="titulo-categorias">Categorias</h2><Link href="/categorias">Ver todas</Link></div>

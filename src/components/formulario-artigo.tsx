@@ -40,7 +40,7 @@ export function FormularioArtigo({registro,modelo,restaurarVersao}:{registro?:Re
       </div>
       <div className="border-t border-[var(--border)] pt-5"><p className="sobre-titulo">Conteúdo e validação</p><h3 className="mt-2 text-lg font-bold">Editor avançado</h3></div>
       <EditorMarkdown conteudoInicial={markdown} tipoInicial={tipoConteudoValido(front.tipo)?front.tipo:"solucao"} chave={registro?`${registro.id}-v${registro.versao}${restaurarVersao?`-recuperar-${restaurarVersao}`:""}`:modelo?`copia-${modelo.id}`:"novo"} editando={Boolean(registro)}/>
-      <p className="text-xs leading-6 text-[var(--muted)]">Respeite os títulos do modelo selecionado. Não inclua dados reais de clientes, senhas, tokens ou documentos fiscais. Depois de publicar, confira o artigo.</p>
+      <p className="text-[13px] leading-6 text-[var(--muted)]">Respeite os títulos do modelo selecionado. Não inclua dados reais de clientes, senhas, tokens ou documentos fiscais. Depois de publicar, confira o artigo.</p>
       <div className="flex flex-wrap gap-3"><button className="botao-primario" type="submit">{registro?"Salvar nova versão":"Criar artigo"}</button><Link className="botao-secundario" href="/admin/artigos">Cancelar</Link></div>
     </FormularioComFeedback>
   );

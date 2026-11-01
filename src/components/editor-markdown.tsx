@@ -151,9 +151,9 @@ export function EditorMarkdown({ conteudoInicial, tipoInicial, chave, editando }
       <input className={CAMPO} value={descricao} maxLength={90} onChange={e=>setDescricao(e.target.value)} placeholder="Descreva o que a captura mostra"/>
     </label>
     {enviandoImagem && <progress className="w-full" aria-label="Envio da imagem em andamento"/>}
-    {aba==="editar" ? <textarea ref={campo} className={`${CAMPO} font-mono text-xs leading-6`} name="conteudo" rows={24} minLength={15} maxLength={60000} value={conteudo} onChange={e=>setConteudo(e.target.value)} required aria-label="Conteúdo do artigo"/> : <><input type="hidden" name="conteudo" value={conteudo}/><div className="cartao min-h-56 p-5" aria-label="Prévia do artigo"><ConteudoMarkdown markdown={conteudo}/></div></>}
-    <p className="text-xs text-[var(--muted)]" role="status">{aviso || "Alterações de conteúdo são guardadas temporariamente nesta aba. Para publicar, clique em Salvar."} {conteudo.length.toLocaleString("pt-BR")}/60.000 caracteres.</p>
-    <p className="text-xs text-[var(--muted)]">PNG/JPEG/WebP até 2 MB. A imagem fica privada; salve o artigo para associá-la ao conteúdo. Até lá, só você poderá visualizá-la.</p>
+    {aba==="editar" ? <textarea ref={campo} className={`${CAMPO} font-mono text-[13px] leading-6`} name="conteudo" rows={24} minLength={15} maxLength={60000} value={conteudo} onChange={e=>setConteudo(e.target.value)} required aria-label="Conteúdo do artigo"/> : <><input type="hidden" name="conteudo" value={conteudo}/><div className="cartao min-h-56 p-5" aria-label="Prévia do artigo"><ConteudoMarkdown markdown={conteudo}/></div></>}
+    <p className="text-[13px] text-[var(--muted)]" role="status">{aviso || "Alterações de conteúdo são guardadas temporariamente nesta aba. Para publicar, clique em Salvar."} {conteudo.length.toLocaleString("pt-BR")}/60.000 caracteres.</p>
+    <p className="text-[13px] text-[var(--muted)]">PNG/JPEG/WebP até 2 MB. A imagem fica privada; salve o artigo para associá-la ao conteúdo. Até lá, só você poderá visualizá-la.</p>
     {editando && <button type="button" className="botao-secundario w-fit" onClick={()=>{sessionStorage.removeItem(chaveRascunho);setTipo(tipoInicial);setConteudo(conteudoInicial);setAviso("Rascunho local descartado.");}}>Descartar rascunho desta aba</button>}
   </fieldset>;
 }
