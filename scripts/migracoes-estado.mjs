@@ -22,6 +22,7 @@ const marcas = {
  "016": {indices:["kb_artigos_texto_fts_idx"]},
  "017": {tabelas:["kb_artigo_aliases"],indices:["kb_artigo_aliases_artigo_idx"],gatilhos:["kb_artigos_validar_url","kb_artigos_migrar_url"],funcoes:["kb_validar_url_artigo","kb_migrar_url_artigo"]},
  "018": {tabelas:["kb_login_ips_confiaveis"],indices:["kb_login_ips_confiaveis_data_idx"]},
+ "019": {colunas:["kb_usuarios.senha_hash_v2"]},
 };
 
 export const SQL_INVENTARIO = `SELECT
