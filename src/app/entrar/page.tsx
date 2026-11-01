@@ -13,10 +13,11 @@ export default async function PaginaEntrar({searchParams}:Props){
  erro==="indisponivel"?"Não foi possível consultar o banco de dados. Tente novamente.":null;
  return <main id="conteudo" className="login-page">
   <div className="login-shell">
-   <div className="login-topo"><span className="login-marca">Nortesys KB</span><AlternarTema/></div>
+   <div className="login-topo"><span className="login-marca"><strong>Nortesys</strong><span>KB</span></span><AlternarTema/></div>
    <section className="login-card" aria-labelledby="titulo-login">
-    <h1 id="titulo-login">Entrar</h1>
-    <p className="login-subtitle">Base de conhecimento do suporte técnico</p>
+    <p className="login-eyebrow">Ambiente interno de suporte</p>
+    <h1 id="titulo-login">Base de conhecimento do suporte</h1>
+    <p className="login-subtitle">Entre com suas credenciais para consultar orientações e procedimentos da equipe.</p>
     {!pronta&&<div className="login-alert" role="alert">O acesso não está configurado. Contate o administrador.</div>}
     {mensagem&&<div id="login-alerta" className="login-alert" role="alert">{mensagem}</div>}
     <FormularioLogin pronta={pronta} retorno={destinoSeguro(retorno)} credenciaisInvalidas={erro==="credenciais"}/>

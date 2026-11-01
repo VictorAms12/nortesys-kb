@@ -1093,6 +1093,57 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
  .pesquisa-inicio-form .atalho-inicio{display:none;}
 }
 
+
+/* Fase visual 5/7 — autenticação com identidade, campo confortável e painel de 400px. */
+.login-page{
+ min-height:100dvh;display:flex;align-items:center;justify-content:center;
+ padding:32px 20px;background:var(--background);
+}
+.login-shell{width:min(100%,432px);min-height:0;height:auto;padding:0;}
+.login-topo{
+ display:flex;justify-content:space-between;align-items:center;
+ padding:0 3px 22px;border:0;
+}
+.login-marca{
+ display:inline-flex;align-items:baseline;gap:8px;
+ color:var(--text);font-size:19px;font-weight:700;letter-spacing:-.02em;
+}
+.login-marca strong{font-weight:700;}
+.login-marca span{font-size:13px;font-weight:600;color:var(--marca-forte);}
+.login-topo .botao-secundario{min-height:38px;}
+.login-card{
+ width:min(100%,400px);max-width:none;margin:0 auto;
+ padding:30px 28px;background:var(--surface-panel);
+ border:1px solid var(--border);border-radius:var(--radius-panel);box-shadow:none;
+}
+.login-eyebrow{margin:0 0 9px;font-size:13px;font-weight:600;color:var(--marca-forte);}
+.login-card h1{margin:0;font-size:25px;line-height:1.25;font-weight:700;letter-spacing:-.025em;color:var(--text);}
+.login-subtitle{font-size:15px;line-height:1.6;margin-top:12px;color:var(--muted);}
+.login-form{display:grid;gap:20px;margin-top:28px;}
+.login-field{gap:8px;}
+.login-field label{font-size:14px;font-weight:600;}
+.login-field>input,.login-password-wrap input{
+ min-height:44px;font-size:15px;padding:10px 12px;
+ border-radius:var(--radius-control);background:var(--surface);
+}
+.login-password-toggle{min-width:38px;min-height:38px;border-radius:var(--radius-control);}
+.login-field-hint,.login-caps-warning{font-size:12px;line-height:1.55;}
+.login-submit{width:100%;min-height:46px;font-size:15px;font-weight:600;margin-top:2px;}
+.login-alert{
+ padding:13px 14px;margin-top:18px;font-size:14px;line-height:1.55;
+ border-radius:var(--radius-control);border-left:3px solid var(--danger-border);
+}
+.login-support{
+ font-size:13px;line-height:1.6;margin-top:30px;padding-top:18px;
+ border-top:1px solid var(--border);
+}
+.login-rodape{margin-top:25px;font-size:12px;color:var(--muted);}
+@media(max-width:480px){
+ .login-page{padding:24px 14px;}
+ .login-card{padding:24px 20px;}
+ .login-card h1{font-size:23px;}
+}
+
 @media print{
  body{background:white!important;color:black!important;}
  .sidebar-app,.topbar-app,.rodape-app,.no-print,.sumario-lateral,.chat-painel{display:none!important;}

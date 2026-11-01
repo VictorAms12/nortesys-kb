@@ -21,7 +21,7 @@ test.beforeAll(()=>{
 
 async function autenticar(page){
  await page.goto("/entrar");
- await expect(page.getByRole("heading",{name:"Entrar"})).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Base de conhecimento do suporte"})).toBeVisible();
  await page.getByRole("textbox",{name:"Nome de usuário"}).fill(usuario);
  await page.getByLabel("Senha",{exact:true}).fill(senha);
  await page.getByRole("button",{name:"Entrar",exact:true}).click();
