@@ -1,5 +1,6 @@
 /** Sessões opacas: token aleatório no cookie, somente SHA-256 no PostgreSQL. */
 import { createHash, randomBytes } from "node:crypto";
+import {cache} from "react";
 import { bancoConfigurado, consultar } from "./banco";
 import type { Usuario, UsuarioPublico, Papel } from "./usuarios";
 
@@ -15,14 +16,19 @@ export async function criarTokenSessao(conta: Usuario): Promise<string> {
     VALUES ($1, $2, $3, NOW() + INTERVAL '8 hours')`, [hashToken(token), conta.id, conta.versao_sessao]);
   return token;
 }
-export async function obterSessao(token: unknown): Promise<UsuarioPublico | null> {
-  if (typeof token !== "string" || !/^v3\.[0-9a-f]{64}$/.test(token) || !bancoConfigurado()) return null;
+// Cache apenas por requisição React. Revogação e permissões são reconsultadas
+// em toda nova requisição; não usar cache global para sessões autenticadas.
+const consultarSessaoNaRequisicao = cache(async (token: string): Promise<UsuarioPublico | null> => {
   const linhas = await consultar<UsuarioPublico>(`
     SELECT u.id, u.usuario, u.nome, u.papel FROM kb_sessoes s
     JOIN kb_usuarios u ON u.id = s.usuario_id
     WHERE s.token_hash = $1 AND s.expira_em > NOW() AND u.ativo = true
       AND s.versao_sessao = u.versao_sessao LIMIT 1`, [hashToken(token)]);
   return linhas[0] ?? null;
+});
+export async function obterSessao(token: unknown): Promise<UsuarioPublico | null> {
+  if (typeof token !== "string" || !/^v3\.[0-9a-f]{64}$/.test(token) || !bancoConfigurado()) return null;
+  return consultarSessaoNaRequisicao(token);
 }
 export async function validarTokenSessao(token: unknown): Promise<boolean> {
   return (await obterSessao(token)) !== null;

@@ -6,8 +6,9 @@ import { contarPorCategoria } from "./artigos";
 import { criarIndiceBusca, type DocumentoBusca } from "./indice-busca";
 import { criarBuscador } from "./busca";
 import type { Papel } from "./usuarios";
+import { TAG_INDICE_BUSCA } from "./tags-cache";
+export { TAG_INDICE_BUSCA } from "./tags-cache";
 
-export const TAG_INDICE_BUSCA = "kb-indice-busca";
 type DadosBusca = {
   versao: string;
   indice: DocumentoBusca[];
