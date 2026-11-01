@@ -40,7 +40,11 @@
     "testar:chat-imagens": "tsx --test tests/testar-chat-imagens.ts",
     "testar:fases-7h-7j": "tsx --test tests/testar-fases-7h-7j.ts",
     "testar:chat-clipboard": "tsx --test tests/testar-chat-clipboard.ts",
-    "testar:e2e": "playwright test -c playwright.config.mjs"
+    "testar:e2e": "playwright test -c playwright.config.mjs",
+    "typecheck": "next typegen && tsc --noEmit --incremental false",
+    "format:check": "node scripts/verificar-formatacao.mjs",
+    "format:prettier": "npx --yes prettier@3.6.2 --write src/lib/chat-sql.ts src/lib/chat-sql/*.ts scripts/verificar-formatacao.mjs .github/dependabot.yml .github/workflows/kb-verificacao.yml",
+    "testar:e2e:listar": "playwright test --list -c playwright.config.mjs"
   },
   "engines": {
     "node": ">=20.9.0"
@@ -62,6 +66,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
+    "@playwright/test": "1.56.1",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
