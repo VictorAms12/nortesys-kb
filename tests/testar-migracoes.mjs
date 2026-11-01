@@ -27,6 +27,7 @@ test("Todas as migrações são reaplicáveis em um Postgres isolado",async t=>{
  assert.ok(arquivos.includes("013_limites_retencao.sql"));
  assert.ok(arquivos.includes("014_ultimo_admin.sql"));
  assert.ok(arquivos.includes("015_recuperar_fila_imagens_chat.sql"));
+ assert.ok(arquivos.includes("016_indices_busca_artigos.sql"));
  for(let rodada=0;rodada<2;rodada++){
   for(const arquivo of arquivos){
    const instrucoes=dividirInstrucoesSql(readFileSync("db/"+arquivo,"utf8"));
@@ -39,6 +40,9 @@ test("Todas as migrações são reaplicáveis em um Postgres isolado",async t=>{
  const tabelas=await banco.query("SELECT to_regclass('public.kb_avatar_limites') AS avatar, to_regclass('public.kb_busca_sugestoes_limites') AS busca");
  assert.equal(tabelas.rows[0].avatar,"kb_avatar_limites");
  assert.equal(tabelas.rows[0].busca,"kb_busca_sugestoes_limites");
+ const indice=await banco.query("SELECT COUNT(*)::int AS total FROM pg_indexes WHERE indexname='kb_artigos_texto_fts_idx'");
+ assert.equal(indice.rows[0].total,1,"GIN de pesquisa deve existir sem extensão adicional");
+
 });
 
 test("Migração 015 restaura o gatilho 009 ausente e enfileira somente exclusão global",async context=>{
