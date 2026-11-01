@@ -49,8 +49,12 @@ export function converterMensagem(m:MsgLinha):MensagemChat{
   }};
 }
 export async function listarMensagens(usuario:string,conversa:string,antes:number|null,pesquisa:string):Promise<MensagemChat[]>{
- if(!await conversaPermitida(usuario,conversa))throw new ErroChat(404,"Conversa não encontrada.");
+ // A consulta SQL já exige participação na conversa; poupamos o SELECT 1
+ // nas páginas com mensagens. Somente resultado vazio precisa distinguir
+ // conversa legítima vazia de conversa não autorizada (mantém o 404).
  const rows=await consultar<MsgLinha>(SQL_LISTAR_MENSAGENS,[usuario,conversa,antes,pesquisa]);
+ if(!rows.length && !await conversaPermitida(usuario,conversa))
+  throw new ErroChat(404,"Conversa não encontrada.");
  return rows.reverse().map(converterMensagem);
 }
 export async function abrirConversaPrivada(usuario:string,alvo:string):Promise<string>{

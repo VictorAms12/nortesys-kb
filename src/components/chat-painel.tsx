@@ -156,7 +156,10 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
  },[atualizarEstado]);
  useEffect(()=>{
   let stream:EventSource|null=null;let encerrado=false;
+  let renovacao:number|null=null;
   const conectar=async()=>{
+   if(encerrado)return;
+   if(renovacao!==null){window.clearTimeout(renovacao);renovacao=null;}
    stream?.close();stream=null;tempoRealAtivo.current=false;setRealtime(false);
    try{
     const r=await fetch("/api/chat/token",{cache:"no-store",credentials:"same-origin"});
@@ -166,6 +169,9 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     stream=new EventSource("https://main.realtime.ably.net/sse?"+q);
     stream.onopen=()=>{tempoRealAtivo.current=true;setRealtime(true);setAviso(atual=>atual.includes("tempo real")?"":atual);};
     stream.onerror=()=>{tempoRealAtivo.current=false;setRealtime(false);};
+    // Renovação usa a validade real do token e preserva 2 minutos de margem.
+    renovacao=window.setTimeout(()=>{if(!encerrado)void conectar();},
+      Math.max(60_000,Math.min(20*60_000,token.expires-Date.now()-120_000)));
     stream.onmessage=e=>{
      try{
       const evento=JSON.parse(e.data) as {name?:string;data?:unknown};
@@ -184,11 +190,16 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       }
      }catch{/* Eventos malformados são ignorados. */}
     };
-   }catch {tempoRealAtivo.current=false;setRealtime(false);}
+   }catch {
+    tempoRealAtivo.current=false;setRealtime(false);
+    // Quando o token falha, tenta novamente sem aguardar os antigos 20 minutos.
+    if(!encerrado)renovacao=window.setTimeout(()=>void conectar(),5*60_000);
+   }
   };
   void conectar();
-  const renew=window.setInterval(()=>{if(!encerrado)void conectar();},20*60*1000);
-  return ()=>{encerrado=true;tempoRealAtivo.current=false;window.clearInterval(renew);stream?.close();
+  return ()=>{encerrado=true;tempoRealAtivo.current=false;
+    if(renovacao!==null)window.clearTimeout(renovacao);
+    stream?.close();
     if(timeoutDigitando.current!==null)window.clearTimeout(timeoutDigitando.current);};
  },[atualizarEstado,carregar,usuarioId]);
  useEffect(()=>{
