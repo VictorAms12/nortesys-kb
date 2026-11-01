@@ -134,3 +134,7 @@ O limite preventivo é **1.500.000 bytes (aproximadamente 1,5 MB)**, abaixo do t
 A migração 019 adiciona `senha_hash_v2`, preservando `senha_hash` para contas antigas. Novas senhas usam `scrypt$v2$131072$8$1$<hash>` com sal individual de 16 bytes e marcador legado aleatório não derivado da senha. Logins de contas antigas executam rehash atômico após autenticação, sem alterar a versão da sessão. Hash versionado inválido nunca faz fallback para legado.
 
 Medição de referência em Node.js 22 no ambiente de desenvolvimento: `scrypt` N=2^17, r=8, p=1 e 256 MiB de limite de memória levou aproximadamente **532–642 ms** por derivação. **Não foi aferido em runtime Serverless Vercel**: medir latência, memória e concorrência em Preview antes de publicar. Aplicar `018` e `019` no banco de Preview antes de testar login, cadastro e redefinição de senhas; não executar em produção nesta PR.
+
+## Cabeçalhos HTTP e CSP
+
+HSTS é declarado em `next.config.ts` com `max-age=31536000; includeSubDomains`; aplique somente quando todos os subdomínios servirem HTTPS. COOP/CORP usam `same-origin`; CSP força `upgrade-insecure-requests` em produção. `style-src` mantém `unsafe-inline` porque o Next.js e componentes existentes utilizam estilos inline: removê-lo exige inventário e migração visual fora do escopo desta branch. Não se verificou o HSTS real do deployment protegido em produção nem WebSocket Ably/upload Blob em navegador autenticado; executar homologação no Preview.
