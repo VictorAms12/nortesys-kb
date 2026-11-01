@@ -176,18 +176,18 @@ export function CentralNotificacoes(){
    </button>
    {aberto&&<section className="painel-notificacoes" aria-label="Notificações recebidas">
     <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] p-3">
-     <strong>Notificações</strong><button type="button" className="text-xs underline" onClick={()=>void marcar(null)}>Marcar lidas</button>
+     <strong>Notificações</strong><button type="button" className="text-[13px] underline" onClick={()=>void marcar(null)}>Marcar lidas</button>
     </div>
-    {falhaSincronizacao&&<p role="status" className="border-b border-[var(--border)] px-3 py-2 text-xs text-[var(--muted)]">Não foi possível sincronizar as notificações. Tentaremos novamente.</p>}
+    {falhaSincronizacao&&<p role="status" className="border-b border-[var(--border)] px-3 py-2 text-[13px] text-[var(--muted)]">Não foi possível sincronizar as notificações. Tentaremos novamente.</p>}
     <div className="max-h-80 overflow-y-auto">{dados.itens.length?dados.itens.map(n=>
       <Link key={n.id} href={"/chat?conversa="+encodeURIComponent(n.conversaId)}
        onClick={()=>{setAberto(false);if(!n.vistaEm)void marcar(n.id);}}
        className={"notificacao-item "+(!n.vistaEm?"nao-lida":"")}>
        <strong className="block text-sm">{n.autor}</strong>
-       <span className="text-xs text-[var(--muted)]">Nova mensagem {n.tipo==="geral"?"na equipe":"em conversa privada"}</span>
+       <span className="text-[13px] text-[var(--muted)]">Nova mensagem {n.tipo==="geral"?"na equipe":"em conversa privada"}</span>
       </Link>):<p className="p-4 text-sm text-[var(--muted)]">Nenhum aviso recente.</p>}</div>
    </section>}
   </div>
-  {aviso&&<Link href={"/chat?conversa="+encodeURIComponent(aviso.conversaId)} className="toast-mensagem" onClick={()=>setAviso(null)} role="status">{aviso.texto}<span className="block text-xs opacity-80">Abrir conversa</span></Link>}
+  {aviso&&<Link href={"/chat?conversa="+encodeURIComponent(aviso.conversaId)} className="toast-mensagem" onClick={()=>setAviso(null)} role="status">{aviso.texto}<span className="block text-[13px] opacity-80">Abrir conversa</span></Link>}
  </>;
 }

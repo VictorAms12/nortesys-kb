@@ -13,7 +13,7 @@ function parserCss(s){
 function dividirSeletores(sel){const arr=[];let word="",level=0,quote="";for(const c of sel){if(quote){word+=c;if(c===quote)quote="";continue;}if(c==="'"||c==='"'){quote=c;word+=c;continue;}if(c==="["||c==="(")level++;if(c==="]"||c===")")level--;if(c===","&&level===0){arr.push(word.trim());word="";}else word+=c;}if(word.trim())arr.push(word.trim());return arr;}
 const css=readFileSync("src/app/globals.css","utf8"),rules=parserCss(css);
 const groups=new Map(),classes=new Map();
-for(const r of rules){const k=r.context+"//"+r.selector;groups.set(k,(groups.get(k)??0)+1);for(const m of r.selector.matchAll(/\\.([a-z][a-z0-9_-]*)/gi)){classes.set(m[1],(classes.get(m[1])??0)+1);}}
+for(const r of rules){const k=r.context+"//"+r.selector;groups.set(k,(groups.get(k)??0)+1);for(const m of r.selector.matchAll(/\.([a-z][a-z0-9_-]*)/gi)){classes.set(m[1],(classes.get(m[1])??0)+1);}}
 const duplicates=[...groups].filter(([k,v])=>v>1);
 function sources(dir){const a=[];for(const n of readdirSync(dir,{withFileTypes:true})){if(n.name==="node_modules"||n.name===".next"||n.name===".git")continue;const p=join(dir,n.name);if(n.isDirectory())a.push(...sources(p));else if([".tsx",".ts",".mjs"].includes(extname(p)))a.push(p);}return a;}
 const data=sources("src").concat(sources("scripts"),sources("tests")).map(p=>readFileSync(p,"utf8")).join("\\n");

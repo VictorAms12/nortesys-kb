@@ -332,7 +332,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
   {contatosAbertos&&<button type="button" className="chat-fundo-contatos" aria-label="Fechar lista de conversas" onClick={()=>setContatosAbertos(false)}/>}
   <aside className="chat-lista grid min-w-0 content-start gap-3 overflow-y-auto overflow-x-hidden" aria-label="Conversas e colaboradores">
    <div className="flex min-w-0 items-start justify-between gap-2"><div className="min-w-0"><h2 className="text-base font-bold">Conversas</h2>
-    <p className="mt-1 text-xs text-[var(--muted)]"><span className={"ponto-presenca "+(realtime?"presenca-online":"presenca-ausente")} aria-hidden="true"/>{" "}{realtime?"Tempo real conectado":"Atualizações periódicas"} · {totalNaoLidas} {totalNaoLidas===1?"mensagem não lida":"mensagens não lidas"}</p>
+    <p className="mt-1 text-[13px] text-[var(--muted)]"><span className={"ponto-presenca "+(realtime?"presenca-online":"presenca-ausente")} aria-hidden="true"/>{" "}{realtime?"Tempo real conectado":"Atualizações periódicas"} · {totalNaoLidas} {totalNaoLidas===1?"mensagem não lida":"mensagens não lidas"}</p>
    </div><button type="button" className="chat-fechar-lista botao-secundario" onClick={()=>setContatosAbertos(false)} aria-label="Fechar conversas">Fechar</button></div>
    {!estado?<p className="text-sm text-[var(--muted)]">Carregando conversas...</p>:
    <div className="grid min-w-0 gap-1" role="group" aria-label="Selecionar conversa">
@@ -340,7 +340,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       <button type="button" onClick={()=>mudarConversa(c.id)}
        className="flex min-w-0 flex-1 items-center gap-2 p-3 text-left text-sm">
        <span className="block min-w-0 flex-1 overflow-hidden"><strong className="block truncate">{c.nome}</strong>
-        <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-[var(--muted)]">{c.ultimaMensagem?.slice(0,65)||"Sem mensagens"}</span>
+        <span className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[13px] text-[var(--muted)]">{c.ultimaMensagem?.slice(0,65)||"Sem mensagens"}</span>
        </span>{c.naoLidas>0&&<span className="etiqueta" aria-label={c.naoLidas+" mensagens não lidas"}>{c.naoLidas}</span>}
       </button>
       <button type="button" onClick={()=>void alternarSilencio(c)}
@@ -359,7 +359,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       title={"Conversar com "+u.nome}>
       <span aria-hidden="true">{selo(u.presenca)}</span>
       <span className="min-w-0 flex-1 truncate">{u.nome}</span>
-      <span className="text-xs text-[var(--muted)]">{statusLabel(u.presenca)}</span>
+      <span className="text-[13px] text-[var(--muted)]">{statusLabel(u.presenca)}</span>
      </button>
      <Link href={"/perfil/"+u.id} className="botao-icone !h-8 !w-8 shrink-0" title={"Perfil de "+u.nome} aria-label={"Ver perfil de "+u.nome}>
       <svg aria-hidden="true" viewBox="0 0 24 24" width={17} height={17} fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3-7 8-7s8 2 8 7"/></svg>
@@ -372,7 +372,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
       <div className="flex min-w-0 items-center gap-2">
        <button type="button" className="chat-botao-contatos botao-secundario" onClick={()=>setContatosAbertos(true)} aria-label="Abrir conversas" aria-expanded={contatosAbertos}>Conversas{totalNaoLidas>0?` (${totalNaoLidas})`:""}</button>
        <div className="min-w-0"><h2 className="truncate text-base font-bold">{atual?.nome??"Equipe — Geral"}</h2>
-        <p className="text-xs text-[var(--muted)]">{atual?.tipo==="privada"?"Conversa privada":"Canal geral da equipe"}</p></div>
+        <p className="text-[13px] text-[var(--muted)]">{atual?.tipo==="privada"?"Conversa privada":"Canal geral da equipe"}</p></div>
       </div>
       <div className="chat-ferramentas-mensagens flex min-w-0 flex-wrap items-center gap-2">
       <form className="flex min-w-0 flex-wrap items-center gap-2" onSubmit={e=>{e.preventDefault();setMensagens([]);setMais(false);setPesquisa(busca.trim().slice(0,100));}}>
@@ -417,8 +417,8 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     </div>
     <div className="chat-compositor shrink-0 border-t border-[var(--border)] pt-2">
      {respondendo&&<div className="chat-resposta-compositor mb-3 flex min-w-0 items-center justify-between gap-2 p-3">
-       <div className="min-w-0"><strong className="block text-xs">Respondendo a {respondendo.autorId===usuarioId?"você":respondendo.autor}</strong>
-         <p className="line-clamp-2 break-words text-xs [overflow-wrap:anywhere]">{textoVisivel(respondendo)}</p>
+       <div className="min-w-0"><strong className="block text-[13px]">Respondendo a {respondendo.autorId===usuarioId?"você":respondendo.autor}</strong>
+         <p className="line-clamp-2 break-words text-[13px] [overflow-wrap:anywhere]">{textoVisivel(respondendo)}</p>
        </div>
        <button className="botao-secundario shrink-0" type="button" onClick={()=>setRespondendo(null)} aria-label="Cancelar resposta">Cancelar</button>
      </div>}
@@ -427,11 +427,11 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
         width={96} height={72} unoptimized className="h-16 w-20 shrink-0 rounded-md border border-[var(--border)] bg-[var(--surface)] object-contain"/>}
       <div className="min-w-0 flex-1">
        <p className="truncate font-medium" title={imagemSelecionada.name||"Imagem colada"}>{imagemSelecionada.name||"Imagem colada"}</p>
-       <p className="text-xs text-[var(--muted)]">Pronta para enviar · {Math.ceil(imagemSelecionada.size/1024)} KB</p>
+       <p className="text-[13px] text-[var(--muted)]">Pronta para enviar · {Math.ceil(imagemSelecionada.size/1024)} KB</p>
       </div>
-      <button type="button" className="botao-secundario shrink-0 text-xs" onClick={removerImagem} disabled={enviando} aria-label="Remover imagem anexada">Remover</button>
+      <button type="button" className="botao-secundario shrink-0 text-[13px]" onClick={removerImagem} disabled={enviando} aria-label="Remover imagem anexada">Remover</button>
      </div>}
-     <p className="mb-2 min-h-4 text-xs text-[var(--muted)]" aria-live="polite">{digitando}</p>
+     <p className="mb-2 min-h-4 text-[13px] text-[var(--muted)]" aria-live="polite">{digitando}</p>
      <form onSubmit={e=>void enviarTexto(e)} className="flex items-end gap-2">
       <input ref={inputImagemRef} type="file" accept="image/png,image/jpeg,image/webp"
        className="sr-only" aria-label="Selecionar imagem para enviar" tabIndex={-1}
@@ -445,7 +445,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
        readOnly={enviando} disabled={!estado}/>
       <button ref={botaoEnviarRef} className="botao-primario" type="submit" disabled={enviando||(!texto.trim()&&!imagemSelecionada)}>{enviando?"Enviando...":"Enviar"}</button>
      </form>
-     <p className="chat-dica-envio mt-1 text-xs text-[var(--muted)]">Enter envia · Shift+Enter quebra linha · Imagens PNG, JPEG ou WebP, até 2 MB. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
+     <p className="chat-dica-envio mt-1 text-[13px] text-[var(--muted)]">Enter envia · Shift+Enter quebra linha · Imagens PNG, JPEG ou WebP, até 2 MB. Evite dados confidenciais de clientes. <Link href="/artigos">Compartilhe links de artigos do KB</Link>.</p>
     </div>
   </section>
  </div>;
