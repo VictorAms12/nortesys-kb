@@ -11,3 +11,9 @@ Critérios: top-3 de pelo menos 90% entre positivos, zero resultados em consulta
 ## Ensaio adicional de sinônimos sem termos literais
 
 Para impedir que o corpus seja trivial, foram retiradas menções explícitas de `DANFE`, `imprimir` e `demora` dos documentos-alvo, mantendo os conceitos correspondentes (`NF-e`, `impressora` e `lentidão`). O teste exige que as três consultas alcancem o artigo correto **via expansão secundária**. A comparação numérica original de 63 casos permanece registrada acima; o novo corpus com 64 casos exige nova medição CI antes de publicar números atualizados.
+
+## Resultado do corpus ampliado (GitHub Actions, 01/11/2026)
+
+**64 consultas:** 54 positivas e 10 negativas. Baseline (`threshold=0.38`) teve **51/54 (94,4%)** acertos no top-3; busca nova (`threshold=0.30` mais normalização e sinônimos) teve **54/54 (100%)**, ganho de **5,6 pontos percentuais** no corpus controlado. **Zero falsos positivos** entre as dez consultas negativas. Tempo médio: **2,05 ms** por consulta. Índice e vocabulário serializados: **8,3 KB**.
+
+Os três ganhos foram isolados no conjunto artificial removendo menções literais de DANFE, imprimir e demora; não comprovam melhora em buscas reais do Neon. As 6 sessões E2E, navegação móvel autenticada e custo sob grande catálogo seguem pendentes de homologação.

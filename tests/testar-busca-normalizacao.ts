@@ -30,6 +30,8 @@ test("radicais leves preservam siglas e unem plural/singular",async()=>{
  const {radicalPortugues}=await import("../src/lib/busca-normalizacao");
  assert.equal(radicalPortugues("impressoras"),radicalPortugues("impressora"));
  assert.equal(radicalPortugues("impressões"),radicalPortugues("impressão"));
+ assert.equal(radicalPortugues("pães"),radicalPortugues("pão"));
+ assert.equal(radicalPortugues("cães"),radicalPortugues("cão"));
  assert.equal(radicalPortugues("configurando"),radicalPortugues("configurar"));
  assert.equal(radicalPortugues("CFOP"),"cfop");
  assert.equal(radicalPortugues("539"),"539");
