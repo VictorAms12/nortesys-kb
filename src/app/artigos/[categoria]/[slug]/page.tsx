@@ -63,7 +63,7 @@ export default async function PaginaArtigo({ params }: Props) {
     <p className="resumo-artigo">{artigo.resumo}</p>
     <div className="metadados-linha metadados-artigo">
      <EtiquetaStatus status={artigo.status}/>
-     <span>{artigo.nivel}</span><span aria-hidden="true">·</span>
+     <span className="indicador-nivel" data-nivel={artigo.nivel}>{artigo.nivel}</span><span aria-hidden="true">·</span>
      <span>{TIPOS_CONTEUDO[artigo.tipo].nome}</span><span aria-hidden="true">·</span>
      <span>{artigo.sistema}</span><span aria-hidden="true">·</span>
      <time dateTime={artigo.atualizadoEm}>Atualizado {formatarData(artigo.atualizadoEm)}</time>

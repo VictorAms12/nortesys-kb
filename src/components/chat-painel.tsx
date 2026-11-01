@@ -390,7 +390,7 @@ export function ChatPainel({usuarioId}:{usuarioId:string}){
     <div ref={historicoRef} className="chat-historico min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto" aria-label="Histórico de mensagens">
      {mais&&<button type="button" className="botao-secundario mb-4" onClick={()=>{const area=historicoRef.current;if(area)ajusteHistorico.current={altura:area.scrollHeight,topo:area.scrollTop};void carregar(conversa,pesquisa,mensagens[0]?.id??null);}}>Carregar mensagens anteriores</button>}
      {mensagens.length===0?<p className="estado-chat-vazio">{pesquisa?"Nenhuma mensagem encontrada.":"Sem mensagens neste canal."}</p>:
-      <ul className="lista-mensagens">{mensagens.map(m=><li key={m.id} className="chat-linha-mensagem">
+      <ul className="lista-mensagens">{mensagens.map(m=><li key={m.id} className="chat-linha-mensagem" data-propria={m.autorId===usuarioId?"sim":"nao"}>
        <div className="chat-avatar" aria-hidden="true">{m.autor.trim().slice(0,1).toUpperCase()}</div>
        <article className="chat-corpo-mensagem">
         <div className="chat-meta-mensagem">

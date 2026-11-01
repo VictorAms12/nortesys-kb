@@ -184,7 +184,7 @@ const ResultadosBusca=memo(function ResultadosBusca({resultados,consulta}:{resul
     </h2>
     <div className="metadados-linha">
      <span>{artigo.nomeCategoria}</span><span aria-hidden="true">·</span><span>{artigo.sistema}</span>
-     <span aria-hidden="true">·</span><span>{artigo.nivel}</span><span aria-hidden="true">·</span>
+     <span aria-hidden="true">·</span><span className="indicador-nivel" data-nivel={artigo.nivel}>{artigo.nivel}</span><span aria-hidden="true">·</span>
      <time dateTime={artigo.atualizadoEm}>{formatarData(artigo.atualizadoEm)}</time>
     </div>
     <p className="trecho-resultado"><Destaque texto={trechoEncontrado(artigo.conteudoBusca,consulta)} consulta={consulta}/></p>
