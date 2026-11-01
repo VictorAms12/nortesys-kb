@@ -101,14 +101,18 @@ export function EstruturaAplicacao({nome,papel,versao,contadores,dataBase,childr
         <button type="button" className="botao-icone fechar-menu-mobile" onClick={()=>setMobileAberta(false)} aria-label="Fechar menu"><IconeInterface nome="fechar"/></button>
       </div>
       <div className="rolagem-sidebar">
-        <nav aria-label="Principal" className="grupo-navegacao"><p className="titulo-navegacao">Principal</p>{principal.map(linkItem)}</nav>
+        <nav aria-label="Principal" className="grupo-navegacao"><p className="titulo-navegacao">Principal</p>{principal.map(linkItem)}<div className="separador-principal" aria-hidden="true"/>{ferramentas.map(linkItem)}</nav>
         <nav aria-label="Categorias" className="grupo-navegacao"><div className="titulo-navegacao titulo-navegacao-link"><span>Categorias</span><Link href="/categorias" onClick={()=>setMobileAberta(false)} title="Todas as categorias">Ver todas</Link></div>{destinosCategorias.map(linkItem)}</nav>
-        <nav aria-label="Ferramentas" className="grupo-navegacao"><p className="titulo-navegacao">Ferramentas</p>{ferramentas.map(linkItem)}</nav>
+        
         {papel!=="leitor"&&<nav aria-label="Administração" className="grupo-navegacao"><p className="titulo-navegacao">Administração</p>{admin.filter(d=>papel==="administrador"|| !["/admin/usuarios","/admin/auditoria","/admin/indicadores","/admin/manutencao"].includes(d.href)).map(linkItem)}</nav>}
       </div>
       <div className="rodape-sidebar">
         <Link href="/perfil" className="perfil-sidebar no-underline text-[var(--text)]" title={`Abrir perfil de ${nome}`}><div className="avatar-sidebar">{nome.trim().slice(0,1).toUpperCase()}</div><div className="texto-perfil"><strong>{nome}</strong><small>{papel}</small></div></Link>
         <button type="button" className="botao-icone recolher-sidebar" aria-label={recolhida?"Expandir menu lateral":"Recolher menu lateral"} title={recolhida?"Expandir menu":"Recolher menu"} onClick={alternar}><IconeInterface nome={recolhida?"expandir":"recolher"}/></button>
+      </div>
+      <div className="sidebar-meta no-print" aria-label="Informações da versão">
+        <span>Versão {versao}</span>
+        <span>{dataBase?"Atualizada em "+dataBase.slice(0,10).split("-").reverse().join("/"):"Base interna de suporte"}</span>
       </div>
     </aside>
     <div className="area-app" inert={mobileAberta}>
