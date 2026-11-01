@@ -60,7 +60,7 @@ test("8: imagens privadas, migração idempotente e autorização individual",as
  assert.equal((await db.query(SQL_LER_IMAGEM_CHAT,[receptor,novoId])).rows.length,0,
   "Apagar para todos revoga leitura mesmo com URL antiga");
 });
-\n
+
 test("3: validação compartilhada permite imagem sem legenda, mas não mensagem textual vazia",()=>{
  const vazio=normalizarTextoChat("  \n\t ");
  assert.equal(vazio,"");
