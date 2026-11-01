@@ -9,11 +9,15 @@ const requisitos=[
  ["E2E_USUARIO",usuario],["E2E_SENHA",senha],
  ["E2E_ARTIGO_TERMO",consulta],["E2E_ARTIGO_URL",artigoUrl],
 ];
-for(const [chave,valor] of requisitos){
- if(!valor)throw new Error("Defina "+chave+" para executar os testes de navegador.");
-}
-if(!/^\/artigos\/[a-z0-9-]+\/[a-z0-9-]+$/.test(artigoUrl))
- throw new Error("E2E_ARTIGO_URL deve apontar para um artigo disponível no banco de desenvolvimento.");
+// A descoberta da suíte (playwright test --list) dispensa segredos; a execução
+// continua falhando explicitamente se os dados do Preview de DEV não existirem.
+test.beforeAll(()=>{
+ for(const [chave,valor] of requisitos){
+  if(!valor)throw new Error("Defina "+chave+" para executar os testes de navegador.");
+ }
+ if(!/^\/artigos\/[a-z0-9-]+\/[a-z0-9-]+$/.test(artigoUrl))
+  throw new Error("E2E_ARTIGO_URL deve apontar para artigo disponível no desenvolvimento.");
+});
 
 async function autenticar(page){
  await page.goto("/entrar");
