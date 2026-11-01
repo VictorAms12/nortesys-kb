@@ -1,13 +1,8 @@
 @import "tailwindcss";
 
-/* Estilos legados com precedência inferior aos do sistema atual. */
-@layer kb-legado {
-/* Movimento curto: confirma ações e orienta a navegação sem atrasar o uso. */
-
-
-
-@keyframes giro-envio { to { transform: rotate(360deg); } }
-
+/* Ordem explícita: a camada utilities sempre prevalece sobre components. */
+@layer theme, base, components, utilities;
+@layer base {
 :root{
  color-scheme:light;
  --background:#f8f9fa; --surface:#ffffff; --sidebar-bg:#f3f5f6; --surface-alt:#f4f6f7;
@@ -33,10 +28,34 @@
  --danger-bg:#462a2c; --danger-border:#a86868; --danger-text:#f1b9b9;
  --overlay:rgba(0,0,0,.68);
 }
-html { scroll-behavior: smooth; }
-body { background: var(--background); color: var(--text); font-family: var(--font-sans); }
-a { color: var(--link); text-underline-offset: 3px; }
-:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+:root { --raio-interacao: .65rem; --tempo-interacao: 160ms; }
+:root{--sidebar-width:232px;--sidebar-collapsed-width:60px;}
+html{scroll-behavior:auto;overflow-x:clip;}
+body{margin:0;min-width:320px;background:var(--background);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
+:is(h1,h2,h3,h4){line-height:1.3;}
+a{color:var(--link);text-underline-offset:2px;}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
+::selection{background:var(--selection);color:var(--text);}
+:where(button,a,input,select,textarea,summary){transition:color 120ms ease,background-color 120ms ease,border-color 120ms ease;}
+:where(button,input,textarea,select,summary){font-family:inherit;}
+}
+
+
+/* Compatibilidade preservada dentro da camada components; classes utilities prevalecem. */
+@layer components {
+
+/* Movimento curto: confirma ações e orienta a navegação sem atrasar o uso. */
+
+
+
+@keyframes giro-envio { to { transform: rotate(360deg); } }
+
+
+
+
+
+
+
 .conteiner { width: min(100% - 2.5rem, 1200px); margin-inline: auto; }
 @media(min-width:640px) { .conteiner { width: min(100% - 4rem, 1200px); } }
 .pular-conteudo { position: absolute; left: 12px; top: -80px; padding: 10px; background: var(--surface); z-index: 90; }
@@ -384,7 +403,7 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 @media (prefers-reduced-motion:reduce){.chat-historico li,.painel-notificacoes,.toast-mensagem{animation:none;}}
 
 /* Fase 8 — acabamento visual e estados de interação da aplicação inteira. */
-:root { --raio-interacao: .65rem; --tempo-interacao: 160ms; }
+
 ::selection { background: color-mix(in srgb, var(--primary) 24%, transparent); color: var(--text); }
 .botao-primario,.botao-secundario,.botao-copiar,.botao-icone,.item-navegacao,.link-sumario,.link-cartao {
  transition: background-color var(--tempo-interacao) ease,
@@ -395,7 +414,7 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 }
 .botao-primario:active:not(:disabled),.botao-secundario:active:not(:disabled),.botao-icone:active:not(:disabled) {transform:translateY(1px);}
 .botao-primario:disabled,.botao-secundario:disabled,.botao-icone:disabled {opacity:.54;cursor:not-allowed;}
-:where(button,input,textarea,select) {font:inherit;}
+
 :where(input,textarea,select):focus-visible {outline:2px solid var(--primary);outline-offset:2px;}
 .item-navegacao:focus-visible,.perfil-sidebar:focus-visible {outline:2px solid var(--primary);outline-offset:2px;}
 .item-navegacao-ativo {box-shadow:inset 3px 0 var(--primary);font-weight:720;}
@@ -438,22 +457,23 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
 @media(prefers-reduced-motion:reduce){.menu-conta-painel{animation:none}.menu-conta-item{transition:none}}
 }
 
+@layer components {
 /* ============================================================
    NORTEsys KB / Sistema visual de produto — Fase 8
    Os estilos de compatibilidade permanecem em camada inferior a estes
    tokens e componentes. Esta camada é a fonte visual.
    ============================================================ */
-:root{--sidebar-width:232px;--sidebar-collapsed-width:60px;}
-html{scroll-behavior:auto;overflow-x:clip;}
-body{margin:0;min-width:320px;background:var(--background);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.5;}
-:is(h1,h2,h3,h4,h5,h6,strong,b){font-weight:600;letter-spacing:normal;}
-:is(h1,h2,h3,h4){line-height:1.3;}
-a{color:var(--link);text-underline-offset:2px;}
-:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
-::selection{background:var(--selection);color:var(--text);}
-:where(button,input,textarea,select,summary){font-family:inherit;font-size:inherit;}
-:where(button,a,input,select,textarea,summary){transition:color 120ms ease,background-color 120ms ease,border-color 120ms ease;}
-:where([class*="rounded-"],.cartao,.etiqueta,.botao-primario,.botao-secundario,.botao-copiar,.botao-icone,.login-submit,.destaque,.aviso-artigo){border-radius:var(--radius);}
+
+
+
+
+
+
+
+
+
+
+
 :is(.avatar-sidebar,.chat-avatar,.menu-conta-inicial){border-radius:50%;}
 :is(.cartao,.indicador-home,.painel-notificacoes,.menu-conta-painel,.toast-mensagem,.dropdown-busca){box-shadow:none;}
 :is(.cartao,.cartao-categoria):hover{box-shadow:none;transform:none;}
@@ -886,7 +906,7 @@ a{color:var(--link);text-underline-offset:2px;}
  .filtros-biblioteca{grid-template-columns:1fr;}
  .admin-resumo-grade{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
-:where(.text-\[10px\],.text-\[11px\]){font-size:12px;}
+
 
 @media print{
  body{background:white!important;color:black!important;}
@@ -902,4 +922,5 @@ a{color:var(--link);text-underline-offset:2px;}
  .somente-impressao{display:block!important;}
  a{color:black!important;}
  .bloco-codigo{background:white!important;color:black!important;}
+}
 }
