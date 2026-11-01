@@ -3,6 +3,7 @@ import {randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {test} from "node:test";
 import {PGlite} from "@electric-sql/pglite";
+import {normalizarTextoChat,textoChatValido} from "../src/lib/chat-conteudo";
 import {SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_INSERIR_IMAGEM_CHAT,
  SQL_LER_IMAGEM_CHAT,SQL_LISTAR_MENSAGENS,SQL_LIMPAR_CONVERSA} from "../src/lib/chat-sql";
 
@@ -58,4 +59,14 @@ test("8: imagens privadas, migração idempotente e autorização individual",as
  await db.query(SQL_APAGAR_PARA_TODOS,[autor,novoId,conversa]);
  assert.equal((await db.query(SQL_LER_IMAGEM_CHAT,[receptor,novoId])).rows.length,0,
   "Apagar para todos revoga leitura mesmo com URL antiga");
+});
+\n
+test("3: validação compartilhada permite imagem sem legenda, mas não mensagem textual vazia",()=>{
+ const vazio=normalizarTextoChat("  \n\t ");
+ assert.equal(vazio,"");
+ assert.equal(textoChatValido(vazio,true),true);
+ assert.equal(textoChatValido(vazio,false),false);
+ assert.equal(normalizarTextoChat("  Foto do erro\u0000  "),"Foto do erro");
+ assert.equal(textoChatValido("x".repeat(2000),true),true);
+ assert.equal(textoChatValido("x".repeat(2001),true),false);
 });

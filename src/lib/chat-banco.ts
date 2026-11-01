@@ -6,6 +6,7 @@ import {registrarAuditoriaSegura} from "./auditoria-eventos";
 import {publicarChat} from "./chat-ably";
 import {enviarPushChat} from "./push-web";
 import {SQL_MARCAR_NOTIFICACOES_CONVERSA,SQL_MARCAR_NOTIFICACOES_ATE} from "./notificacoes-sql";
+import {normalizarTextoChat,textoChatValido} from "./chat-conteudo";
 import {SQL_CONVERSAS,SQL_LISTAR_MENSAGENS,SQL_INSERIR_MENSAGEM,SQL_APAGAR_PARA_MIM,SQL_APAGAR_PARA_TODOS,SQL_LIMPAR_CONVERSA,SQL_INSERIR_IMAGEM_CHAT,SQL_MARCAR_LIDA_VISIVEL} from "./chat-sql";
 export class ErroChat extends Error {constructor(public status:number,mensagem:string){super(mensagem);}}
 type UsuarioLinha={id:string;nome:string;usuario:string;presenca:"online"|"ausente"|"offline"};
@@ -114,8 +115,8 @@ export async function enviarMensagem(usuario:string,conversa:string,texto:string
  if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
  if(respondendoA!==null&&!idMensagemValido(respondendoA))
   throw new ErroChat(400,"Mensagem de origem inválida.");
- const limpo=texto.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,"").trim();
- if(!limpo||limpo.length>2000)throw new ErroChat(400,"Mensagem deve ter de 1 a 2000 caracteres.");
+ const limpo=normalizarTextoChat(texto);
+ if(!textoChatValido(limpo,false))throw new ErroChat(400,"Mensagem deve ter de 1 a 2000 caracteres.");
  const destino=await destinatarios(usuario,conversa);
  if(!await consumirLimite(usuario))throw new ErroChat(429,"Muitas mensagens. Aguarde alguns segundos.");
  const rows=await consultar<MsgLinha>(SQL_INSERIR_MENSAGEM,[conversa,usuario,limpo,respondendoA]);
@@ -138,8 +139,8 @@ export async function registrarImagemChat(usuario:string,conversa:string,texto:s
  respondendoA:number|null,caminho:string,mime:string,tamanho:number):Promise<MensagemChat>{
  if(!CHAT_UUID.test(conversa))throw new ErroChat(400,"Conversa inválida.");
  if(respondendoA!==null&&!idMensagemValido(respondendoA))throw new ErroChat(400,"Mensagem de origem inválida.");
- const limpo=texto.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,"").trim();
- if(!limpo||limpo.length>2000)throw new ErroChat(400,"Legenda inválida.");
+ const limpo=normalizarTextoChat(texto);
+ if(!textoChatValido(limpo,true))throw new ErroChat(400,"Legenda inválida.");
  const destino=await destinatarios(usuario,conversa);
  const rows=await consultar<MsgLinha>(SQL_INSERIR_IMAGEM_CHAT,[conversa,usuario,limpo,respondendoA,caminho,mime,tamanho]);
  if(!rows.length)throw new ErroChat(400,"A mensagem respondida não está disponível para você.");
