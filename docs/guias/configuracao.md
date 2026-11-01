@@ -50,7 +50,10 @@ A migração 012 permite imagens de chat sem legenda e atualiza somente textos a
 
 A **migração 014** protege o último administrador ativo por trigger no PostgreSQL, inclusive em atualizações simultâneas ou operações feitas fora do painel.
 
-A **migração 015** recupera o gatilho da fila de imagens de chat excluídas para todos se ele estiver ausente, sem remover arquivos ou mensagens. No Neon de desenvolvimento onde a migração 009 estiver parcialmente instalada, aplique 015 primeiro e confirme o gatilho antes de reconciliar os checksums históricos. A reconciliação **não deve** certificar uma migração 009 incompleta. Aplique-a primeiro no Neon de desenvolvimento e valide a ativação, rebaixamento e desativação de contas com pelo menos dois administradores de teste. O controle de concorrência entre conexões reais precisa ser homologado no banco escolhido. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
+A **migração 015** recupera o gatilho da fila de imagens de chat excluídas para todos se ele estiver ausente, sem remover arquivos ou mensagens.
+ 
+A **migração 016** prepara índices de busca para crescimento do catálogo. Cria o índice GIN de `to_tsvector('portuguese',titulo || conteudo)` e, quando disponíveis, instala `pg_trgm` e `unaccent` e cria um índice trigram para títulos. A pesquisa principal continua usando Fuse.js (com a mesma relevância e visibilidade); a migração **não muda a experiência de pesquisa**, e os índices SQL só serão aproveitados quando uma consulta full-text for adotada. No Neon de desenvolvimento, valide `pg_indexes` e `pg_extension` após aplicar. Extensões ausentes em PostgreSQL de testes são tratadas como opcionais.
+ No Neon de desenvolvimento onde a migração 009 estiver parcialmente instalada, aplique 015 primeiro e confirme o gatilho antes de reconciliar os checksums históricos. A reconciliação **não deve** certificar uma migração 009 incompleta. Aplique-a primeiro no Neon de desenvolvimento e valide a ativação, rebaixamento e desativação de contas com pelo menos dois administradores de teste. O controle de concorrência entre conexões reais precisa ser homologado no banco escolhido. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
 
 Conferência SQL:
 
