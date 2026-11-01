@@ -16,3 +16,21 @@ export function prepararConsulta(consulta:string):string{
 export function normalizarCodigoErro(texto:string):string{
  return normalizarTexto(texto).replace(/^(?:erro|rejeicao)\s+(?=\d)/,"");
 }
+
+const SIGLAS=new Set(["nfe","nfce","cfop","cst","csosn","ncm","xml","danfe","vpn","ibs","cbs","a1","a3"]);
+/** Radical leve: não transformar dígitos ou siglas do suporte. */
+export function radicalPortugues(original:string):string{
+ const termo=normalizarTexto(original);
+ if(!termo||termo.includes(" ")||/\d/.test(termo)||SIGLAS.has(termo)||/^[A-Z]{2,}$/.test(original))
+   return termo;
+ if(termo.length<5)return termo;
+ if(termo.endsWith("coes"))return termo.slice(0,-4)+"cao";
+ if(termo.endsWith("oes")||termo.endsWith("aes"))return termo.slice(0,-3)+"ao";
+ for(const fim of ["ando","endo","indo"])if(termo.endsWith(fim))return termo.slice(0,-fim.length);
+ for(const fim of ["ar","er","ir"])if(termo.endsWith(fim))return termo.slice(0,-2);
+ if(termo.endsWith("s"))return termo.slice(0,-1);
+ return termo;
+}
+export function radicalizarTexto(texto:string):string{
+ return normalizarTexto(texto).split(" ").filter(Boolean).map(radicalPortugues).join(" ");
+}

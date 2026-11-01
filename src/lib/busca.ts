@@ -1,6 +1,7 @@
 import Fuse from "fuse.js";
 import type { DocumentoBusca } from "./indice-busca";
-import { normalizarTexto, prepararConsulta, normalizarCodigoErro } from "./busca-normalizacao";
+import { normalizarTexto, prepararConsulta, normalizarCodigoErro, radicalizarTexto } from "./busca-normalizacao";
+import { GRUPOS_SINONIMOS } from "../../config/sinonimos";
 
 export const MINIMO_CARACTERES_BUSCA = 2;
 
@@ -14,7 +15,8 @@ export function criarBuscador(documentos: DocumentoBusca[]): Fuse<DocumentoBusca
     buscaResumo:normalizarTexto(doc.resumo),
     buscaSistema:normalizarTexto(doc.sistema),
     buscaCategoria:normalizarTexto(doc.nomeCategoria),
-    buscaConteudo:normalizarTexto(doc.conteudoBusca)
+    buscaConteudo:normalizarTexto(doc.conteudoBusca),
+    buscaRadicais:radicalizarTexto([doc.titulo,doc.resumo,doc.conteudoBusca,...(doc.tags??[])].join(" "))
   })), {
     ignoreDiacritics: true,
     ignoreLocation: true, // Encontra palavras mesmo no final de procedimentos longos.
@@ -29,23 +31,17 @@ export function criarBuscador(documentos: DocumentoBusca[]): Fuse<DocumentoBusca
       { name: "buscaSistema", weight: 2 },
       { name: "buscaCategoria", weight: 1.2 },
       { name: "buscaConteudo", weight: 0.6 },
+      { name: "buscaRadicais", weight: 0.45 },
     ],
   });
 }
 
 export type ResultadoBusca = { artigo: DocumentoBusca; pontuacao: number };
 /** Equivalências restritas, sem adivinhar regras fiscais ou substituir o termo original. */
-const ALIASES_BUSCA = [
-  ["nf-e", "nfe", "nota fiscal eletrônica"],
-  ["nfc-e", "nfce", "nota fiscal consumidor"],
-  ["impressão", "impressora", "imprime", "fila impressão"],
-  ["login", "entrar sistema", "acesso sistema"],
-  ["ibs cbs", "ibscbs", "reforma tributária"],
-] as const;
 export function variacoesBusca(termo:string):string[] {
-  const chave=normalizarTexto(termo).replace(/\s+/g," ");
-  const grupo=ALIASES_BUSCA.find(op=>op.some(v=>normalizarTexto(v)===chave));
-  return grupo?grupo.filter(v=>normalizarTexto(v)!==chave):[];
+ const chave=normalizarTexto(termo);
+ const grupos=GRUPOS_SINONIMOS.filter(grupo=>grupo.termos.some(t=>normalizarTexto(t)===chave));
+ return [...new Set(grupos.flatMap(grupo=>grupo.termos).map(normalizarTexto).filter(t=>t!==chave))];
 }
 
 /** Prioriza código exato e títulos; nas demais situações usa a relevância do Fuse. */
@@ -55,7 +51,9 @@ export function executarBusca(buscador: Fuse<DocumentoBusca>, consulta: string):
 
   const termoNormalizado = normalizar(termo);
   const combinados = new Map<string, {artigo: DocumentoBusca; pontuacao:number; prioridade:number}>();
-  const consultas=[termo,...variacoesBusca(termo)];
+  const raiz=radicalizarTexto(termo);
+  const consultas=[termo,...(raiz!==termo?[raiz]:[]),...variacoesBusca(termo)];
+  const quantidadeOriginais=raiz!==termo?2:1;
   for (const [indice,consulta] of consultas.entries()) {
     for(const resultado of buscador.search(prepararConsulta(consulta))) {
       const artigo=resultado.item;
@@ -63,8 +61,8 @@ export function executarBusca(buscador: Fuse<DocumentoBusca>, consulta: string):
       const codigoExato=indice===0&&codigosErro.some(c=>normalizarCodigoErro(c)===termoNormalizado);
       const codigoContem=indice===0&&codigosErro.some(c=>normalizarCodigoErro(c).split(" ").includes(termoNormalizado));
       const tituloContem=indice===0&&normalizarTexto(artigo.titulo).includes(termoNormalizado);
-      const prioridade=indice>0?2:codigoExato?-3:codigoContem?-2:tituloContem?-1:0;
-      const novo={artigo,pontuacao:(resultado.score??1)+(indice>0?0.2:0),prioridade};
+      const prioridade=indice>=quantidadeOriginais?2:indice===1?1:codigoExato?-3:codigoContem?-2:tituloContem?-1:0;
+      const novo={artigo,pontuacao:(resultado.score??1)+(indice>=quantidadeOriginais?0.25:indice===1?0.08:0),prioridade};
       const anterior=combinados.get(artigo.url);
       if(!anterior||novo.prioridade<anterior.prioridade||
         (novo.prioridade===anterior.prioridade&&novo.pontuacao<anterior.pontuacao))combinados.set(artigo.url,novo);

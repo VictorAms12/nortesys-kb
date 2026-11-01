@@ -25,3 +25,12 @@ test("índice e consulta usam a mesma normalização e códigos exatos",()=>{
  assert.equal(executarBusca(fuse,"erro 539")[0]?.artigo.url,docs[0].url);
  assert.equal(executarBusca(fuse,"539")[0]?.artigo.url,docs[0].url);
 });
+
+test("radicais leves preservam siglas e unem plural/singular",async()=>{
+ const {radicalPortugues}=await import("../src/lib/busca-normalizacao");
+ assert.equal(radicalPortugues("impressoras"),radicalPortugues("impressora"));
+ assert.equal(radicalPortugues("impressões"),radicalPortugues("impressão"));
+ assert.equal(radicalPortugues("configurando"),radicalPortugues("configurar"));
+ assert.equal(radicalPortugues("CFOP"),"cfop");
+ assert.equal(radicalPortugues("539"),"539");
+});
