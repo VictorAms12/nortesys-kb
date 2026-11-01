@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound,redirect } from "next/navigation";
+import { resolverAliasArtigo } from "../../../../lib/artigos-alias";
 import { exigirSessao } from "../../../../lib/autenticacao-servidor";
 import { encontrarCategoria } from "../../../../../config/categorias";
 import { AcoesArtigo } from "../../../../components/acoes-artigo";
@@ -24,17 +25,29 @@ type Props = { params: Promise<{ categoria: string; slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const sessao = await exigirSessao();
   const { categoria, slug } = await params;
-  const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === categoria && a.slug === slug);
-  return { title: artigo ? `${artigo.titulo} | Nortesys KB` : "Artigo não encontrado", description: artigo?.resumo };
+  const artigos=await carregarTodosArtigos(sessao.papel);
+  const url=`/artigos/${categoria}/${slug}`;
+  let artigo=artigos.find(a=>a.url===url);
+  if(!artigo){
+   const destino=await resolverAliasArtigo(url,sessao.papel);
+   artigo=destino?artigos.find(a=>a.url===destino):undefined;
+  }
+  return {title:artigo?`${artigo.titulo} | Nortesys KB`:"Artigo não encontrado",description:artigo?.resumo};
 }
 
 export default async function PaginaArtigo({ params }: Props) {
   const sessao = await exigirSessao();
   const { categoria: slugCategoria, slug } = await params;
-  const artigo = (await carregarTodosArtigos(sessao.papel)).find((a) => a.categoria === slugCategoria && a.slug === slug);
-  if (!artigo) notFound();
+  const artigos=await carregarTodosArtigos(sessao.papel);
+  const url=`/artigos/${slugCategoria}/${slug}`;
+  const artigo=artigos.find(a=>a.url===url);
+  if(!artigo){
+   const destino=await resolverAliasArtigo(url,sessao.papel);
+   if(destino&&artigos.some(a=>a.url===destino))redirect(destino);
+   notFound();
+  }
   const categoria = encontrarCategoria(artigo.categoria);
-  const relacionados = sugerirArtigosRelacionados(artigo, await carregarTodosArtigos(sessao.papel));
+  const relacionados = sugerirArtigosRelacionados(artigo, artigos);
   const [favorito, anexos, feedbackDisponivel] = await Promise.all([favoritoAtivo(sessao.id,artigo.url), listarAnexosPorChave(artigo.categoria,artigo.slug), migracao009Aplicada()]);
   const feedback = feedbackDisponivel ? await feedbackUsuario(sessao.id,artigo.url) : null;
   const revisaoVencida = artigoPrecisaRevisao(artigo, hojeISO());
