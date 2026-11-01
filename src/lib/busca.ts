@@ -43,7 +43,8 @@ export type ResultadoBusca = { artigo: DocumentoBusca; pontuacao: number };
 export function variacoesBusca(termo:string):string[] {
  const chave=normalizarTexto(termo);
  const grupos=GRUPOS_SINONIMOS.filter(grupo=>grupo.termos.some(t=>normalizarTexto(t)===chave));
- return [...new Set(grupos.flatMap(grupo=>grupo.termos).map(normalizarTexto).filter(t=>t!==chave))];
+ return [...new Set(grupos.flatMap(grupo=>grupo.termos).filter(t=>
+   t.toLocaleLowerCase("pt-BR")!==termo.toLocaleLowerCase("pt-BR")))];
 }
 
 /** Prioriza código exato e títulos; nas demais situações usa a relevância do Fuse. */
