@@ -43,3 +43,7 @@ O vínculo com o artigo é exclusivo e preservado para o histórico. Falhas parc
 As animações usam CSS, com preferência por movimento reduzido. Formulários mostram envio em andamento e evitam submissões duplicadas. A navegação móvel controla foco e rolagem do fundo.
 
 As suítes cobrem conteúdo, busca, segurança, usuários, formulários, imagens e regressões. PGlite executa as regras SQL de imagens em memória; o armazenamento é simulado. O build isolado e seu teste HTTP complementam esses checks. Os fluxos autenticados com serviços externos e a aparência final devem ser conferidos no deployment.
+
+## Organização das consultas do chat (Fase 6 de engenharia)
+
+A interface histórica `src/lib/chat-sql.ts` continua exportando os mesmos identificadores para evitar alterar rotas e testes. As consultas SQL parametrizadas foram organizadas em `src/lib/chat-sql/conversas.ts`, `mensagens.ts` e `imagens.ts`; o banco continua sendo a única fonte de autorização e histórico. Testes com PGlite verificam o comportamento sem conectar ao Neon real.
