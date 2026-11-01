@@ -12,3 +12,9 @@ hero-inicio, botao-hero, botao-hero-contorno, indicador-home, lista-animada, ent
 Foram preservadas regras de :hover, focus, tema escuro e media queries quando são seletores distintos; linhas de impressão e reduced-motion mantêm prioridades justificadas.
 
 A equivalência visual exata depende da homologação por captura de tela em diferentes viewports. O inventário agrupa regras por seletor e contexto CSS, mas não interpreta a cascata entre seletores diferentes. Classes sem fonte de uso inequívoca são mantidas.
+
+## Complemento após o CI
+
+A varredura final identificou mais seis seletores órfãos que foram removidos: `chat-item-conversa`, `icone-busca`, `mensagem-vazia`, `num-secao`, `rodape-site` e `trecho-busca`. A classe `presenca-offline` foi **mantida**, pois é construída dinamicamente por `"presenca-" + p` no componente de chat; grep por palavra exata não identifica esse uso.
+
+A correção pós-auditoria também define `--text-xs:13px` para os utilitários do Tailwind e aumenta a especificidade dos alvos de toque móveis, garantindo que `min-height:40px` prevaleça quando botões têm estilos próprios.
