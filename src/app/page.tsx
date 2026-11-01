@@ -26,6 +26,7 @@ export default async function Home() {
     <IconeInterface nome="busca" width={18} height={18}/>
     <label className="sr-only" htmlFor="busca-inicio">Buscar por erro, código ou procedimento</label>
     <input id="busca-inicio" name="q" type="search" maxLength={120} placeholder="Buscar por erro, código ou procedimento" autoComplete="off"/>
+    <kbd className="atalho-teclado atalho-inicio" title="Atalho para a busca global">/</kbd>
     <button type="submit" className="botao-primario">Buscar</button>
    </form>
    <div className="pesquisa-exemplos"><span>Consultas rápidas</span>
@@ -33,22 +34,22 @@ export default async function Home() {
    </div>
   </section>
   <div className="grid-painel-inicio">
-   <section className="painel-lista" aria-labelledby="titulo-recentes">
-    <div className="cabecalho-lista"><h2 id="titulo-recentes">Atualizados recentemente</h2><Link href="/recentes">Ver todos</Link></div>
-    {recentes.length?<div className="lista-artigos">{recentes.map(a=><CartaoArtigo key={a.url} artigo={resumoArtigo(a)} hoje={hoje}/>)}</div>:
+   <section className="painel-lista painel-lista-recentes" aria-labelledby="titulo-recentes">
+    <div className="cabecalho-lista"><h2 id="titulo-recentes">Artigos recentes</h2><Link href="/recentes">Ver todos</Link></div>
+    {recentes.length?<div className="lista-artigos lista-artigos-recentes">{recentes.map(a=><CartaoArtigo key={a.url} artigo={resumoArtigo(a)} hoje={hoje}/>)}</div>:
     <p className="estado-vazio">Nenhum artigo disponível na base.</p>}
    </section>
    <div className="pilha-paineis">
-    <section className="painel-lista" aria-labelledby="titulo-revisoes">
+    <section className="painel-lista painel-lista-apoio" aria-labelledby="titulo-revisoes">
      <div className="cabecalho-lista"><h2 id="titulo-revisoes">Precisam de revisão</h2><span className="contagem-discreta">{revisao.length}</span></div>
      {revisao.length?<div className="lista-artigos">{revisao.slice(0,4).map(a=><CartaoArtigo key={a.url} artigo={resumoArtigo(a)} hoje={hoje}/>)}</div>:
      <p className="estado-vazio">Nenhum artigo com revisão pendente.</p>}
     </section>
-    <section className="painel-lista" aria-labelledby="titulo-categorias">
+    <section className="painel-lista painel-lista-apoio" aria-labelledby="titulo-categorias">
      <div className="cabecalho-lista"><h2 id="titulo-categorias">Categorias</h2><Link href="/categorias">Ver todas</Link></div>
-     <div className="categorias-resumidas">{categorias.map(c=><Link href={"/categorias/"+c.slug} key={c.slug}>
+     {categorias.length?<div className="categorias-resumidas">{categorias.map(c=><Link href={"/categorias/"+c.slug} key={c.slug}>
       <span>{c.nome}</span><span className="contagem-discreta">{c.quantidade}</span>
-     </Link>)}</div>
+     </Link>)}</div>:<p className="estado-vazio" role="status">Nenhuma categoria disponível.</p>}
     </section>
    </div>
   </div>
