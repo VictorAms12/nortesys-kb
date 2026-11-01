@@ -49,7 +49,7 @@ export function executarBusca(buscador: Fuse<DocumentoBusca>, consulta: string):
   const termo = prepararConsulta(consulta);
   if (termo.length < MINIMO_CARACTERES_BUSCA) return [];
 
-  const termoNormalizado = normalizar(termo);
+  const termoNormalizado = normalizarCodigoErro(termo);
   const combinados = new Map<string, {artigo: DocumentoBusca; pontuacao:number; prioridade:number}>();
   const raiz=radicalizarTexto(termo);
   const consultas=[termo,...(raiz!==termo?[raiz]:[]),...variacoesBusca(termo)];
