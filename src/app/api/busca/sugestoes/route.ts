@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { NOME_COOKIE, obterSessao } from "../../../../lib/sessao";
 import { consultar } from "../../../../lib/banco";
 import { obterDadosBusca, buscadorEmMemoria } from "../../../../lib/cache-busca";
-import { executarBusca } from "../../../../lib/busca";
+import { executarBusca, executarBuscaOu } from "../../../../lib/busca";
+import { sugerirConsultas } from "../../../../lib/busca-sugestoes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,14 +55,18 @@ export async function GET(req: NextRequest) {
       resultados: [], categorias: dados.categorias, atualizadoEm: dados.atualizadoEm,
     }, { headers });
 
-    const resultados = executarBusca(buscadorEmMemoria(sessao.papel, dados), q)
+    const buscador=buscadorEmMemoria(sessao.papel,dados);
+    const exatos=executarBusca(buscador,q);
+    const aproximados=exatos.length===0?executarBuscaOu(buscador,q):[];
+    const resultados = (exatos.length?exatos:aproximados)
       .slice(0, 6).map(({ artigo }) => ({
         url: artigo.url,
         titulo: artigo.titulo,
         categoria: artigo.nomeCategoria,
         codigos: artigo.codigosErro?.slice(0, 2) ?? [],
       }));
-    return NextResponse.json({ resultados }, { headers });
+    return NextResponse.json({ resultados, aproximada:exatos.length===0&&aproximados.length>0,
+      alternativas:exatos.length===0?sugerirConsultas(q,dados.vocabulario):[] }, { headers });
   } catch (erro) {
     console.error("[busca] Falha ao consultar sugestões", erro instanceof Error ? erro.name : "erro");
     return NextResponse.json({ erro: "Busca temporariamente indisponível" }, { status: 503, headers });

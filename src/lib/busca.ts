@@ -2,6 +2,7 @@ import Fuse from "fuse.js";
 import type { DocumentoBusca } from "./indice-busca";
 import { normalizarTexto, prepararConsulta, normalizarCodigoErro, radicalizarTexto } from "./busca-normalizacao";
 import { GRUPOS_SINONIMOS } from "../../config/sinonimos";
+import {confereTermos,tokensDocumento} from "./busca-sugestoes";
 
 export const MINIMO_CARACTERES_BUSCA = 2;
 
@@ -16,12 +17,13 @@ export function criarBuscador(documentos: DocumentoBusca[]): Fuse<DocumentoBusca
     buscaSistema:normalizarTexto(doc.sistema),
     buscaCategoria:normalizarTexto(doc.nomeCategoria),
     buscaConteudo:normalizarTexto(doc.conteudoBusca),
-    buscaRadicais:radicalizarTexto([doc.titulo,doc.resumo,doc.conteudoBusca,...(doc.tags??[])].join(" "))
+    buscaRadicais:radicalizarTexto([doc.titulo,doc.resumo,doc.conteudoBusca,...(doc.tags??[])].join(" ")),
+    buscaTokens:tokensDocumento(doc)
   })), {
     ignoreDiacritics: true,
     ignoreLocation: true, // Encontra palavras mesmo no final de procedimentos longos.
     includeScore: true,
-    threshold: 0.38,
+    threshold: 0.30, // Menor que 0.38; filtro por distância reforça precisão.
     useTokenSearch: true,
     keys: [
       { name: "buscaCodigos", weight: 6 },
@@ -57,6 +59,7 @@ export function executarBusca(buscador: Fuse<DocumentoBusca>, consulta: string):
   for (const [indice,consulta] of consultas.entries()) {
     for(const resultado of buscador.search(prepararConsulta(consulta))) {
       const artigo=resultado.item;
+      if(!confereTermos((artigo as DocumentoBusca & {buscaTokens:string[]}).buscaTokens,consulta))continue;
       const codigosErro=artigo.codigosErro??[];
       const codigoExato=indice===0&&codigosErro.some(c=>normalizarCodigoErro(c)===termoNormalizado);
       const codigoContem=indice===0&&codigosErro.some(c=>normalizarCodigoErro(c).split(" ").includes(termoNormalizado));
@@ -85,4 +88,20 @@ export function trechoEncontrado(conteudo: string, consulta: string, tamanho = 1
   const inicio = Math.max(0, posicao - 65);
   const fim = Math.min(conteudo.length, inicio + tamanho);
   return `${inicio ? "…" : ""}${conteudo.slice(inicio, fim).trim()}${fim < conteudo.length ? "…" : ""}`;
+}
+
+/** Fallback somente quando nenhum resultado AND; a UI deve marcar como aproximado. */
+export function executarBuscaOu(buscador:Fuse<DocumentoBusca>,consulta:string):ResultadoBusca[]{
+ const termos=prepararConsulta(consulta).split(" ").filter(t=>t.length>=2);
+ if(termos.length<2)return [];
+ const coletados=new Map<string,{artigo:DocumentoBusca;pontuacao:number;termos:number}>();
+ for(const termo of termos){
+  for(const {artigo,pontuacao} of executarBusca(buscador,termo)){
+   const anterior=coletados.get(artigo.url);
+   if(anterior){anterior.termos++;anterior.pontuacao=Math.min(anterior.pontuacao,pontuacao);}
+   else coletados.set(artigo.url,{artigo,pontuacao,termos:1});
+  }
+ }
+ return [...coletados.values()].sort((a,b)=>b.termos-a.termos||a.pontuacao-b.pontuacao)
+  .map(({artigo,pontuacao})=>({artigo,pontuacao}));
 }
