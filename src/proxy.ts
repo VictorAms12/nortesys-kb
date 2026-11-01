@@ -2,19 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { NOME_COOKIE, destinoSeguro, validarTokenSessao } from "./lib/sessao";
-
-function csp(nonce: string): string {
-  const desenvolvimento = process.env.NODE_ENV !== "production";
-  return [
-    "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}'${desenvolvimento ? " 'unsafe-eval'" : ""}`,
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
-    "font-src 'self' data:",
-    `connect-src 'self' https://main.realtime.ably.net${desenvolvimento ? " ws: wss:" : ""}`,
-    "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
-  ].join("; ");
-}
+import { montarCsp } from "./lib/seguranca-cabecalhos";
 
 export async function proxy(req: NextRequest) {
   const rota = req.nextUrl.pathname;
@@ -24,7 +12,7 @@ export async function proxy(req: NextRequest) {
     if (req.cookies.has(NOME_COOKIE)) sessaoValida = await validarTokenSessao(req.cookies.get(NOME_COOKIE)?.value);
   } catch { sessaoValida = false; } // Falha no banco nunca libera acesso.
   const nonce = randomBytes(16).toString("base64");
-  const politica = csp(nonce);
+  const politica = montarCsp(nonce);
   let resposta: NextResponse;
   if (!publica && !sessaoValida) {
     if (rota.startsWith("/api/")) resposta = NextResponse.json({ erro: "Não autorizado" }, { status: 401 });

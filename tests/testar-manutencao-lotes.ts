@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import { dividirInstrucoesSql } from "../scripts/migracoes-sql.mjs";
-import { SQL_LIMPAR_TEMPORARIOS, SQL_LIMPAR_NOTIFICACOES, SQL_LIMPAR_COTAS_AVATAR, SQL_LIMPAR_COTAS_BUSCA, LOTE_MANUTENCAO } from "../src/lib/manutencao-sql";
+import { SQL_LIMPAR_TEMPORARIOS, SQL_LIMPAR_NOTIFICACOES, SQL_LIMPAR_COTAS_AVATAR, SQL_LIMPAR_COTAS_BUSCA, SQL_LIMPAR_AUDITORIA, LOTE_MANUTENCAO } from "../src/lib/manutencao-sql";
 
 const hash="a".repeat(128),salt="b".repeat(32);
 async function usuario(db:PGlite,login:string) {
@@ -59,4 +59,17 @@ test("notificações vencidas e cotas são limpas por lote e preservam itens rec
  assert.equal((await db.query<{total:number}>(SQL_LIMPAR_COTAS_AVATAR,[LOTE_MANUTENCAO])).rows[0].total,1);
  assert.equal((await db.query<{total:number}>(SQL_LIMPAR_COTAS_BUSCA,[LOTE_MANUTENCAO])).rows[0].total,1);
  assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_avatar_limites")).rows[0].total,1);
+});
+
+test("auditoria exclui lotes antigos e preserva eventos recentes",async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ await db.exec(readFileSync("db/001_auth.sql","utf8"));
+ await db.exec(readFileSync("db/002_painel.sql","utf8"));
+ await db.exec("INSERT INTO kb_auditoria(evento,alvo,data) SELECT 'login_falha','credenciais_invalidas',NOW()-INTERVAL '400 days' FROM generate_series(1,205)");
+ await db.exec("INSERT INTO kb_auditoria(evento,alvo,data) VALUES('login_sucesso','sessao',NOW())");
+ const primeira=await db.query<{total:number}>(SQL_LIMPAR_AUDITORIA,[365,200]);
+ const segunda=await db.query<{total:number}>(SQL_LIMPAR_AUDITORIA,[365,200]);
+ assert.equal(primeira.rows[0].total,200);
+ assert.equal(segunda.rows[0].total,5);
+ assert.equal((await db.query<{total:number}>("SELECT COUNT(*)::int AS total FROM kb_auditoria")).rows[0].total,1);
 });

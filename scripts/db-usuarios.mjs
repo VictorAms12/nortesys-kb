@@ -18,8 +18,8 @@ const papeis = ["administrador", "editor", "leitor"];
 function senhaNova() { return randomBytes(24).toString("base64url"); }
 function gerarHash(senha) {
   const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(senha, Buffer.from(salt,"hex"), 64, {N:1<<14,r:8,p:1,maxmem:64*1024*1024}).toString("hex");
-  return {salt,hash};
+  const forte = scryptSync(senha, Buffer.from(salt,"hex"), 64, {N:1<<17,r:8,p:1,maxmem:256*1024*1024}).toString("hex");
+  return {salt,hash:randomBytes(64).toString("hex"),hashVersionado:"scrypt$v2$131072$8$1$"+forte};
 }
 
 const SQL_CONTROLE = `CREATE TABLE IF NOT EXISTS kb_migracoes (
@@ -175,16 +175,16 @@ async function executar() {
     const nome = resto.slice(0,-1).join(" ").trim();
     if (!papeis.includes(papel)) erro("Informe papel: administrador, editor ou leitor.");
     if (!/^[\p{L}\p{M}\s.-]{2,80}$/u.test(nome)) erro("Nome inválido (2 a 80 caracteres, letras e espaços).");
-    const senha = senhaNova(); const {salt,hash} = gerarHash(senha);
-    await q(`INSERT INTO kb_usuarios(usuario,nome,papel,senha_salt,senha_hash)
-      VALUES ($1,$2,$3,$4,$5)`, [usuario,nome,papel,salt,hash]);
+    const senha = senhaNova(); const {salt,hash,hashVersionado} = gerarHash(senha);
+    await q(`INSERT INTO kb_usuarios(usuario,nome,papel,senha_salt,senha_hash,senha_hash_v2)
+      VALUES ($1,$2,$3,$4,$5,$6)`, [usuario,nome,papel,salt,hash,hashVersionado]);
     console.log(`Conta criada: ${usuario} (${papel})\nSenha inicial (exibida apenas agora): ${senha}`); return;
   }
   if (acao === "senha") {
-    const senha = senhaNova(); const {salt,hash} = gerarHash(senha);
-    const r = await q(`UPDATE kb_usuarios SET senha_salt=$2, senha_hash=$3,
+    const senha = senhaNova(); const {salt,hash,hashVersionado} = gerarHash(senha);
+    const r = await q(`UPDATE kb_usuarios SET senha_salt=$2, senha_hash=$3, senha_hash_v2=$4,
       versao_sessao=versao_sessao+1, atualizado_em=NOW()
-      WHERE usuario=$1 RETURNING usuario`, [usuario,salt,hash]);
+      WHERE usuario=$1 RETURNING usuario`, [usuario,salt,hash,hashVersionado]);
     if (!r.length) erro("Conta não encontrada.");
     console.log(`Senha redefinida: ${usuario}\nNova senha (exibida apenas agora): ${senha}\nSessões anteriores revogadas imediatamente.`); return;
   }

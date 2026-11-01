@@ -1,0 +1,430 @@
+[
+  {
+    "consulta": "impressora",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "impressao",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "impressão",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "imprimir",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "spooler",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "fila impressão",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "empresora",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "impressoras",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "configurar impressora",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "como configurar a impressora",
+    "esperado": [
+      "/artigos/infra/impressora-spooler"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "nfe",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "NF-e",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "nf e",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "nota fiscal eletronica",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "DANFE",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "XML",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "539",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "erro 539",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "chave de acesso",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfe"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "nfce",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfce"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "NFC-e",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfce"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "nfc e",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfce"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "nota fiscal consumidor",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfce"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "602",
+    "esperado": [
+      "/artigos/notas-fiscais/emissao-nfce"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "CFOP",
+    "esperado": [
+      "/artigos/fiscal/cfop"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "6102",
+    "esperado": [
+      "/artigos/fiscal/cfop"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "CST",
+    "esperado": [
+      "/artigos/fiscal/cst-csosn"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "CSOSN",
+    "esperado": [
+      "/artigos/fiscal/cst-csosn"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "NCM",
+    "esperado": [
+      "/artigos/fiscal/ncm"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "certificado",
+    "esperado": [
+      "/artigos/certificados/a1-a3"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "certifcado",
+    "esperado": [
+      "/artigos/certificados/a1-a3"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "certificado digital",
+    "esperado": [
+      "/artigos/certificados/a1-a3"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "certificado A1",
+    "esperado": [
+      "/artigos/certificados/a1-a3"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "certificados",
+    "esperado": [
+      "/artigos/certificados/a1-a3"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "VPN",
+    "esperado": [
+      "/artigos/infra/vpn"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "ponto rede",
+    "esperado": [
+      "/artigos/infra/vpn"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "configurar VPN",
+    "esperado": [
+      "/artigos/infra/vpn"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "lentidao",
+    "esperado": [
+      "/artigos/infra/lentidao"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "lentidão",
+    "esperado": [
+      "/artigos/infra/lentidao"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "lento",
+    "esperado": [
+      "/artigos/infra/lentidao"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "demora",
+    "esperado": [
+      "/artigos/infra/lentidao"
+    ],
+    "observacao": "Sinônimo sem repetição literal no artigo"
+  },
+  {
+    "consulta": "fornecedor",
+    "esperado": [
+      "/artigos/cadastros/fornecedor"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "cadastrar fornecedor",
+    "esperado": [
+      "/artigos/cadastros/fornecedor"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "produto",
+    "esperado": [
+      "/artigos/cadastros/produto"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "produtos",
+    "esperado": [
+      "/artigos/cadastros/produto"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "login",
+    "esperado": [
+      "/artigos/infra/login"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "entrar no sistema",
+    "esperado": [
+      "/artigos/infra/login"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "backup",
+    "esperado": [
+      "/artigos/infra/backup"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "restaurar backup",
+    "esperado": [
+      "/artigos/infra/backup"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "ibs cbs",
+    "esperado": [
+      "/artigos/fiscal/ibscbs"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "reforma tributaria",
+    "esperado": [
+      "/artigos/fiscal/ibscbs"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "cliente duplicado",
+    "esperado": [
+      "/artigos/cadastros/cliente-duplicado"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "CLI-DUP-001",
+    "esperado": [
+      "/artigos/cadastros/cliente-duplicado"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "operador",
+    "esperado": [
+      "/artigos/cadastros/cliente-duplicado"
+    ],
+    "observacao": "Positivo: tolerância e relevância"
+  },
+  {
+    "consulta": "elefante marinho",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "quebracabeca",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "vampiro",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "fps jogabilidade",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "999999",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "517",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "zzxyq",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "heroi galactico",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "girafa submarina",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  },
+  {
+    "consulta": "criptomoeda especulativa",
+    "esperado": [],
+    "observacao": "Negativo: resultado deve permanecer vazio"
+  }
+]

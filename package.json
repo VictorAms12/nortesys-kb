@@ -14,7 +14,7 @@
     "verificar:documentacao": "node scripts/verificar-documentacao.mjs",
     "validar:artigos": "tsx scripts/validar-artigos.ts",
     "testar:validacao": "tsx tests/testar-validacao.ts",
-    "testar:busca": "tsx tests/testar-busca.ts",
+    "testar:busca": "tsx tests/testar-busca.ts && tsx --test tests/testar-busca-ouro.ts",
     "testar:imagens": "tsx --test tests/testar-imagens.ts",
     "verificar": "node scripts/verificar-dados-sensiveis.mjs",
     "testar:seguranca": "tsx tests/testar-seguranca.ts",

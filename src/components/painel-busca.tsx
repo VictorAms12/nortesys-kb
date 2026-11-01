@@ -4,8 +4,9 @@ import { memo, useDeferredValue, useMemo, useState, type FormEvent } from "react
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { categorias } from "../../config/categorias";
-import { criarBuscador, executarBusca, MINIMO_CARACTERES_BUSCA, trechoEncontrado, type ResultadoBusca } from "../lib/busca";
+import { criarBuscador, executarBusca, executarBuscaOu, MINIMO_CARACTERES_BUSCA, trechoEncontrado, type ResultadoBusca } from "../lib/busca";
 import { formatarData } from "../lib/apresentacao";
+import { sugerirConsultas } from "../lib/busca-sugestoes";
 import type { DocumentoBusca } from "../lib/indice-busca";
 import { TIPOS_CONTEUDO, TODOS_TIPOS } from "../lib/tipos-conteudo";
 
@@ -20,9 +21,9 @@ function Destaque({ texto, consulta }: { texto: string; consulta: string }) {
   return <>{partes.map((parte, i) => termosMinusculos.has(parte.toLocaleLowerCase("pt-BR")) ? <mark key={i} className="marca-busca">{parte}</mark> : <span key={i}>{parte}</span>)}</>;
 }
 
-type Props = { documentos: DocumentoBusca[] };
+type Props = { documentos: DocumentoBusca[]; vocabulario: string[] };
 
-export function PainelBusca({ documentos }: Props) {
+export function PainelBusca({ documentos, vocabulario }: Props) {
   const router = useRouter();
   const parametros = useSearchParams();
   const urlConsulta = (parametros.get("q") ?? "").slice(0, 120);
@@ -44,16 +45,22 @@ export function PainelBusca({ documentos }: Props) {
   const sugestoes = useMemo(() => [...new Set(documentos.flatMap(doc=>[doc.titulo,...(doc.codigosErro??[])]))].slice(0,100), [documentos]);
   const sistemas = useMemo(() => [...new Set(documentos.map((doc) => doc.sistema))].sort((a, b) => a.localeCompare(b, "pt-BR")), [documentos]);
   const resultadoBusca = useMemo(() => executarBusca(fuse, consultaResultados), [fuse, consultaResultados]);
+  const buscaAproximada = useMemo(() => resultadoBusca.length===0 ?
+    executarBuscaOu(fuse, consultaResultados) : [], [fuse, consultaResultados, resultadoBusca]);
+  const aproximada=resultadoBusca.length===0&&buscaAproximada.length>0;
+  const alternativas=useMemo(() => consultaResultados.trim().length>=MINIMO_CARACTERES_BUSCA&&
+    resultadoBusca.length===0 ? sugerirConsultas(consultaResultados,vocabulario) : [],
+    [consultaResultados,resultadoBusca,vocabulario]);
   const resultados = useMemo(() => {
     const semTermo=consultaResultados.trim().length<MINIMO_CARACTERES_BUSCA;
-    const base=semTermo?documentos.map(artigo=>({artigo,pontuacao:1})):resultadoBusca;
+    const base=semTermo?documentos.map(artigo=>({artigo,pontuacao:1})):(resultadoBusca.length?resultadoBusca:buscaAproximada);
     return base.filter(({artigo})=>
       (!categoria||artigo.categoria===categoria)&&(!sistema||artigo.sistema===sistema)&&
       (!nivel||artigo.nivel===nivel)&&(!status||artigo.status===status)&&(!tipo||artigo.tipo===tipo)
     ).sort((a,b)=>ordenacao==="recentes"||semTermo&&ordenacao==="relevancia"
       ?b.artigo.atualizadoEm.localeCompare(a.artigo.atualizadoEm)
       :ordenacao==="az"?a.artigo.titulo.localeCompare(b.artigo.titulo,"pt-BR"):0);
-  },[resultadoBusca,documentos,consultaResultados,categoria,sistema,nivel,status,tipo,ordenacao]);
+  },[resultadoBusca,buscaAproximada,documentos,consultaResultados,categoria,sistema,nivel,status,tipo,ordenacao]);
   const filtrosAtivos = Boolean(categoria || sistema || nivel || status || tipo);
   const temTermo = consultaResultados.trim().length >= MINIMO_CARACTERES_BUSCA;
   const explorarSemTermo = !temTermo && filtrosAtivos;
@@ -63,7 +70,7 @@ export function PainelBusca({ documentos }: Props) {
     void fetch("/api/auditoria/acao",{method:"POST",credentials:"same-origin",cache:"no-store",
       headers:{"Content-Type":"application/json"},body:JSON.stringify({evento:"busca_executada"})}).catch(()=>{});
     const termo = consulta.trim().slice(0, 120);
-    if(termo.length>=MINIMO_CARACTERES_BUSCA&&executarBusca(fuse,termo).length===0){
+    if(termo.length>=MINIMO_CARACTERES_BUSCA&&executarBusca(fuse,termo).length===0&&executarBuscaOu(fuse,termo).length===0){
       // Registro agregado apenas após busca explícita, sem armazenar a identidade.
       void fetch("/api/busca/lacuna",{method:"POST",credentials:"same-origin",cache:"no-store",
         headers:{"Content-Type":"application/json"},body:JSON.stringify({termo})}).catch(()=>{});
@@ -151,6 +158,13 @@ export function PainelBusca({ documentos }: Props) {
        explorarSemTermo?quantidade(resultados.length,"artigo")+" com os filtros selecionados":
        quantidade(documentos.length,"artigo")+" indexados"}
     </div>
+    {temTermo&&alternativas.length>0&&<div className="sugestoes-termos" role="group" aria-label="Correções sugeridas">
+      <span>Você quis dizer:</span>
+      {alternativas.map(termo=><button key={termo} type="button" onClick={()=>alterarConsulta(termo)}>{termo}</button>)}
+    </div>}
+    {temTermo&&aproximada&&resultados.length>0&&<p role="status" className="resultado-contagem">
+      Resultados aproximados: pelo menos um termo da pesquisa.
+    </p>}
     {!temTermo&&!explorarSemTermo?
      <div className="estado-vazio">
       <strong>Pesquise por título, código de erro ou procedimento.</strong>

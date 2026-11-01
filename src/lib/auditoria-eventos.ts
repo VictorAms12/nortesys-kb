@@ -1,7 +1,7 @@
 import "server-only";
 import {consultar} from "./banco";
 export const ROTULOS_AUDITORIA:Record<string,string>={
- login_sucesso:"Login realizado",login_falha:"Tentativa de login inválida",logout_sucesso:"Logout realizado",
+ login_sucesso:"Login realizado",login_falha:"Tentativa de login inválida",login_bloqueio:"Limite global de falhas atingido",logout_sucesso:"Logout realizado",
  artigo_inicio_criacao:"Iniciou criação de artigo",artigo_inicio_edicao:"Abriu editor de artigo",
  artigo_criado:"Criou artigo",artigo_editado:"Editou artigo",artigo_arquivado:"Arquivou artigo",
  artigo_visualizado:"Consultou artigo",artigo_favoritado:"Favoritou artigo",artigo_desfavoritado:"Removeu favorito",

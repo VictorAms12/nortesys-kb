@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { consultar } from "./banco";
-import { derivarHashSenha, FORMATO_USUARIO, type Papel } from "./usuarios";
+import { gerarHashVersionado, hashLegadoIrrecuperavel, FORMATO_USUARIO, type Papel } from "./usuarios";
 
 export type ContaAdmin = { id:string; usuario:string; nome:string; papel:Papel; ativo:boolean; criado_em:string };
 export const PAPEIS: Papel[] = ["administrador", "editor", "leitor"];
@@ -12,10 +12,10 @@ export async function listarContas(): Promise<ContaAdmin[]> {
 export async function registrarEvento(ator:string, evento:string, alvo:string): Promise<void> {
   await consultar(`INSERT INTO kb_auditoria(usuario_id,evento,alvo) VALUES ($1,$2,$3)`,[ator,evento,alvo]);
 }
-export async function gerarCredencialHash(credencial:string): Promise<{salt:string;hash:string}> {
+export async function gerarCredencialHash(credencial:string): Promise<{salt:string;hash:string;hashVersionado:string}> {
   if (typeof credencial!=="string" || credencial.length===0 || credencial.trim().length===0 || credencial.length>256) throw Error("credencial_invalida");
   const sal = randomBytes(16);
-  return {salt:sal.toString("hex"),hash:(await derivarHashSenha(credencial,sal)).toString("hex")};
+  return {salt:sal.toString("hex"),hash:hashLegadoIrrecuperavel(),hashVersionado:await gerarHashVersionado(credencial,sal)};
 }
 export function entradaContaValida(usuario: string,nome:string,papel:string): papel is Papel {
   return FORMATO_USUARIO.test(usuario) && nome.length>=2 && nome.length<=80 && PAPEIS.includes(papel as Papel);

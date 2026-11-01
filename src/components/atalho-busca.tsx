@@ -9,6 +9,8 @@ export function AtalhoBusca(){
  const router=useRouter();
  const [consulta,setConsulta]=useState("");
  const [resultados,setResultados]=useState<Sugestao[]>([]);
+ const [alternativas,setAlternativas]=useState<string[]>([]);
+ const [aproximada,setAproximada]=useState(false);
  const [aberto,setAberto]=useState(false);
  const [indice,setIndice]=useState(-1);
  const [carregando,setCarregando]=useState(false);
@@ -39,14 +41,14 @@ export function AtalhoBusca(){
     const r=await fetch("/api/busca/sugestoes?q="+encodeURIComponent(consulta.slice(0,120)),
       {cache:"no-store",signal:controller.signal});
     if(!r.ok)throw Error();
-    const d=await r.json() as {resultados:Sugestao[]};
-    setResultados(d.resultados??[]);setIndice(-1);setFalha(false);
-   }catch{if(!controller.signal.aborted){setResultados([]);setFalha(true);}}
+    const d=await r.json() as {resultados:Sugestao[];alternativas?:string[];aproximada?:boolean};
+    setResultados(d.resultados??[]);setAlternativas(d.alternativas??[]);setAproximada(Boolean(d.aproximada));setIndice(-1);setFalha(false);
+   }catch{if(!controller.signal.aborted){setResultados([]);setAlternativas([]);setFalha(true);}}
    finally{if(!controller.signal.aborted)setCarregando(false);}
   },220);
   return()=>{controller.abort();window.clearTimeout(t);};
  },[consulta]);
- function mudar(valor:string){setConsulta(valor);setResultados([]);setIndice(-1);setFalha(false);setCarregando(valor.trim().length>=2);setAberto(true);}
+ function mudar(valor:string){setConsulta(valor);setResultados([]);setAlternativas([]);setAproximada(false);setIndice(-1);setFalha(false);setCarregando(valor.trim().length>=2);setAberto(true);}
  function teclado(e:React.KeyboardEvent<HTMLInputElement>){
   if(e.key==="Escape"){e.preventDefault();setAberto(false);inputRef.current?.blur();return;}
   if(e.key==="ArrowDown"&&resultados.length){e.preventDefault();setIndice(i=>(i+1)%resultados.length);setAberto(true);}
@@ -68,11 +70,13 @@ export function AtalhoBusca(){
    <kbd className="atalho-teclado" aria-hidden="true">/</kbd>
   </form>
   {visivel&&<div id="sugestoes-busca" role="listbox" aria-label="Resultados instantâneos" className="dropdown-busca">
+    {aproximada&&resultados.length>0&&<p className="dropdown-mensagem">Resultados aproximados: pelo menos um termo</p>}
     {resultados.map((r,i)=><Link key={r.url} href={r.url} id={"sugestao-busca-"+i} role="option"
      aria-selected={indice===i} className={"opcao-busca "+(indice===i?"opcao-busca-ativa":"")}
      onMouseEnter={()=>setIndice(i)} onClick={()=>setAberto(false)}>
       <strong>{r.titulo}</strong><small>{r.categoria}{r.codigos.length?" · "+r.codigos.join(", "):""}</small>
      </Link>)}
+    {!carregando&&alternativas.length>0&&<div className="dropdown-mensagem">Você quis dizer: {alternativas.map(t=><button type="button" key={t} onClick={()=>mudar(t)} className="underline mr-2">{t}</button>)}</div>}
     {carregando&&<p className="dropdown-mensagem" role="status">Buscando...</p>}
     {!carregando&&falha&&<p className="dropdown-mensagem">Resultados instantâneos indisponíveis. Pressione Enter para pesquisar.</p>}
     {!carregando&&!falha&&resultados.length===0&&<p className="dropdown-mensagem">Nenhuma sugestão encontrada.</p>}

@@ -47,3 +47,6 @@ export const SQL_LIMPAR_COTAS_BUSCA = `
   DELETE FROM kb_busca_sugestoes_limites q USING antigas a WHERE q.usuario_id=a.usuario_id RETURNING q.usuario_id
  )
  SELECT COUNT(*)::int AS total FROM apagadas`;
+
+/** Retenção da auditoria em lotes, com índice kb_auditoria_data_idx. */
+export const SQL_LIMPAR_AUDITORIA = "WITH antigas AS (SELECT id FROM kb_auditoria WHERE data<NOW()-make_interval(days => $1::int) ORDER BY data,id LIMIT $2::int FOR UPDATE SKIP LOCKED),apagadas AS (DELETE FROM kb_auditoria a USING antigas x WHERE a.id=x.id RETURNING a.id) SELECT COUNT(*)::int AS total FROM apagadas";

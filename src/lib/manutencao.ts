@@ -3,15 +3,19 @@ import {del} from "@vercel/blob";
 import {consultar} from "./banco";
 import {migracao009Aplicada} from "./migracao-009";
 import {LOTE_MANUTENCAO,RODADAS_RETENCAO,SQL_LIMPAR_TEMPORARIOS,SQL_LIMPAR_NOTIFICACOES,
- SQL_LIMPAR_COTAS_AVATAR,SQL_LIMPAR_COTAS_BUSCA} from "./manutencao-sql";
+ SQL_LIMPAR_COTAS_AVATAR,SQL_LIMPAR_COTAS_BUSCA,SQL_LIMPAR_AUDITORIA} from "./manutencao-sql";
 
 type Fila={caminho:string};
 function diasRetencao():number {
  const valor=Number(process.env.NOTIFICACOES_RETENCAO_DIAS??30);
  return Number.isSafeInteger(valor)&&valor>=7&&valor<=365?valor:30;
 }
+export function diasRetencaoAuditoria():number {
+ const valor=Number(process.env.AUDITORIA_RETENCAO_DIAS??365);
+ return Number.isSafeInteger(valor)&&valor>=30&&valor<=1825?valor:365;
+}
 /** Rotina manual, lote pequeno e reserva por 2 minutos para evitar exclusões concorrentes. */
-export async function executarManutencao():Promise<{limpas:number;falhas:number;temporarios:number;notificacoes:number;limites:number}>{
+export async function executarManutencao():Promise<{limpas:number;falhas:number;temporarios:number;notificacoes:number;limites:number;auditoria:number}>{
  if(!(await migracao009Aplicada()))throw Error("Migração 009 pendente.");
  /** Limite máximo por execução: 5 × 200 por tipo, sem varreduras DELETE ilimitadas. */
  async function limparEmLotes(query:string,parametros:unknown[]):Promise<number>{
@@ -38,6 +42,7 @@ export async function executarManutencao():Promise<{limpas:number;falhas:number;
   SELECT to_regclass('public.kb_notificacoes') IS NOT NULL AS notificacoes,
          to_regclass('public.kb_avatar_limites') IS NOT NULL AS avatar,
          to_regclass('public.kb_busca_sugestoes_limites') IS NOT NULL AS busca`);
+ const auditoria=await limparEmLotes(SQL_LIMPAR_AUDITORIA,[diasRetencaoAuditoria(),LOTE_MANUTENCAO]);
  const notificacoes=recursos?.notificacoes
   ?await limparEmLotes(SQL_LIMPAR_NOTIFICACOES,[diasRetencao(),LOTE_MANUTENCAO]):0;
  const [limitesAvatar,limitesBusca]=await Promise.all([
@@ -69,7 +74,7 @@ export async function executarManutencao():Promise<{limpas:number;falhas:number;
    // A reserva vence e o registro continua disponível para nova tentativa.
   }
  }
- return {limpas,falhas,temporarios,notificacoes,limites};
+ return {limpas,falhas,temporarios,notificacoes,limites,auditoria};
 }
 export async function situacaoManutencao(){
  const habilitada=await migracao009Aplicada();

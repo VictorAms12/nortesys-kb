@@ -10,8 +10,8 @@ async function executarTestes(): Promise<void> {
     assert.equal(autenticacaoConfigurada(), false);
     assert.equal(FORMATO_USUARIO.test("ana.souza"), true);
     assert.equal(FORMATO_USUARIO.test("Ana"), false);
-    assert.equal(chaveTentativas("ana"), "usuario:ana");
-    assert.equal(chaveTentativas("!!!!!"), "usuario:invalido");
+    assert.match(chaveTentativas("ana","192.0.2.1"), /^ui:[a-f0-9]{48}$/);
+    assert.notEqual(chaveTentativas("ana","192.0.2.1"),chaveTentativas("ana","192.0.2.2"));
     assert.equal(papelPermitido("leitor", ["administrador"]), false);
     assert.equal(papelPermitido("editor", ["editor", "administrador"]), true);
     assert.equal(destinoSeguro("https://host.test"), "/");
