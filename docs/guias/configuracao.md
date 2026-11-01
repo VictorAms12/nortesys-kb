@@ -48,12 +48,17 @@ Confirme o ID em Neon → projeto `nortesyskb` → Branches → `dev-fase-7c1`. 
 
 A migração 012 permite imagens de chat sem legenda e atualiza somente textos automáticos. A 013 cria cotas para avatar (12 por hora), sugestões (90 por minuto) e índices para a central de notificações.
 
-A **migração 014** protege o último administrador ativo por trigger no PostgreSQL, inclusive em atualizações simultâneas ou operações feitas fora do painel.
+A **migração 014** protege o último administrador ativo por trigger no PostgreSQL, inclusive em alterações feitas fora do painel. Valide o comportamento com pelo menos dois administradores de teste antes da produção.
 
-A **migração 015** recupera o gatilho da fila de imagens de chat excluídas para todos se ele estiver ausente, sem remover arquivos ou mensagens.
- 
-A **migração 016** prepara índices de busca para crescimento do catálogo. Cria o índice GIN de `to_tsvector('portuguese',titulo || conteudo)` e, quando disponíveis, instala `pg_trgm` e `unaccent` e cria um índice trigram para títulos. A pesquisa principal continua usando Fuse.js (com a mesma relevância e visibilidade); a migração **não muda a experiência de pesquisa**, e os índices SQL só serão aproveitados quando uma consulta full-text for adotada. No Neon de desenvolvimento, valide `pg_indexes` e `pg_extension` após aplicar. Extensões ausentes em PostgreSQL de testes são tratadas como opcionais.
- No Neon de desenvolvimento onde a migração 009 estiver parcialmente instalada, aplique 015 primeiro e confirme o gatilho antes de reconciliar os checksums históricos. A reconciliação **não deve** certificar uma migração 009 incompleta. Aplique-a primeiro no Neon de desenvolvimento e valide a ativação, rebaixamento e desativação de contas com pelo menos dois administradores de teste. O controle de concorrência entre conexões reais precisa ser homologado no banco escolhido. O deploy do código da Fase B precisa ocorrer **após aplicar as migrações em Preview**.
+A **migração 015** recupera o gatilho da fila de imagens de chat excluídas para todos, sem remover arquivos ou mensagens. Se a migração 009 estiver parcialmente instalada, recupere o gatilho e verifique seu funcionamento antes de reconciliar os checksums históricos.
+
+A **migração 016** prepara índices de pesquisa SQL: GIN para texto em português e, quando disponíveis, `pg_trgm`, `unaccent` e trigram de títulos. A busca atual continua usando Fuse.js, sem alteração na relevância.
+
+A **migração 017** preserva vínculos quando um editor altera categoria ou slug de um artigo persistido no Neon. Ela cria a tabela `kb_artigo_aliases` e dois gatilhos no PostgreSQL, que, na **mesma transação da atualização**, migram favoritos, leituras e feedback para a URL atual. Em registros duplicados, preserva a data mais antiga do favorito, a leitura mais recente e o feedback mais recente. Os anexos e as imagens continuam vinculados ao `artigo_id`, sem alterações nesses vínculos.
+
+URLs anteriores redirecionam para a URL atual **somente se o artigo não estiver arquivado e estiver visível ao papel autenticado**. A URL antiga permanece reservada contra criação de outro artigo; um artigo pode voltar a usar uma de suas próprias URLs antigas. Renomeações feitas **antes** da instalação da 017 não são recuperadas automaticamente: revise casos históricos manualmente, sem remapear dados de outro artigo. A resolução de aliases falha de forma compatível se 017 ainda não estiver instalada em produção.
+
+Aplique e valide novas migrações primeiro na branch Neon de desenvolvimento; não aplique na produção sem uma verificação separada. O comando `npm run db:status` permite conferir as assinaturas, e `npm run db:verificar` confere o histórico.
 
 Conferência SQL:
 

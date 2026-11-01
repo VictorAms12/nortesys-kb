@@ -26,7 +26,7 @@ async function artigo(db:PGlite,slug:string,status="revisado"):Promise<string>{
  return id;
 }
 const url=(slug:string)=>`/artigos/erp/${slug}`;
-const q=async<T>(db:PGlite,sql:string,args:unknown[]=[])=>(
+const q=async<T extends Record<string, unknown>>(db:PGlite,sql:string,args:unknown[]=[])=>(
  await db.query<T>(sql,args)).rows;
 
 test("Fase 5: renomeação conserva favoritos, leituras, feedback e anexos em transação",async t=>{
