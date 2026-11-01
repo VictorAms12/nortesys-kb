@@ -1262,10 +1262,17 @@ form[data-enviando="sim"] .feedback-formulario { animation: entrada-item 160ms e
  border-radius:var(--radius-panel);margin:12px 0 8px;
 }
 .lista-artigos-recentes>.linha-artigo:nth-child(2),
-.lista-artigos-recentes>.linha-artigo:nth-child(3){padding-block:19px;}
+.lista-artigos-recentes>.linha-artigo:nth-child(3){
+ padding:18px 20px;border-left:2px solid var(--border-strong);
+ background:var(--surface-panel);border-radius:var(--radius-control);margin:8px 0;
+}
+.lista-artigos-recentes>.linha-artigo:nth-child(-n+3) p{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+ overflow:hidden;line-height:1.6;max-width:80ch;
+}
 .lista-artigos-recentes>.linha-artigo:nth-child(n+4){padding-block:12px;}
 .lista-artigos-recentes>.linha-artigo:nth-child(n+4) p{display:none;}
-.painel-lista-apoio{padding-top:4px;}
+.painel-lista-apoio{padding-top:12px;border-top:1px solid var(--border);}
 .painel-lista-apoio .cabecalho-lista h2{font-size:16px;font-weight:600;}
 .painel-lista-apoio .cabecalho-lista h2::before{height:15px;}
 .painel-lista-apoio .linha-artigo{padding:12px 0;}
